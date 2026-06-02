@@ -32,18 +32,21 @@ const WheelDirectionGuide = {
     if (!this.visible) { guide.style.opacity = '0'; return; }
 
     const isDark = !document.body.classList.contains('light');
-    const arcStroke = isDark ? 'rgba(240,237,232,.28)' : 'rgba(20,20,20,.22)';
-    const labelFill = isDark ? 'rgba(240,237,232,.52)' : 'rgba(20,20,20,.46)';
-    const subFill   = isDark ? 'rgba(240,237,232,.3)'  : 'rgba(20,20,20,.28)';
+    const arcStroke = isDark ? 'rgba(240,237,232,.30)' : 'rgba(20,20,20,.24)';
+    const labelFill = isDark ? 'rgba(240,237,232,.55)' : 'rgba(20,20,20,.48)';
+    const subFill   = isDark ? 'rgba(240,237,232,.32)' : 'rgba(20,20,20,.3)';
 
-    // r=297 sits just outside the outer wheel ring (r=286).
-    // Right arc: angles 40° – 140° (NE to SE in wheel convention = clockwise Fifths side)
-    const R = 297;
-    const [rx1, ry1] = polar(R, 38);
-    const [rx2, ry2] = polar(R, 142);
-    // Left arc: angles 218° – 322° (SW to NW = counterclockwise Fourths side)
-    const [lx1, ly1] = polar(R, 218);
-    const [lx2, ly2] = polar(R, 322);
+    // The wheel sectors end at r=286 and the viewBox edge is at r=300.
+    // The arcs sit OUTSIDE the wheel in the SVG overflow region (overflow:visible),
+    // and labels sit further out still, so nothing overlaps the chord names.
+    const R   = 306;   // arc radius — clearly outside the wheel ring
+    const RL  = 316;   // label radius — outside the arcs, in the empty corners
+
+    // Right side = Fifths (clockwise) · Left side = Fourths (counterclockwise)
+    const [rx1, ry1] = polar(R, 40);
+    const [rx2, ry2] = polar(R, 140);
+    const [lx1, ly1] = polar(R, 220);
+    const [lx2, ly2] = polar(R, 320);
 
     // ── Fifths arc (right side, clockwise sweep) ──────
     const arcF = se('path', {
@@ -57,10 +60,10 @@ const WheelDirectionGuide = {
     });
     guide.appendChild(arcF);
 
-    // Arrowhead at end of Fifths arc (clockwise, points downward at 3–4 o'clock)
-    const [ax1, ay1] = polar(R - 8, 150);
-    const [ax2, ay2] = polar(R + 8, 150);
-    const [ax3, ay3] = polar(R,     138);
+    // Arrowhead at end of Fifths arc (clockwise, just past 140°)
+    const [ax1, ay1] = polar(R - 7, 146);
+    const [ax2, ay2] = polar(R + 7, 146);
+    const [ax3, ay3] = polar(R,     136);
     const arrowF = se('polygon', {
       points:  `${ax1.toFixed(1)},${ay1.toFixed(1)} ${ax2.toFixed(1)},${ay2.toFixed(1)} ${ax3.toFixed(1)},${ay3.toFixed(1)}`,
       fill:    arcStroke,
@@ -68,21 +71,22 @@ const WheelDirectionGuide = {
     });
     guide.appendChild(arrowF);
 
-    // Labels for Fifths (right side)
+    // Labels for Fifths (upper-right corner, in the empty space outside the arc)
+    const [fx, fy] = polar(RL, 54);
     const lFifths = se('text', {
-      x: '556', y: '294',
+      x: fx.toFixed(1), y: (fy - 3).toFixed(1),
       'text-anchor': 'middle',
       'font-family': 'DM Mono,monospace',
-      'font-size':   '10.5',
+      'font-size':   '11',
       fill:          labelFill,
-      'letter-spacing': '.1em',
+      'letter-spacing': '.12em',
       class: 'dir-label',
     });
     lFifths.textContent = t('dirguide.fifths').toUpperCase();
     guide.appendChild(lFifths);
 
     const lFifthsSub = se('text', {
-      x: '556', y: '308',
+      x: fx.toFixed(1), y: (fy + 11).toFixed(1),
       'text-anchor': 'middle',
       'font-family': 'DM Mono,monospace',
       'font-size':   '8',
@@ -90,7 +94,7 @@ const WheelDirectionGuide = {
       'letter-spacing': '.04em',
       class: 'dir-label-sub',
     });
-    lFifthsSub.textContent = t('dirguide.clockwise') + ' →';
+    lFifthsSub.textContent = t('dirguide.clockwise') + ' ↻';
     guide.appendChild(lFifthsSub);
 
     // ── Fourths arc (left side, counterclockwise sweep) ─
@@ -105,10 +109,10 @@ const WheelDirectionGuide = {
     });
     guide.appendChild(arcFo);
 
-    // Arrowhead at end of Fourths arc (counterclockwise, points upward at 9–10 o'clock)
-    const [bx1, by1] = polar(R - 8, 310);
-    const [bx2, by2] = polar(R + 8, 310);
-    const [bx3, by3] = polar(R,     322);
+    // Arrowhead at end of Fourths arc (counterclockwise, just past 320°)
+    const [bx1, by1] = polar(R - 7, 314);
+    const [bx2, by2] = polar(R + 7, 314);
+    const [bx3, by3] = polar(R,     324);
     const arrowFo = se('polygon', {
       points:  `${bx1.toFixed(1)},${by1.toFixed(1)} ${bx2.toFixed(1)},${by2.toFixed(1)} ${bx3.toFixed(1)},${by3.toFixed(1)}`,
       fill:    arcStroke,
@@ -116,21 +120,22 @@ const WheelDirectionGuide = {
     });
     guide.appendChild(arrowFo);
 
-    // Labels for Fourths (left side)
+    // Labels for Fourths (upper-left corner, in the empty space outside the arc)
+    const [ox, oy] = polar(RL, 306);
     const lFourths = se('text', {
-      x: '44', y: '294',
+      x: ox.toFixed(1), y: (oy - 3).toFixed(1),
       'text-anchor': 'middle',
       'font-family': 'DM Mono,monospace',
-      'font-size':   '10.5',
+      'font-size':   '11',
       fill:          labelFill,
-      'letter-spacing': '.1em',
+      'letter-spacing': '.12em',
       class: 'dir-label',
     });
     lFourths.textContent = t('dirguide.fourths').toUpperCase();
     guide.appendChild(lFourths);
 
     const lFourthsSub = se('text', {
-      x: '44', y: '308',
+      x: ox.toFixed(1), y: (oy + 11).toFixed(1),
       'text-anchor': 'middle',
       'font-family': 'DM Mono,monospace',
       'font-size':   '8',
@@ -138,7 +143,7 @@ const WheelDirectionGuide = {
       'letter-spacing': '.04em',
       class: 'dir-label-sub',
     });
-    lFourthsSub.textContent = '← ' + t('dirguide.ccw');
+    lFourthsSub.textContent = '↺ ' + t('dirguide.ccw');
     guide.appendChild(lFourthsSub);
 
     // Animate in

@@ -30,14 +30,16 @@ function updatePanelsAfterSpin() {
 }
 
 function settleWheelFrom(rot, velocity) {
-  const DECEL = 0.94, SNAP_SPEED = 2;
-  let v = velocity;
+  // DECEL near 1 = the wheel keeps gliding for a while; SNAP_SPEED low so
+  // residual motion carries before snapping to the nearest key.
+  const DECEL = 0.965, SNAP_SPEED = 0.5, MAX_V = 42;
+  let v = Math.max(-MAX_V, Math.min(MAX_V, velocity));
   let r = rot;
   function step() {
     if (Math.abs(v) < SNAP_SPEED) {
       const target = -nearestFifthIndex(r) * 30;
       const delta  = shortestDelta(target, r);
-      const dur    = 480, t0 = performance.now();
+      const dur    = 420, t0 = performance.now();
       const r0     = r;
       function snap(now) {
         const p = Math.min((now - t0) / dur, 1);
@@ -87,7 +89,11 @@ function initWheelRoulette() {
     const delta  = shortestDelta(angle, lastAngle);
     const now    = performance.now();
     const dt     = now - lastTime;
-    if (dt > 0) angularVelocity = delta / dt * 16;
+    if (dt > 0) {
+      // deg per ~16ms frame, smoothed so a flick carries but a slow turn doesn't
+      const inst = delta / dt * 16;
+      angularVelocity = angularVelocity * 0.55 + inst * 0.45;
+    }
     lastAngle = angle;
     lastTime  = now;
     const newRot = startRot + shortestDelta(angle, startAngle);
@@ -104,7 +110,11 @@ function initWheelRoulette() {
     wheelDrag   = null;
     InteractionController.end();
     if (moved) {
-      settleWheelFrom(wRot, angularVelocity);
+      // If the pointer was held still before release, drop the stale velocity
+      // so the wheel settles in place instead of flinging.
+      const idle = performance.now() - lastTime;
+      const v    = idle > 90 ? 0 : angularVelocity;
+      settleWheelFrom(wRot, v);
     } else {
       suppressWheelClick = false;
     }

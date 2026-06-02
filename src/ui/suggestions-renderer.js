@@ -57,22 +57,16 @@ function _buildBubblesHTML() {
   const all     = SuggestionEngine.getNextWithScores(from);
   const current = gc()[from];
   const bubbles = all.map((it, i) => {
-    const normalized = Math.max(0, Math.min(1, (it.fit - 18) / 82));
-    const d   = Math.round(62 + Math.pow(normalized, 1.65) * 96);
+    // Wider size range + steeper curve = stronger visual difference between
+    // strong and weak suggestions. The bubble shows only the chord, centered.
+    const normalized = Math.max(0, Math.min(1, (it.fit - 12) / 88));
+    const d   = Math.round(48 + Math.pow(normalized, 2.0) * 142); // ~48px → ~190px
     const cat = friendlyCategory(it.transition?.category);
     return `<button class="next-bubble ${i === 0 ? 'best' : ''}"
         style="--fit:${it.fit};--d:${d}px;--rank:${i}"
         onclick="AppActions.selectDegree(${it.to},{force:true})"
-        title="${it.fit}% fit · ${cat}">
-      <span class="nb-fit">${it.fit}%</span>
+        title="${it.chord.chord} · ${it.chord.degree} · ${it.fit}% fit · ${cat}">
       <span class="nb-chord">${it.chord.chord}</span>
-      <span class="nb-degree">${it.chord.degree}</span>
-      <span class="nb-category">${cat}</span>
-      <span class="nb-metrics">
-        ${_metricBar('Resolution', it.m.resolution, 'resolution', 'res')}
-        ${_metricBar('Tension',    it.m.tension,    'tension',    'ten')}
-        ${_metricBar('Motion',     it.m.movement,   'motion',     'mot')}
-      </span>
     </button>`;
   }).join('');
 
@@ -87,7 +81,6 @@ function _buildBubblesHTML() {
       <div class="builder-next-title">Suggested next chords</div>
       <div class="builder-next-hint">The larger the circle, the stronger the next move from ${current.chord}.</div>
     </div>
-    <div class="builder-next-context">R Resolution · T Tension · M Motion</div>
   </div>
   <div class="next-orbit">${bubbles}</div>`;
 }

@@ -31,20 +31,19 @@ body.light .next-orbit::-webkit-scrollbar-thumb { background:rgba(0,0,0,.14) }
 .next-bubble {
   --d: 88px;
   --fit: 50;
-  --diam: clamp(62px, var(--d), 158px);
+  --diam: clamp(48px, var(--d), 190px);
   width:var(--diam) !important; height:var(--diam) !important;
   min-width:var(--diam) !important; min-height:var(--diam) !important;
   max-width:var(--diam) !important; max-height:var(--diam) !important;
   aspect-ratio:1/1 !important;
   flex:0 0 var(--diam) !important;
   border-radius:999px !important;
-  padding:10px !important;
+  padding:6px !important;
   scroll-snap-align:center !important;
   transform:translateY(calc((100 - var(--fit)) * .05px)) !important;
   display:grid !important;
-  grid-template-rows:auto 1fr auto !important;
   place-items:center !important;
-  gap:2px !important;
+  gap:0 !important;
   border:1px solid rgba(255,255,255,.12) !important;
   background:
     radial-gradient(circle at 34% 24%, rgba(255,255,255,.14), transparent 28%),
@@ -84,32 +83,18 @@ body.light .next-bubble {
 }
 .next-bubble:active { transform:translateY(-1px) scale(.985) !important }
 
-/* Bubble inner elements */
-.nb-fit    { font-family:'DM Mono',monospace !important; font-size:7px !important; letter-spacing:.1em !important; opacity:.62 !important; line-height:1 !important }
+/* Bubble inner — only the chord, centered, sized to the bubble */
 .nb-chord  {
   font-family:var(--wheel-font) !important;
   font-weight:700 !important;
   letter-spacing:-.03em !important;
-  font-size:clamp(20px, calc(var(--diam, 88px) * .25), 40px) !important;
+  font-size:clamp(15px, calc(var(--diam, 88px) * .34), 58px) !important;
   line-height:.9 !important; text-align:center !important;
   white-space:nowrap !important;
+  color:var(--ink) !important;
 }
-.nb-degree  { font-family:'DM Mono',monospace !important; font-size:8px !important; color:var(--muted) !important; line-height:1 !important }
-.nb-category { display:none !important }
-.nb-metrics  { width:min(84%,90px) !important; display:grid !important; gap:3px !important; margin-top:4px !important }
-.metric-line { display:grid !important; grid-template-columns:12px 1fr !important; gap:4px !important; align-items:center !important }
-.metric-name { font-family:'DM Mono',monospace; font-size:7px !important; letter-spacing:.04em !important; color:var(--muted); overflow:hidden; text-align:left }
-.metric-name span { display:none !important }
-.metric-name.res::after { content:'R' }
-.metric-name.ten::after { content:'T' }
-.metric-name.mot::after { content:'M' }
-.metric-track { height:3px !important; border-radius:999px; background:rgba(255,255,255,.09); overflow:hidden }
-body.light .metric-track { background:rgba(0,0,0,.08) }
-.metric-fill  { display:block; height:100%; border-radius:999px; background:rgba(255,255,255,.34) }
-.metric-fill.tension.hot     { background:var(--accent2); box-shadow:0 0 9px rgba(232,68,26,.35) }
-.metric-fill.resolution.hot  { background:rgba(255,255,255,.62) }
-body.light .metric-fill      { background:rgba(0,0,0,.30) }
-body.light .metric-fill.tension.hot { background:var(--accent) }
+/* Hidden meta — removed from the bubble but kept defined for safety */
+.nb-fit, .nb-degree, .nb-category, .nb-metrics { display:none !important }
 
 /* Old suggestion card components (kept in case section re-enabled) */
 .gravity-status  { display:grid; grid-template-columns:1fr; margin-bottom:9px }
