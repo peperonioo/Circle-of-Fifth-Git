@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "efc-dist",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "4242", "--no-clipboard", "dist"],
+      "port": 4242
+    }
+  ]
+}
