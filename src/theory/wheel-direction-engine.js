@@ -39,10 +39,25 @@ const WheelDirectionGuide = {
     // The wheel sectors end at r=286 and the viewBox edge is at r=300.
     // The arcs sit OUTSIDE the wheel in the SVG overflow region (overflow:visible),
     // and labels sit further out still, so nothing overlaps the chord names.
-    const R   = 306;   // arc radius — clearly outside the wheel ring
-    const RL  = 316;   // label radius — outside the arcs, in the empty corners
+    const R   = 320;   // arc radius — well outside the wheel ring
+    const RL  = 330;   // label radius — outside the arcs, in the empty corners
+
+    // Helper: a tangential arrowhead pointing along the arc's direction of
+    // travel. `lead` is the tip angle (ahead in travel), `tail` the base angle.
+    const arrowAt = (lead, tail) => {
+      const [tx, ty]   = polar(R,     lead);
+      const [b1x, b1y] = polar(R - 6, tail);
+      const [b2x, b2y] = polar(R + 6, tail);
+      return se('polygon', {
+        points: `${tx.toFixed(1)},${ty.toFixed(1)} ${b1x.toFixed(1)},${b1y.toFixed(1)} ${b2x.toFixed(1)},${b2y.toFixed(1)}`,
+        fill:   arcStroke,
+        class:  'dir-arrow',
+      });
+    };
 
     // Right side = Fifths (clockwise) · Left side = Fourths (counterclockwise)
+    // Both arcs sweep from the top down their side toward the bottom, so both
+    // arrowheads sit near the bottom pointing outward in the travel direction.
     const [rx1, ry1] = polar(R, 40);
     const [rx2, ry2] = polar(R, 140);
     const [lx1, ly1] = polar(R, 220);
@@ -59,20 +74,11 @@ const WheelDirectionGuide = {
       class:          'dir-arc dir-arc-fifths',
     });
     guide.appendChild(arcF);
-
-    // Arrowhead at end of Fifths arc (clockwise, just past 140°)
-    const [ax1, ay1] = polar(R - 7, 146);
-    const [ax2, ay2] = polar(R + 7, 146);
-    const [ax3, ay3] = polar(R,     136);
-    const arrowF = se('polygon', {
-      points:  `${ax1.toFixed(1)},${ay1.toFixed(1)} ${ax2.toFixed(1)},${ay2.toFixed(1)} ${ax3.toFixed(1)},${ay3.toFixed(1)}`,
-      fill:    arcStroke,
-      class:   'dir-arrow',
-    });
-    guide.appendChild(arrowF);
+    // Clockwise → tip ahead at higher angle (140 → 147), pointing down/out
+    guide.appendChild(arrowAt(147, 137));
 
     // Labels for Fifths (upper-right corner, in the empty space outside the arc)
-    const [fx, fy] = polar(RL, 54);
+    const [fx, fy] = polar(RL, 51);
     const lFifths = se('text', {
       x: fx.toFixed(1), y: (fy - 3).toFixed(1),
       'text-anchor': 'middle',
@@ -108,20 +114,11 @@ const WheelDirectionGuide = {
       class:          'dir-arc dir-arc-fourths',
     });
     guide.appendChild(arcFo);
-
-    // Arrowhead at end of Fourths arc (counterclockwise, just past 320°)
-    const [bx1, by1] = polar(R - 7, 314);
-    const [bx2, by2] = polar(R + 7, 314);
-    const [bx3, by3] = polar(R,     324);
-    const arrowFo = se('polygon', {
-      points:  `${bx1.toFixed(1)},${by1.toFixed(1)} ${bx2.toFixed(1)},${by2.toFixed(1)} ${bx3.toFixed(1)},${by3.toFixed(1)}`,
-      fill:    arcStroke,
-      class:   'dir-arrow',
-    });
-    guide.appendChild(arrowFo);
+    // Counterclockwise → tip ahead at lower angle (220 → 213), pointing down/out
+    guide.appendChild(arrowAt(213, 223));
 
     // Labels for Fourths (upper-left corner, in the empty space outside the arc)
-    const [ox, oy] = polar(RL, 306);
+    const [ox, oy] = polar(RL, 309);
     const lFourths = se('text', {
       x: ox.toFixed(1), y: (oy - 3).toFixed(1),
       'text-anchor': 'middle',

@@ -31,9 +31,10 @@ function updatePanelsAfterSpin() {
 
 function settleWheelFrom(rot, velocity) {
   // DECEL near 1 = the wheel keeps gliding for a while; SNAP_SPEED low so
-  // residual motion carries before snapping to the nearest key.
-  const DECEL = 0.965, SNAP_SPEED = 0.5, MAX_V = 42;
-  let v = Math.max(-MAX_V, Math.min(MAX_V, velocity));
+  // residual motion carries before snapping to the nearest key. A small gain
+  // on the release velocity makes a flick "throw" the wheel further.
+  const DECEL = 0.984, SNAP_SPEED = 0.22, MAX_V = 54, GAIN = 1.3;
+  let v = Math.max(-MAX_V, Math.min(MAX_V, velocity * GAIN));
   let r = rot;
   function step() {
     if (Math.abs(v) < SNAP_SPEED) {
