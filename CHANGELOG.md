@@ -1,5 +1,24 @@
 # Easy Fifth Circle — Changelog
 
+## V4.0 — Motion & Life (batch 1)
+
+**Release date:** 2026-06-04
+
+Making the app feel like a living instrument (Audit §12). All animations are
+transform/opacity only, pause during interaction, and respect
+`prefers-reduced-motion`.
+
+- **Wheel breathing:** the wheel gently breathes at rest (scale 1↔1.008) and a
+  soft accent ring pulses at the centre as a tonic heartbeat.
+- **Selection FX:** changing the key fires a ripple from the centre, a bloom of
+  the centre letters, and a staggered cascade through the degrees row, piano
+  (arpeggio-like sweep) and guitar.
+- **Fly-to-pill:** clicking a suggestion flies a ghost of the chord into its
+  new pill in the builder.
+- **Theme wipe:** light/dark toggles with a radial reveal from the theme button
+  (View Transitions API, graceful fallback). Tabs already slide their active
+  indicator.
+
 ## V3.22 — Test Suite Expansion (Audit §8.5)
 
 **Release date:** 2026-06-04

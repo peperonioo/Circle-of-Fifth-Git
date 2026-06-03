@@ -115,13 +115,24 @@ const PALETTES_DATA = PALETTES;
 })();
 
 function toggleTheme() {
-  isLight = !isLight;
-  st.theme = isLight ? 'light' : 'dark';
-  document.body.classList.toggle('light', isLight);
+  const apply = () => {
+    isLight = !isLight;
+    st.theme = isLight ? 'light' : 'dark';
+    document.body.classList.toggle('light', isLight);
+    const btn = document.getElementById('themeBtn');
+    if (btn) btn.textContent = isLight ? '☾' : '☀';
+    saveState();
+    renderWheel();
+  };
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Radial wipe from the theme button via the View Transitions API (graceful
+  // fallback to an instant switch where it's unsupported).
+  if (!document.startViewTransition || reduce) { apply(); return; }
   const btn = document.getElementById('themeBtn');
-  if (btn) btn.textContent = isLight ? '☾' : '☀';
-  saveState();
-  renderWheel();
+  const r = btn?.getBoundingClientRect();
+  document.documentElement.style.setProperty('--vt-x', (r ? r.left + r.width / 2 : innerWidth - 40) + 'px');
+  document.documentElement.style.setProperty('--vt-y', (r ? r.top + r.height / 2 : 40) + 'px');
+  document.startViewTransition(apply);
 }
 
 // App boot
