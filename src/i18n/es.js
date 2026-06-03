@@ -45,4 +45,10 @@ const I18N_ES = {
   'dirguide.popover.sig':   'Armadura — cuántos sostenidos o bemoles',
   'dirguide.popover.cw':    'Horario — quintas',
   'dirguide.popover.ccw':   'Antihorario — cuartas (cadencias: ii–V–I)',
+  'dirguide.why.title':     '¿Qué es el Círculo de Quintas?',
+  'dirguide.why.body':      'Ordena las 12 tonalidades por cercanía. Las vecinas comparten casi todas sus notas, así sus acordes suenan bien juntos. Úsalo para ver qué acordes caben en una tonalidad, crear progresiones que fluyen y cambiar de tono sin saltos bruscos.',
+  'dirguide.fifthsCard.title': 'Horario → Quintas',
+  'dirguide.fifthsCard.body':  'Cada paso sube una quinta y añade un sostenido, así el sonido se vuelve más brillante y abierto. Aquí vive la energía hacia adelante: el acorde V que empuja, subidas luminosas y giros épicos.',
+  'dirguide.fourthsCard.title':'Antihorario → Cuartas',
+  'dirguide.fourthsCard.body': 'Cada paso sube una cuarta (baja una quinta) y añade un bemol — más cálido y asentado. Es la dirección de la resolución: ii–V–I y casi todas las cadencias se mueven así, atraídas hacia la tónica.',
 };

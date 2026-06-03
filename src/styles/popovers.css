@@ -86,8 +86,50 @@
   border-right:1px solid var(--ui-border-strong); border-top:1px solid var(--ui-border-strong);
 }
 
+/* ── Direction-guide explanation panels ────────────── */
+.dir-panels { position:fixed; inset:0; z-index:var(--z-popover) !important; pointer-events:none;
+  opacity:0; transition:opacity .26s var(--ease); }
+.dir-panels.open { opacity:1; }
+.dir-scrim { position:absolute; inset:0; pointer-events:auto;
+  background:rgba(8,8,10,.30); backdrop-filter:blur(2px); }
+body.light .dir-scrim { background:rgba(40,36,32,.13); }
+
+.dir-panel {
+  position:fixed; width:250px; max-width:calc(100vw - 28px);
+  padding:15px 16px; border-radius:var(--r-md) !important;
+  border:1px solid var(--ui-border-strong) !important;
+  background:var(--ui-surface-strong) !important;
+  backdrop-filter:blur(24px) !important;
+  box-shadow:0 24px 70px rgba(0,0,0,.32) !important;
+  pointer-events:auto; text-align:left;
+  opacity:0; transform:translateY(10px) scale(.985);
+  transition:opacity .3s var(--ease), transform .3s var(--ease);
+}
+.dir-panels.open .dir-panel { opacity:1; transform:none; }
+.dir-panels.open .dir-panel-fourths { transition-delay:.05s }
+.dir-panels.open .dir-panel-fifths  { transition-delay:.10s }
+.dir-panel h4 { font-family:'DM Serif Display',serif; font-size:15.5px; line-height:1.14; margin:0 0 7px; color:var(--ink); }
+.dir-panel p  { font-size:11.5px; line-height:1.55; color:var(--muted); margin:0; }
+.dir-panel-intro { width:300px; }
+.dir-panel-intro .dgp-legend { margin-top:12px; }
+.dir-panel-tag {
+  display:inline-grid; place-items:center; width:26px; height:26px; border-radius:50%;
+  border:1px solid var(--ui-border-strong); font-size:15px; color:var(--ink); opacity:.8; margin-bottom:9px;
+}
+.dir-panel .micro-close { top:9px; right:9px; }
+
+/* Mobile: stack the panels as a centred, scrollable column over a scrim. */
+@media (max-width:860px) {
+  .dir-panels.open { pointer-events:auto; overflow-y:auto;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    gap:12px; padding:78px 16px 28px; }
+  .dir-scrim { position:fixed; }
+  .dir-panel { position:relative !important; left:auto !important; top:auto !important;
+    width:min(440px,100%) !important; transform:none; }
+  .dir-panel-intro { width:min(440px,100%) !important; }
+}
+
 /* ── Direction-guide didactic legend ───────────────── */
-.dir-guide-popover { width:min(300px,calc(100vw - 28px)); }
 .dgp-intro  { font-size:11.5px; line-height:1.5; color:var(--muted); margin:0 0 11px; }
 .dgp-legend { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
 .dgp-legend li {

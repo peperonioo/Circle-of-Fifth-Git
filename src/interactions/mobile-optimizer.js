@@ -11,21 +11,23 @@ const MobileOptimizer = {
   isMobile: matchMedia('(max-width: 860px)').matches,
 
   init() {
-    const mq    = matchMedia('(max-width: 860px)');
+    const mq = matchMedia('(max-width: 860px)');
+    // Collapse the instrument drawers by default on mobile (§10.5): they are
+    // optional support and should not push the harmony flow down the page.
+    const collapseDrawers = () =>
+      document.querySelectorAll('.drawers .drawer[open]').forEach(d => d.removeAttribute('open'));
+    let wasMobile = null;
     const apply = () => {
       this.isMobile = mq.matches;
       document.documentElement.classList.toggle('is-mobile-browser', this.isMobile);
+      // Collapse on initial mobile load and on desktop→mobile transitions, but
+      // never when already mobile (don't fight a user who reopened a drawer).
+      if (this.isMobile && wasMobile !== true) collapseDrawers();
+      wasMobile = this.isMobile;
     };
     apply();
     mq.addEventListener?.('change', apply);
     document.addEventListener('touchstart', () => {}, { passive: true });
-
-    // Collapse the instrument drawers by default on mobile (§10.5): they are
-    // optional support and should not push the harmony flow down the page.
-    if (this.isMobile) {
-      document.querySelectorAll('.drawers .drawer[open]')
-        .forEach(d => d.removeAttribute('open'));
-    }
 
     // Prevent page scroll while the wheel is being dragged
     const wheel = document.getElementById('wheelSvg');

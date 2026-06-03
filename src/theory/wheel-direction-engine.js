@@ -202,57 +202,102 @@ const WheelDirectionGuide = {
     }
   },
 
-  // ── Popover ───────────────────────────────────────────
-  _showPopover() {
-    let pop = document.getElementById('dirGuidePopover');
-    if (!pop) {
-      pop = document.createElement('div');
-      pop.id = 'dirGuidePopover';
-      pop.className = 'micro-popover dir-guide-popover';
-      document.body.appendChild(pop);
-    }
+  // ── Explanation panels ────────────────────────────────
+  // Instead of one dropdown, several panels sit around the wheel: an intro
+  // ("what is it / why use it") plus a Fifths card on the right and a Fourths
+  // card on the left — each explaining that direction musically.
+  _buildPanels() {
+    let wrap = document.getElementById('dirGuidePanels');
+    if (wrap) return wrap;
+    wrap = document.createElement('div');
+    wrap.id = 'dirGuidePanels';
+    wrap.className = 'dir-panels';
     const row = (mk, mkClass, key) =>
-      `<li><span class="dgp-mk ${mkClass}">${mk}</span><span>${t(key)}</span></li>`;
-    pop.innerHTML = `
-      <button class="micro-close" onclick="WheelDirectionGuide._hidePopover()">✕</button>
-      <h4>${t('dirguide.popover.title')}</h4>
-      <p class="dgp-intro">${t('dirguide.popover.intro')}</p>
-      <ul class="dgp-legend">
-        ${row('', 'mk-tonic', 'dirguide.popover.tonic')}
-        ${row('', 'mk-outer', 'dirguide.popover.outer')}
-        ${row('', 'mk-inner', 'dirguide.popover.inner')}
-        ${row('♯♭', 'mk-sig', 'dirguide.popover.sig')}
-        ${row('↻', 'mk-dir', 'dirguide.popover.cw')}
-        ${row('↺', 'mk-dir', 'dirguide.popover.ccw')}
-      </ul>`;
+      `<li><span class="dgp-mk ${mkClass}">${mk}</span><span data-i18n="${key}">${t(key)}</span></li>`;
+    wrap.innerHTML = `
+      <div class="dir-scrim"></div>
+      <article class="dir-panel dir-panel-intro">
+        <button class="micro-close" onclick="WheelDirectionGuide.toggle()" aria-label="Close">✕</button>
+        <h4 data-i18n="dirguide.why.title">${t('dirguide.why.title')}</h4>
+        <p data-i18n="dirguide.why.body">${t('dirguide.why.body')}</p>
+        <ul class="dgp-legend">
+          ${row('', 'mk-tonic', 'dirguide.popover.tonic')}
+          ${row('', 'mk-outer', 'dirguide.popover.outer')}
+          ${row('', 'mk-inner', 'dirguide.popover.inner')}
+          ${row('♯♭', 'mk-sig', 'dirguide.popover.sig')}
+        </ul>
+      </article>
+      <article class="dir-panel dir-panel-fourths">
+        <span class="dir-panel-tag">↺</span>
+        <h4 data-i18n="dirguide.fourthsCard.title">${t('dirguide.fourthsCard.title')}</h4>
+        <p data-i18n="dirguide.fourthsCard.body">${t('dirguide.fourthsCard.body')}</p>
+      </article>
+      <article class="dir-panel dir-panel-fifths">
+        <span class="dir-panel-tag">↻</span>
+        <h4 data-i18n="dirguide.fifthsCard.title">${t('dirguide.fifthsCard.title')}</h4>
+        <p data-i18n="dirguide.fifthsCard.body">${t('dirguide.fifthsCard.body')}</p>
+      </article>`;
+    // Click on the scrim / empty backdrop (desktop or mobile) closes the guide.
+    wrap.addEventListener('click', e => {
+      if (e.target === wrap || e.target.classList.contains('dir-scrim')) WheelDirectionGuide.toggle();
+    });
+    document.body.appendChild(wrap);
+    return wrap;
+  },
 
-    // Position near the info button
-    const btn = document.getElementById('wheelInfoBtn');
-    if (btn) {
-      const svgEl = document.getElementById('wheelSvg');
-      const svgRect = svgEl?.getBoundingClientRect();
-      if (svgRect) {
-        const scale = svgRect.width / 600;
-        const px = svgRect.left + 548 * scale;
-        const py = svgRect.top  + 40  * scale;
-        const pw = pop.offsetWidth || 300;
-        const ph = pop.offsetHeight || 120;
-        let left = px + 20;
-        if (left + pw > window.innerWidth - 14) {
-          left = px - pw - 20;
-          pop.classList.add('flip');
-        } else {
-          pop.classList.remove('flip');
-        }
-        const top = Math.min(Math.max(14, py - ph / 2), window.innerHeight - ph - 14);
-        pop.style.left = left + 'px';
-        pop.style.top  = top  + 'px';
-      }
+  _showPanels() {
+    const wrap = this._buildPanels();
+    // refresh text in case language changed
+    wrap.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
+    wrap.classList.add('open');
+    this._positionPanels();
+    if (!this._boundReposition) {
+      this._boundReposition = () => this._positionPanels();
+      window.addEventListener('resize', this._boundReposition, { passive: true });
+      window.addEventListener('scroll', this._boundReposition, { passive: true });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape' && this.visible) this.toggle(); });
     }
-    pop.classList.add('open');
   },
 
-  _hidePopover() {
-    document.getElementById('dirGuidePopover')?.classList.remove('open');
+  _positionPanels() {
+    const wrap = document.getElementById('dirGuidePanels');
+    if (!wrap || !wrap.classList.contains('open')) return;
+    const svg = document.getElementById('wheelSvg');
+    const r   = svg?.getBoundingClientRect(); if (!r) return;
+    const intro   = wrap.querySelector('.dir-panel-intro');
+    const fifths  = wrap.querySelector('.dir-panel-fifths');
+    const fourths = wrap.querySelector('.dir-panel-fourths');
+
+    // Mobile: let CSS stack the cards in a centered column.
+    if (matchMedia('(max-width: 860px)').matches) {
+      [intro, fifths, fourths].forEach(c => { if (c) { c.style.left = c.style.top = ''; } });
+      return;
+    }
+
+    const gap = 14;
+    const vw  = window.innerWidth, vh = window.innerHeight;
+    const clampLeft = (x, w) => Math.min(Math.max(12, x), vw - w - 12);
+    const clampTop  = (y, h) => Math.min(Math.max(12, y), vh - h - 12);
+    const place = (el, left, top) => { el.style.left = Math.round(left) + 'px'; el.style.top = Math.round(top) + 'px'; };
+
+    if (fifths)  place(fifths,  clampLeft(r.right + gap - 4, fifths.offsetWidth),
+                                clampTop(r.top + r.height * 0.42 - fifths.offsetHeight / 2, fifths.offsetHeight));
+    if (fourths) place(fourths, clampLeft(r.left - gap - fourths.offsetWidth + 4, fourths.offsetWidth),
+                                clampTop(r.top + r.height * 0.42 - fourths.offsetHeight / 2, fourths.offsetHeight));
+    if (intro) {
+      const topbar = document.querySelector('.topbar')?.getBoundingClientRect();
+      const minTop = (topbar ? topbar.bottom : 12) + 8;
+      let top = r.top - intro.offsetHeight - gap;
+      if (top < minTop) top = minTop;
+      place(intro, clampLeft(r.left + r.width / 2 - intro.offsetWidth / 2, intro.offsetWidth), top);
+    }
   },
+
+  _hidePanels() {
+    document.getElementById('dirGuidePanels')?.classList.remove('open');
+  },
+
+  // Back-compat aliases
+  _showPopover() { this._showPanels(); },
+  _hidePopover() { this._hidePanels(); },
 };

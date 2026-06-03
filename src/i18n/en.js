@@ -45,4 +45,10 @@ const I18N_EN = {
   'dirguide.popover.sig':   'Key signature — how many sharps or flats',
   'dirguide.popover.cw':    'Clockwise — fifths',
   'dirguide.popover.ccw':   'Counter-clockwise — fourths (cadences: ii–V–I)',
+  'dirguide.why.title':     'What is the Circle of Fifths?',
+  'dirguide.why.body':      'It lays out the 12 keys by how closely related they are. Neighbours share almost all their notes, so their chords sound at home together. Use it to see which chords belong in a key, build progressions that flow, and change key without a jarring jump.',
+  'dirguide.fifthsCard.title': 'Clockwise → Fifths',
+  'dirguide.fifthsCard.body':  'Each step rises a fifth and adds one sharp, so the sound gets brighter and more open. This is where forward energy lives — the V chord pushing on, bright lifts and anthemic turns.',
+  'dirguide.fourthsCard.title':'Counter-clockwise → Fourths',
+  'dirguide.fourthsCard.body': 'Each step rises a fourth (falls a fifth) and adds one flat — warmer and more grounded. This is the direction of resolution: ii–V–I and most cadences move this way, pulling home to the tonic.',
 };

@@ -751,8 +751,50 @@ body.light .gravity-pill.metric.high { color:#fff }
   border-right:1px solid var(--ui-border-strong); border-top:1px solid var(--ui-border-strong);
 }
 
+/* ── Direction-guide explanation panels ────────────── */
+.dir-panels { position:fixed; inset:0; z-index:var(--z-popover) !important; pointer-events:none;
+  opacity:0; transition:opacity .26s var(--ease); }
+.dir-panels.open { opacity:1; }
+.dir-scrim { position:absolute; inset:0; pointer-events:auto;
+  background:rgba(8,8,10,.30); backdrop-filter:blur(2px); }
+body.light .dir-scrim { background:rgba(40,36,32,.13); }
+
+.dir-panel {
+  position:fixed; width:250px; max-width:calc(100vw - 28px);
+  padding:15px 16px; border-radius:var(--r-md) !important;
+  border:1px solid var(--ui-border-strong) !important;
+  background:var(--ui-surface-strong) !important;
+  backdrop-filter:blur(24px) !important;
+  box-shadow:0 24px 70px rgba(0,0,0,.32) !important;
+  pointer-events:auto; text-align:left;
+  opacity:0; transform:translateY(10px) scale(.985);
+  transition:opacity .3s var(--ease), transform .3s var(--ease);
+}
+.dir-panels.open .dir-panel { opacity:1; transform:none; }
+.dir-panels.open .dir-panel-fourths { transition-delay:.05s }
+.dir-panels.open .dir-panel-fifths  { transition-delay:.10s }
+.dir-panel h4 { font-family:'DM Serif Display',serif; font-size:15.5px; line-height:1.14; margin:0 0 7px; color:var(--ink); }
+.dir-panel p  { font-size:11.5px; line-height:1.55; color:var(--muted); margin:0; }
+.dir-panel-intro { width:300px; }
+.dir-panel-intro .dgp-legend { margin-top:12px; }
+.dir-panel-tag {
+  display:inline-grid; place-items:center; width:26px; height:26px; border-radius:50%;
+  border:1px solid var(--ui-border-strong); font-size:15px; color:var(--ink); opacity:.8; margin-bottom:9px;
+}
+.dir-panel .micro-close { top:9px; right:9px; }
+
+/* Mobile: stack the panels as a centred, scrollable column over a scrim. */
+@media (max-width:860px) {
+  .dir-panels.open { pointer-events:auto; overflow-y:auto;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    gap:12px; padding:78px 16px 28px; }
+  .dir-scrim { position:fixed; }
+  .dir-panel { position:relative !important; left:auto !important; top:auto !important;
+    width:min(440px,100%) !important; transform:none; }
+  .dir-panel-intro { width:min(440px,100%) !important; }
+}
+
 /* ── Direction-guide didactic legend ───────────────── */
-.dir-guide-popover { width:min(300px,calc(100vw - 28px)); }
 .dgp-intro  { font-size:11.5px; line-height:1.5; color:var(--muted); margin:0 0 11px; }
 .dgp-legend { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
 .dgp-legend li {
@@ -1299,6 +1341,12 @@ const I18N_EN = {
   'dirguide.popover.sig':   'Key signature — how many sharps or flats',
   'dirguide.popover.cw':    'Clockwise — fifths',
   'dirguide.popover.ccw':   'Counter-clockwise — fourths (cadences: ii–V–I)',
+  'dirguide.why.title':     'What is the Circle of Fifths?',
+  'dirguide.why.body':      'It lays out the 12 keys by how closely related they are. Neighbours share almost all their notes, so their chords sound at home together. Use it to see which chords belong in a key, build progressions that flow, and change key without a jarring jump.',
+  'dirguide.fifthsCard.title': 'Clockwise → Fifths',
+  'dirguide.fifthsCard.body':  'Each step rises a fifth and adds one sharp, so the sound gets brighter and more open. This is where forward energy lives — the V chord pushing on, bright lifts and anthemic turns.',
+  'dirguide.fourthsCard.title':'Counter-clockwise → Fourths',
+  'dirguide.fourthsCard.body': 'Each step rises a fourth (falls a fifth) and adds one flat — warmer and more grounded. This is the direction of resolution: ii–V–I and most cadences move this way, pulling home to the tonic.',
 };
 
 
@@ -1350,6 +1398,12 @@ const I18N_ES = {
   'dirguide.popover.sig':   'Armadura — cuántos sostenidos o bemoles',
   'dirguide.popover.cw':    'Horario — quintas',
   'dirguide.popover.ccw':   'Antihorario — cuartas (cadencias: ii–V–I)',
+  'dirguide.why.title':     '¿Qué es el Círculo de Quintas?',
+  'dirguide.why.body':      'Ordena las 12 tonalidades por cercanía. Las vecinas comparten casi todas sus notas, así sus acordes suenan bien juntos. Úsalo para ver qué acordes caben en una tonalidad, crear progresiones que fluyen y cambiar de tono sin saltos bruscos.',
+  'dirguide.fifthsCard.title': 'Horario → Quintas',
+  'dirguide.fifthsCard.body':  'Cada paso sube una quinta y añade un sostenido, así el sonido se vuelve más brillante y abierto. Aquí vive la energía hacia adelante: el acorde V que empuja, subidas luminosas y giros épicos.',
+  'dirguide.fourthsCard.title':'Antihorario → Cuartas',
+  'dirguide.fourthsCard.body': 'Cada paso sube una cuarta (baja una quinta) y añade un bemol — más cálido y asentado. Es la dirección de la resolución: ii–V–I y casi todas las cadencias se mueven así, atraídas hacia la tónica.',
 };
 
 
@@ -2091,59 +2145,104 @@ const WheelDirectionGuide = {
     }
   },
 
-  // ── Popover ───────────────────────────────────────────
-  _showPopover() {
-    let pop = document.getElementById('dirGuidePopover');
-    if (!pop) {
-      pop = document.createElement('div');
-      pop.id = 'dirGuidePopover';
-      pop.className = 'micro-popover dir-guide-popover';
-      document.body.appendChild(pop);
-    }
+  // ── Explanation panels ────────────────────────────────
+  // Instead of one dropdown, several panels sit around the wheel: an intro
+  // ("what is it / why use it") plus a Fifths card on the right and a Fourths
+  // card on the left — each explaining that direction musically.
+  _buildPanels() {
+    let wrap = document.getElementById('dirGuidePanels');
+    if (wrap) return wrap;
+    wrap = document.createElement('div');
+    wrap.id = 'dirGuidePanels';
+    wrap.className = 'dir-panels';
     const row = (mk, mkClass, key) =>
-      `<li><span class="dgp-mk ${mkClass}">${mk}</span><span>${t(key)}</span></li>`;
-    pop.innerHTML = `
-      <button class="micro-close" onclick="WheelDirectionGuide._hidePopover()">✕</button>
-      <h4>${t('dirguide.popover.title')}</h4>
-      <p class="dgp-intro">${t('dirguide.popover.intro')}</p>
-      <ul class="dgp-legend">
-        ${row('', 'mk-tonic', 'dirguide.popover.tonic')}
-        ${row('', 'mk-outer', 'dirguide.popover.outer')}
-        ${row('', 'mk-inner', 'dirguide.popover.inner')}
-        ${row('♯♭', 'mk-sig', 'dirguide.popover.sig')}
-        ${row('↻', 'mk-dir', 'dirguide.popover.cw')}
-        ${row('↺', 'mk-dir', 'dirguide.popover.ccw')}
-      </ul>`;
+      `<li><span class="dgp-mk ${mkClass}">${mk}</span><span data-i18n="${key}">${t(key)}</span></li>`;
+    wrap.innerHTML = `
+      <div class="dir-scrim"></div>
+      <article class="dir-panel dir-panel-intro">
+        <button class="micro-close" onclick="WheelDirectionGuide.toggle()" aria-label="Close">✕</button>
+        <h4 data-i18n="dirguide.why.title">${t('dirguide.why.title')}</h4>
+        <p data-i18n="dirguide.why.body">${t('dirguide.why.body')}</p>
+        <ul class="dgp-legend">
+          ${row('', 'mk-tonic', 'dirguide.popover.tonic')}
+          ${row('', 'mk-outer', 'dirguide.popover.outer')}
+          ${row('', 'mk-inner', 'dirguide.popover.inner')}
+          ${row('♯♭', 'mk-sig', 'dirguide.popover.sig')}
+        </ul>
+      </article>
+      <article class="dir-panel dir-panel-fourths">
+        <span class="dir-panel-tag">↺</span>
+        <h4 data-i18n="dirguide.fourthsCard.title">${t('dirguide.fourthsCard.title')}</h4>
+        <p data-i18n="dirguide.fourthsCard.body">${t('dirguide.fourthsCard.body')}</p>
+      </article>
+      <article class="dir-panel dir-panel-fifths">
+        <span class="dir-panel-tag">↻</span>
+        <h4 data-i18n="dirguide.fifthsCard.title">${t('dirguide.fifthsCard.title')}</h4>
+        <p data-i18n="dirguide.fifthsCard.body">${t('dirguide.fifthsCard.body')}</p>
+      </article>`;
+    // Click on the scrim / empty backdrop (desktop or mobile) closes the guide.
+    wrap.addEventListener('click', e => {
+      if (e.target === wrap || e.target.classList.contains('dir-scrim')) WheelDirectionGuide.toggle();
+    });
+    document.body.appendChild(wrap);
+    return wrap;
+  },
 
-    // Position near the info button
-    const btn = document.getElementById('wheelInfoBtn');
-    if (btn) {
-      const svgEl = document.getElementById('wheelSvg');
-      const svgRect = svgEl?.getBoundingClientRect();
-      if (svgRect) {
-        const scale = svgRect.width / 600;
-        const px = svgRect.left + 548 * scale;
-        const py = svgRect.top  + 40  * scale;
-        const pw = pop.offsetWidth || 300;
-        const ph = pop.offsetHeight || 120;
-        let left = px + 20;
-        if (left + pw > window.innerWidth - 14) {
-          left = px - pw - 20;
-          pop.classList.add('flip');
-        } else {
-          pop.classList.remove('flip');
-        }
-        const top = Math.min(Math.max(14, py - ph / 2), window.innerHeight - ph - 14);
-        pop.style.left = left + 'px';
-        pop.style.top  = top  + 'px';
-      }
+  _showPanels() {
+    const wrap = this._buildPanels();
+    // refresh text in case language changed
+    wrap.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
+    wrap.classList.add('open');
+    this._positionPanels();
+    if (!this._boundReposition) {
+      this._boundReposition = () => this._positionPanels();
+      window.addEventListener('resize', this._boundReposition, { passive: true });
+      window.addEventListener('scroll', this._boundReposition, { passive: true });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape' && this.visible) this.toggle(); });
     }
-    pop.classList.add('open');
   },
 
-  _hidePopover() {
-    document.getElementById('dirGuidePopover')?.classList.remove('open');
+  _positionPanels() {
+    const wrap = document.getElementById('dirGuidePanels');
+    if (!wrap || !wrap.classList.contains('open')) return;
+    const svg = document.getElementById('wheelSvg');
+    const r   = svg?.getBoundingClientRect(); if (!r) return;
+    const intro   = wrap.querySelector('.dir-panel-intro');
+    const fifths  = wrap.querySelector('.dir-panel-fifths');
+    const fourths = wrap.querySelector('.dir-panel-fourths');
+
+    // Mobile: let CSS stack the cards in a centered column.
+    if (matchMedia('(max-width: 860px)').matches) {
+      [intro, fifths, fourths].forEach(c => { if (c) { c.style.left = c.style.top = ''; } });
+      return;
+    }
+
+    const gap = 14;
+    const vw  = window.innerWidth, vh = window.innerHeight;
+    const clampLeft = (x, w) => Math.min(Math.max(12, x), vw - w - 12);
+    const clampTop  = (y, h) => Math.min(Math.max(12, y), vh - h - 12);
+    const place = (el, left, top) => { el.style.left = Math.round(left) + 'px'; el.style.top = Math.round(top) + 'px'; };
+
+    if (fifths)  place(fifths,  clampLeft(r.right + gap - 4, fifths.offsetWidth),
+                                clampTop(r.top + r.height * 0.42 - fifths.offsetHeight / 2, fifths.offsetHeight));
+    if (fourths) place(fourths, clampLeft(r.left - gap - fourths.offsetWidth + 4, fourths.offsetWidth),
+                                clampTop(r.top + r.height * 0.42 - fourths.offsetHeight / 2, fourths.offsetHeight));
+    if (intro) {
+      const topbar = document.querySelector('.topbar')?.getBoundingClientRect();
+      const minTop = (topbar ? topbar.bottom : 12) + 8;
+      let top = r.top - intro.offsetHeight - gap;
+      if (top < minTop) top = minTop;
+      place(intro, clampLeft(r.left + r.width / 2 - intro.offsetWidth / 2, intro.offsetWidth), top);
+    }
   },
+
+  _hidePanels() {
+    document.getElementById('dirGuidePanels')?.classList.remove('open');
+  },
+
+  // Back-compat aliases
+  _showPopover() { this._showPanels(); },
+  _hidePopover() { this._hidePanels(); },
 };
 
 
@@ -2161,21 +2260,23 @@ const MobileOptimizer = {
   isMobile: matchMedia('(max-width: 860px)').matches,
 
   init() {
-    const mq    = matchMedia('(max-width: 860px)');
+    const mq = matchMedia('(max-width: 860px)');
+    // Collapse the instrument drawers by default on mobile (§10.5): they are
+    // optional support and should not push the harmony flow down the page.
+    const collapseDrawers = () =>
+      document.querySelectorAll('.drawers .drawer[open]').forEach(d => d.removeAttribute('open'));
+    let wasMobile = null;
     const apply = () => {
       this.isMobile = mq.matches;
       document.documentElement.classList.toggle('is-mobile-browser', this.isMobile);
+      // Collapse on initial mobile load and on desktop→mobile transitions, but
+      // never when already mobile (don't fight a user who reopened a drawer).
+      if (this.isMobile && wasMobile !== true) collapseDrawers();
+      wasMobile = this.isMobile;
     };
     apply();
     mq.addEventListener?.('change', apply);
     document.addEventListener('touchstart', () => {}, { passive: true });
-
-    // Collapse the instrument drawers by default on mobile (§10.5): they are
-    // optional support and should not push the harmony flow down the page.
-    if (this.isMobile) {
-      document.querySelectorAll('.drawers .drawer[open]')
-        .forEach(d => d.removeAttribute('open'));
-    }
 
     // Prevent page scroll while the wheel is being dragged
     const wheel = document.getElementById('wheelSvg');
