@@ -64,7 +64,7 @@ function _buildBubblesHTML() {
     const cat = friendlyCategory(it.transition?.category);
     return `<button class="next-bubble ${i === 0 ? 'best' : ''}"
         style="--fit:${it.fit};--d:${d}px;--rank:${i}"
-        onclick="AppActions.selectDegree(${it.to},{force:true})"
+        onclick="addSuggestion(${it.to},event)"
         title="${it.chord.chord} · ${it.chord.degree} — ${it.reason || cat} · ${it.fit}% fit">
       <span class="nb-chord">${it.chord.chord}</span>
     </button>`;
@@ -82,6 +82,38 @@ function _buildBubblesHTML() {
     </div>
   </div>
   <div class="next-orbit">${bubbles}</div>`;
+}
+
+// ── Fly-to-pill (V4.0 batch 3) ────────────────────────
+// Clicking a suggestion adds it AND flies a ghost of the bubble into its new
+// pill in the builder, so the chord visibly travels into the progression.
+function addSuggestion(to, ev) {
+  const bubble = ev?.currentTarget;
+  const from   = bubble?.getBoundingClientRect();
+  const chord  = bubble?.querySelector('.nb-chord')?.textContent || '';
+  AppActions.selectDegree(to, { force: true });
+  if (!from || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  requestAnimationFrame(() => {
+    const pill   = document.querySelector('.builder-step:last-of-type');
+    const target = pill?.getBoundingClientRect();
+    if (target) _flyGhost(from, target, chord);
+  });
+}
+
+function _flyGhost(from, to, chord) {
+  const g = document.createElement('div');
+  g.className = 'fly-ghost';
+  g.textContent = chord;
+  g.style.cssText = `left:${from.left}px;top:${from.top}px;width:${from.width}px;height:${from.height}px;`;
+  document.body.appendChild(g);
+  const dx = (to.left + to.width / 2) - (from.left + from.width / 2);
+  const dy = (to.top  + to.height / 2) - (from.top  + from.height / 2);
+  requestAnimationFrame(() => {
+    g.style.transform = `translate(${dx}px, ${dy}px) scale(.32)`;
+    g.style.opacity   = '0';
+  });
+  g.addEventListener('transitionend', () => g.remove(), { once: true });
+  setTimeout(() => { if (g.isConnected) g.remove(); }, 800);
 }
 
 function renderProgressionStory() {

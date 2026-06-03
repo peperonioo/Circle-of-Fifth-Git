@@ -174,7 +174,7 @@
           assert('Progression add appends chords', st.history.length === 3 && st.history.map(x => x.chord).join('-') === 'C-G-F', st.history.map(x => x.chord));
           // delete one — build directly (no rendered pills) so remove() is synchronous
           st.history = [mk(0), mk(4), mk(3)];
-          const row = document.getElementById('builderRow'); if (row) row.innerHTML = '';
+          const row = document.getElementById('flowRow'); if (row) row.innerHTML = '';
           HistoryEngine.remove(1);
           assert('Delete removes only that pill', st.history.map(x => x.chord).join('-') === 'C-F', st.history.map(x => x.chord));
           // reorder

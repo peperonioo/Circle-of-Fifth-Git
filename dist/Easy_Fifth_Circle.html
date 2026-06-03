@@ -690,6 +690,19 @@ body.light .next-bubble {
 /* Hidden meta — removed from the bubble but kept defined for safety */
 .nb-fit, .nb-degree, .nb-category, .nb-metrics { display:none !important }
 
+/* Fly-to-pill ghost: bubble visually travels into the builder */
+.fly-ghost {
+  position:fixed; z-index:var(--z-toast); pointer-events:none;
+  display:grid; place-items:center; border-radius:999px;
+  font-family:var(--wheel-font); font-weight:700; letter-spacing:-.03em;
+  font-size:clamp(13px, 4.6vw, 26px); color:var(--ink);
+  background:radial-gradient(circle at 50% 42%, rgba(255,112,72,.5), rgba(255,112,72,.18));
+  border:1px solid rgba(255,112,72,.5);
+  box-shadow:0 10px 26px rgba(232,68,26,.26);
+  transition:transform .46s cubic-bezier(.4,0,.2,1), opacity .46s ease;
+  will-change:transform, opacity;
+}
+
 /* Old suggestion card components (kept in case section re-enabled) */
 .gravity-status  { display:grid; grid-template-columns:1fr; margin-bottom:9px }
 .gravity-card    { padding:9px 11px; border-radius:13px; border:1px solid var(--line); background:rgba(255,255,255,.032); display:flex; align-items:center; justify-content:space-between; gap:10px }
@@ -3131,7 +3144,7 @@ function _buildBubblesHTML() {
     const cat = friendlyCategory(it.transition?.category);
     return `<button class="next-bubble ${i === 0 ? 'best' : ''}"
         style="--fit:${it.fit};--d:${d}px;--rank:${i}"
-        onclick="AppActions.selectDegree(${it.to},{force:true})"
+        onclick="addSuggestion(${it.to},event)"
         title="${it.chord.chord} · ${it.chord.degree} — ${it.reason || cat} · ${it.fit}% fit">
       <span class="nb-chord">${it.chord.chord}</span>
     </button>`;
@@ -3149,6 +3162,38 @@ function _buildBubblesHTML() {
     </div>
   </div>
   <div class="next-orbit">${bubbles}</div>`;
+}
+
+// ── Fly-to-pill (V4.0 batch 3) ────────────────────────
+// Clicking a suggestion adds it AND flies a ghost of the bubble into its new
+// pill in the builder, so the chord visibly travels into the progression.
+function addSuggestion(to, ev) {
+  const bubble = ev?.currentTarget;
+  const from   = bubble?.getBoundingClientRect();
+  const chord  = bubble?.querySelector('.nb-chord')?.textContent || '';
+  AppActions.selectDegree(to, { force: true });
+  if (!from || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  requestAnimationFrame(() => {
+    const pill   = document.querySelector('.builder-step:last-of-type');
+    const target = pill?.getBoundingClientRect();
+    if (target) _flyGhost(from, target, chord);
+  });
+}
+
+function _flyGhost(from, to, chord) {
+  const g = document.createElement('div');
+  g.className = 'fly-ghost';
+  g.textContent = chord;
+  g.style.cssText = `left:${from.left}px;top:${from.top}px;width:${from.width}px;height:${from.height}px;`;
+  document.body.appendChild(g);
+  const dx = (to.left + to.width / 2) - (from.left + from.width / 2);
+  const dy = (to.top  + to.height / 2) - (from.top  + from.height / 2);
+  requestAnimationFrame(() => {
+    g.style.transform = `translate(${dx}px, ${dy}px) scale(.32)`;
+    g.style.opacity   = '0';
+  });
+  g.addEventListener('transitionend', () => g.remove(), { once: true });
+  setTimeout(() => { if (g.isConnected) g.remove(); }, 800);
 }
 
 function renderProgressionStory() {
@@ -3993,7 +4038,7 @@ function toggleTheme() {
           assert('Progression add appends chords', st.history.length === 3 && st.history.map(x => x.chord).join('-') === 'C-G-F', st.history.map(x => x.chord));
           // delete one — build directly (no rendered pills) so remove() is synchronous
           st.history = [mk(0), mk(4), mk(3)];
-          const row = document.getElementById('builderRow'); if (row) row.innerHTML = '';
+          const row = document.getElementById('flowRow'); if (row) row.innerHTML = '';
           HistoryEngine.remove(1);
           assert('Delete removes only that pill', st.history.map(x => x.chord).join('-') === 'C-F', st.history.map(x => x.chord));
           // reorder
