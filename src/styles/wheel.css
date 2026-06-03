@@ -12,6 +12,21 @@
 #wheelSvg:active { cursor:grabbing }
 body.light #wheelSvg { filter:drop-shadow(0 8px 32px rgba(0,0,0,.2)) }
 
+/* ── Breathing: the wheel feels alive at rest ─────────── */
+@keyframes wheelBreath { 0%,100%{ transform:scale(1) } 50%{ transform:scale(1.008) } }
+@keyframes tonicPulse  { 0%,100%{ opacity:0; transform:scale(1) } 50%{ opacity:.2; transform:scale(1.05) } }
+#wheelSvg { animation:wheelBreath 5.6s ease-in-out infinite; transform-origin:50% 50%; }
+/* Pause the breath while the user is actually turning the wheel */
+body[data-interaction="wheel"] #wheelSvg { animation-play-state:paused; }
+#tonicPulse {
+  transform-box:fill-box; transform-origin:center;
+  animation:tonicPulse 3.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  #wheelSvg  { animation:none; }
+  #tonicPulse{ animation:none; opacity:0; }
+}
+
 /* Wheel toggle */
 .wheel-toggle {
   display:flex; gap:3px; margin-top:10px; padding:3px;
