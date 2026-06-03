@@ -59,8 +59,16 @@ const PALETTES_DATA = PALETTES;
   }
   window._setPalActive = applyPalette;
 
+  // On mobile, render the plasma at a lower internal resolution and dim it a
+  // little — it's a soft background, so the quality drop is invisible but the
+  // GPU/battery cost falls a lot (§10.6).
+  const mobileBg = matchMedia('(max-width: 860px)').matches;
+  const resScale = mobileBg ? 0.6 : 1;
+  const dimFactor = mobileBg ? 0.72 : 1;
+
   function resize() {
-    pc.width = innerWidth; pc.height = innerHeight;
+    pc.width  = Math.round(innerWidth  * resScale);
+    pc.height = Math.round(innerHeight * resScale);
     gl.viewport(0,0,pc.width,pc.height);
     gl.uniform2f(uLoc, pc.width, pc.height);
   }
@@ -68,7 +76,8 @@ const PALETTES_DATA = PALETTES;
   applyPalette(currentPal);
 
   let intensity = parseFloat(st.intensity) || 1;
-  gl.uniform1f(dLoc, intensity * 0.38);
+  const setIntensity = () => gl.uniform1f(dLoc, intensity * 0.38 * dimFactor);
+  setIntensity();
 
   const intensityEl = document.getElementById('plasmaIntensity');
   if (intensityEl) {
@@ -77,7 +86,7 @@ const PALETTES_DATA = PALETTES;
       intensity = parseFloat(intensityEl.value) || 1;
       st.intensity = intensity;
       saveState();
-      gl.uniform1f(dLoc, intensity * 0.38);
+      setIntensity();
     });
   }
 

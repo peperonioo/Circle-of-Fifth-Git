@@ -27,6 +27,7 @@
 .builder-row {
   display:flex; align-items:center; gap:8px !important;
   overflow-x:auto; padding:3px 0 2px;
+  touch-action:pan-x; overscroll-behavior-x:contain;  /* scroll pills sideways without fighting page scroll */
   scrollbar-width:thin; scrollbar-color:var(--muted) transparent;
   min-height:42px; margin-bottom:12px;
 }

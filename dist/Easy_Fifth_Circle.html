@@ -446,6 +446,7 @@ body.light #wheelDirectionGuide .dir-arrow { fill:rgba(20,20,20,.22) }
 .builder-row {
   display:flex; align-items:center; gap:8px !important;
   overflow-x:auto; padding:3px 0 2px;
+  touch-action:pan-x; overscroll-behavior-x:contain;  /* scroll pills sideways without fighting page scroll */
   scrollbar-width:thin; scrollbar-color:var(--muted) transparent;
   min-height:42px; margin-bottom:12px;
 }
@@ -543,6 +544,8 @@ body.light .step-tool  { background:rgba(0,0,0,.06) }
   overflow-x:auto !important;
   overflow-y:visible !important;
   -webkit-overflow-scrolling:touch;
+  touch-action:pan-x !important;            /* horizontal swipe scrolls bubbles, vertical scrolls page */
+  overscroll-behavior-x:contain !important; /* don't chain scroll to the page */
   scroll-snap-type:x proximity !important;
   scrollbar-width:thin !important;
   border-radius:22px !important;
@@ -947,8 +950,9 @@ body.light .gravity-pill.metric.high { color:#fff }
   .builder-meta   { flex-direction:column; align-items:flex-start }
   .builder-next-top { align-items:flex-start; flex-direction:column; gap:6px }
   .builder-next-context { white-space:normal }
-  .builder-next-moves .next-orbit { justify-content:flex-start !important; padding-inline:6px !important; gap:9px }
-  .builder-next-moves .next-bubble { min-width:78px; min-height:74px; padding:10px 11px }
+  .builder-next-moves .next-orbit { justify-content:flex-start !important; padding-inline:6px !important; gap:11px }
+  /* Raise the floor so every bubble is tappable, but keep the size difference. */
+  .builder-next-moves .next-bubble { --diam:clamp(56px, var(--d), 116px) !important; padding:6px !important }
   .info-row       { grid-template-columns:1fr }
   .prod-grid,.elements-section { grid-template-columns:1fr }
   .deg-popup-wrap { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) }
@@ -2082,6 +2086,13 @@ const MobileOptimizer = {
     apply();
     mq.addEventListener?.('change', apply);
     document.addEventListener('touchstart', () => {}, { passive: true });
+
+    // Collapse the instrument drawers by default on mobile (§10.5): they are
+    // optional support and should not push the harmony flow down the page.
+    if (this.isMobile) {
+      document.querySelectorAll('.drawers .drawer[open]')
+        .forEach(d => d.removeAttribute('open'));
+    }
 
     // Prevent page scroll while the wheel is being dragged
     const wheel = document.getElementById('wheelSvg');
@@ -3378,8 +3389,16 @@ const PALETTES_DATA = PALETTES;
   }
   window._setPalActive = applyPalette;
 
+  // On mobile, render the plasma at a lower internal resolution and dim it a
+  // little — it's a soft background, so the quality drop is invisible but the
+  // GPU/battery cost falls a lot (§10.6).
+  const mobileBg = matchMedia('(max-width: 860px)').matches;
+  const resScale = mobileBg ? 0.6 : 1;
+  const dimFactor = mobileBg ? 0.72 : 1;
+
   function resize() {
-    pc.width = innerWidth; pc.height = innerHeight;
+    pc.width  = Math.round(innerWidth  * resScale);
+    pc.height = Math.round(innerHeight * resScale);
     gl.viewport(0,0,pc.width,pc.height);
     gl.uniform2f(uLoc, pc.width, pc.height);
   }
@@ -3387,7 +3406,8 @@ const PALETTES_DATA = PALETTES;
   applyPalette(currentPal);
 
   let intensity = parseFloat(st.intensity) || 1;
-  gl.uniform1f(dLoc, intensity * 0.38);
+  const setIntensity = () => gl.uniform1f(dLoc, intensity * 0.38 * dimFactor);
+  setIntensity();
 
   const intensityEl = document.getElementById('plasmaIntensity');
   if (intensityEl) {
@@ -3396,7 +3416,7 @@ const PALETTES_DATA = PALETTES;
       intensity = parseFloat(intensityEl.value) || 1;
       st.intensity = intensity;
       saveState();
-      gl.uniform1f(dLoc, intensity * 0.38);
+      setIntensity();
     });
   }
 
@@ -3618,6 +3638,46 @@ function toggleTheme() {
     return { ok, results: results.slice(), state: AppModel.snapshot(), validation: AppModel.validate() };
   }
 
+  // ── Mobile smoke test (Audit §8.6 / §10) ───────────
+  // Reads live DOM/CSS so it reflects the current viewport's media queries.
+  // Run on a narrow window (or device) for the mobile-only checks to apply.
+  function mobileCheck() {
+    const cs  = el => el ? getComputedStyle(el) : {};
+    const checks = [];
+    const add = (name, ok, detail) => checks.push({ name, ok: !!ok, detail: detail ?? '' });
+    const isMobile = matchMedia('(max-width: 860px)').matches;
+
+    const wheel = document.getElementById('wheelSvg');
+    const orbit = document.querySelector('.next-orbit');
+    const row   = document.querySelector('.builder-row');
+    const piano = document.querySelector('.drawers .drawer');
+    const rootCs = cs(document.documentElement);
+
+    add('Wheel blocks page scroll (touch-action:none)', cs(wheel).touchAction === 'none', safe(() => cs(wheel).touchAction, '?'));
+    add('Wheel blocks text selection',                  /none/.test(safe(() => cs(wheel).userSelect || cs(wheel).webkitUserSelect, '') || ''));
+    add('Bubble row scrolls sideways only',             orbit ? /pan-x/.test(cs(orbit).touchAction) : false, safe(() => cs(orbit).touchAction, 'no orbit'));
+    add('Bubble row contains its overscroll',           orbit ? cs(orbit).overscrollBehaviorX === 'contain' : false);
+    add('Pills row scrolls sideways only',              row ? /pan-x/.test(cs(row).touchAction) : true);
+    add('Page blocks vertical overscroll bounce',       cs(document.body).overscrollBehaviorY === 'none' || rootCs.overscrollBehaviorY === 'none');
+    add('Safe-area inset token present',                !!rootCs.getPropertyValue('--mobile-safe-top').trim());
+
+    // offsetWidth/Height = layout box, ignoring the entrance-animation scale.
+    const bubbles = [...document.querySelectorAll('.next-bubble')];
+    const sizes = bubbles.map(b => Math.min(b.offsetWidth, b.offsetHeight));
+    const sz = sizes.length ? Math.min(...sizes) : 0;
+    add('Smallest bubble is tappable (>=44px)', !bubbles.length || sz >= 44, bubbles.length ? sz + 'px' : 'no bubble');
+
+    if (isMobile) {
+      add('Instrument drawers collapsed on mobile', piano ? !piano.hasAttribute('open') : true);
+    }
+
+    const ok = checks.every(c => c.ok);
+    DevLog.push(ok ? 'info' : 'warn',
+      `Mobile smoke ${ok ? 'OK' : 'has gaps'} (${checks.filter(c => c.ok).length}/${checks.length}, ${isMobile ? 'mobile' : 'desktop'} viewport)`, checks);
+    _renderMobilePanel({ ok, isMobile, checks });
+    return { ok, isMobile, checks };
+  }
+
   function report() {
     return {
       version:    VERSION,
@@ -3625,6 +3685,7 @@ function toggleTheme() {
       duplicateIds: duplicateIds(),
       state:      AppModel.snapshot(),
       validation: AppModel.validate(),
+      mobile:     mobileCheck(),
       testResults: runTests(),
     };
   }
@@ -3638,12 +3699,24 @@ function toggleTheme() {
       <div class="efc-dev-head">
         <strong>EFC ${VERSION}</strong>
         <button type="button" id="efcDevRun">Run tests</button>
+        <button type="button" id="efcDevMobile">Mobile check</button>
         <button type="button" id="efcDevClose">×</button>
       </div>
       <pre id="efcDevBody">Hidden stability panel. Press ⌘/Ctrl + Shift + D.</pre>`;
     document.body.appendChild(panel);
-    document.getElementById('efcDevRun')?.addEventListener('click',  () => runTests());
-    document.getElementById('efcDevClose')?.addEventListener('click', () => panel.classList.remove('open'));
+    document.getElementById('efcDevRun')?.addEventListener('click',    () => runTests());
+    document.getElementById('efcDevMobile')?.addEventListener('click', () => mobileCheck());
+    document.getElementById('efcDevClose')?.addEventListener('click',  () => panel.classList.remove('open'));
+  }
+
+  function _renderMobilePanel(res) {
+    const body = document.getElementById('efcDevBody'); if (!body) return;
+    const lines = res.checks.map(c => `${c.ok ? '✓' : '✗'} ${c.name}${c.detail ? '  · ' + c.detail : ''}`);
+    body.textContent =
+      `MOBILE SMOKE TEST — ${res.isMobile ? 'mobile' : 'desktop'} viewport\n` +
+      `${res.ok ? 'ALL CLEAR' : 'GAPS FOUND'} (${res.checks.filter(c => c.ok).length}/${res.checks.length})\n` +
+      (res.isMobile ? '' : 'Tip: narrow the window < 860px for mobile-only checks.\n') +
+      '\n' + lines.join('\n');
   }
 
   function _updateDevPanel() {
@@ -3684,6 +3757,7 @@ function toggleTheme() {
     state:      () => AppModel.snapshot(),
     validate:   () => AppModel.validate(),
     runTests,
+    mobileCheck,
     report,
     duplicateIds,
     logs:       () => DevLog.snapshot(),

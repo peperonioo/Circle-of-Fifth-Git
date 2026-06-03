@@ -20,6 +20,13 @@ const MobileOptimizer = {
     mq.addEventListener?.('change', apply);
     document.addEventListener('touchstart', () => {}, { passive: true });
 
+    // Collapse the instrument drawers by default on mobile (§10.5): they are
+    // optional support and should not push the harmony flow down the page.
+    if (this.isMobile) {
+      document.querySelectorAll('.drawers .drawer[open]')
+        .forEach(d => d.removeAttribute('open'));
+    }
+
     // Prevent page scroll while the wheel is being dragged
     const wheel = document.getElementById('wheelSvg');
     if (wheel) {

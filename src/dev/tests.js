@@ -133,6 +133,46 @@
     return { ok, results: results.slice(), state: AppModel.snapshot(), validation: AppModel.validate() };
   }
 
+  // ── Mobile smoke test (Audit §8.6 / §10) ───────────
+  // Reads live DOM/CSS so it reflects the current viewport's media queries.
+  // Run on a narrow window (or device) for the mobile-only checks to apply.
+  function mobileCheck() {
+    const cs  = el => el ? getComputedStyle(el) : {};
+    const checks = [];
+    const add = (name, ok, detail) => checks.push({ name, ok: !!ok, detail: detail ?? '' });
+    const isMobile = matchMedia('(max-width: 860px)').matches;
+
+    const wheel = document.getElementById('wheelSvg');
+    const orbit = document.querySelector('.next-orbit');
+    const row   = document.querySelector('.builder-row');
+    const piano = document.querySelector('.drawers .drawer');
+    const rootCs = cs(document.documentElement);
+
+    add('Wheel blocks page scroll (touch-action:none)', cs(wheel).touchAction === 'none', safe(() => cs(wheel).touchAction, '?'));
+    add('Wheel blocks text selection',                  /none/.test(safe(() => cs(wheel).userSelect || cs(wheel).webkitUserSelect, '') || ''));
+    add('Bubble row scrolls sideways only',             orbit ? /pan-x/.test(cs(orbit).touchAction) : false, safe(() => cs(orbit).touchAction, 'no orbit'));
+    add('Bubble row contains its overscroll',           orbit ? cs(orbit).overscrollBehaviorX === 'contain' : false);
+    add('Pills row scrolls sideways only',              row ? /pan-x/.test(cs(row).touchAction) : true);
+    add('Page blocks vertical overscroll bounce',       cs(document.body).overscrollBehaviorY === 'none' || rootCs.overscrollBehaviorY === 'none');
+    add('Safe-area inset token present',                !!rootCs.getPropertyValue('--mobile-safe-top').trim());
+
+    // offsetWidth/Height = layout box, ignoring the entrance-animation scale.
+    const bubbles = [...document.querySelectorAll('.next-bubble')];
+    const sizes = bubbles.map(b => Math.min(b.offsetWidth, b.offsetHeight));
+    const sz = sizes.length ? Math.min(...sizes) : 0;
+    add('Smallest bubble is tappable (>=44px)', !bubbles.length || sz >= 44, bubbles.length ? sz + 'px' : 'no bubble');
+
+    if (isMobile) {
+      add('Instrument drawers collapsed on mobile', piano ? !piano.hasAttribute('open') : true);
+    }
+
+    const ok = checks.every(c => c.ok);
+    DevLog.push(ok ? 'info' : 'warn',
+      `Mobile smoke ${ok ? 'OK' : 'has gaps'} (${checks.filter(c => c.ok).length}/${checks.length}, ${isMobile ? 'mobile' : 'desktop'} viewport)`, checks);
+    _renderMobilePanel({ ok, isMobile, checks });
+    return { ok, isMobile, checks };
+  }
+
   function report() {
     return {
       version:    VERSION,
@@ -140,6 +180,7 @@
       duplicateIds: duplicateIds(),
       state:      AppModel.snapshot(),
       validation: AppModel.validate(),
+      mobile:     mobileCheck(),
       testResults: runTests(),
     };
   }
@@ -153,12 +194,24 @@
       <div class="efc-dev-head">
         <strong>EFC ${VERSION}</strong>
         <button type="button" id="efcDevRun">Run tests</button>
+        <button type="button" id="efcDevMobile">Mobile check</button>
         <button type="button" id="efcDevClose">×</button>
       </div>
       <pre id="efcDevBody">Hidden stability panel. Press ⌘/Ctrl + Shift + D.</pre>`;
     document.body.appendChild(panel);
-    document.getElementById('efcDevRun')?.addEventListener('click',  () => runTests());
-    document.getElementById('efcDevClose')?.addEventListener('click', () => panel.classList.remove('open'));
+    document.getElementById('efcDevRun')?.addEventListener('click',    () => runTests());
+    document.getElementById('efcDevMobile')?.addEventListener('click', () => mobileCheck());
+    document.getElementById('efcDevClose')?.addEventListener('click',  () => panel.classList.remove('open'));
+  }
+
+  function _renderMobilePanel(res) {
+    const body = document.getElementById('efcDevBody'); if (!body) return;
+    const lines = res.checks.map(c => `${c.ok ? '✓' : '✗'} ${c.name}${c.detail ? '  · ' + c.detail : ''}`);
+    body.textContent =
+      `MOBILE SMOKE TEST — ${res.isMobile ? 'mobile' : 'desktop'} viewport\n` +
+      `${res.ok ? 'ALL CLEAR' : 'GAPS FOUND'} (${res.checks.filter(c => c.ok).length}/${res.checks.length})\n` +
+      (res.isMobile ? '' : 'Tip: narrow the window < 860px for mobile-only checks.\n') +
+      '\n' + lines.join('\n');
   }
 
   function _updateDevPanel() {
@@ -199,6 +252,7 @@
     state:      () => AppModel.snapshot(),
     validate:   () => AppModel.validate(),
     runTests,
+    mobileCheck,
     report,
     duplicateIds,
     logs:       () => DevLog.snapshot(),

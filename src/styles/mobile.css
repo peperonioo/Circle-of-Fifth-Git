@@ -30,8 +30,9 @@
   .builder-meta   { flex-direction:column; align-items:flex-start }
   .builder-next-top { align-items:flex-start; flex-direction:column; gap:6px }
   .builder-next-context { white-space:normal }
-  .builder-next-moves .next-orbit { justify-content:flex-start !important; padding-inline:6px !important; gap:9px }
-  .builder-next-moves .next-bubble { min-width:78px; min-height:74px; padding:10px 11px }
+  .builder-next-moves .next-orbit { justify-content:flex-start !important; padding-inline:6px !important; gap:11px }
+  /* Raise the floor so every bubble is tappable, but keep the size difference. */
+  .builder-next-moves .next-bubble { --diam:clamp(56px, var(--d), 116px) !important; padding:6px !important }
   .info-row       { grid-template-columns:1fr }
   .prod-grid,.elements-section { grid-template-columns:1fr }
   .deg-popup-wrap { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) }
