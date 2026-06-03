@@ -1,5 +1,34 @@
 # Easy Fifth Circle — Changelog
 
+## V3.19 — Suggestion Engine Validation (Audit §6)
+
+**Release date:** 2026-06-03
+
+- Suggestion engine now has **memory**: reads the built progression for
+  cadences in progress and pulls toward their target (ii–V→I, IV–V→I,
+  ♭VI–♭VII→i, V→I, mixolydian ♭VII→I).
+- **Repetition/vamp recognition** — repeated chords are treated as a loop
+  ("keeps the loop open") with IV/V/vi offered as clean exits.
+- **Modal signature boost** so modes sound modal (mixo ♭VII, dorian IV,
+  phrygian ♭II, lydian II, aeolian ♭VI/♭VII).
+- **Position awareness** — a progression no longer "opens" by sitting on I.
+- **Self-explaining reasons** ("Completes ii–V–I", "Strong resolution",
+  "Keeps the loop open", "Adds darker colour") shown in the header hint and
+  per-bubble tooltip (on-demand).
+- **+12 validation tests** in `EFC_DEV` (32 total, all green).
+
+## V3.18 — Mobile QA Pass (Audit §10)
+
+**Release date:** 2026-06-03
+
+- Pills row and bubble row use `touch-action:pan-x` + `overscroll-behavior-x`
+  so horizontal swipes scroll the row and vertical swipes scroll the page.
+- Mobile bubbles keep their size difference with a tappable 56px floor.
+- Piano/guitar drawers collapse by default on mobile.
+- Plasma background renders at 0.6× resolution, dimmed 0.72× on mobile.
+- New `EFC_DEV.mobileCheck()` smoke test (9 checks) + dev-panel "Mobile check"
+  button, included in `report()`.
+
 ## V3.17 — Architecture + Wheel Direction Guide
 
 **Release date:** 2026-06-02
