@@ -22,9 +22,29 @@ body[data-interaction="wheel"] #wheelSvg { animation-play-state:paused; }
   transform-box:fill-box; transform-origin:center;
   animation:tonicPulse 3.8s ease-in-out infinite;
 }
+
+/* Ambient light sweep circling the rim — makes the wheel feel like a polished object */
+#wheelSheen {
+  stroke:rgba(255,255,255,.06);
+  transform-box:fill-box; transform-origin:center;
+  animation:sheenSweep 15s linear infinite;
+}
+body.light #wheelSheen { stroke:rgba(0,0,0,.05); }
+@keyframes sheenSweep { to { transform:rotate(360deg); } }
+
+/* Tonic sector breathes a soft glow at rest */
+.active-sector { animation:sectorBreath 4.2s ease-in-out infinite; }
+@keyframes sectorBreath { 0%,100%{ opacity:1 } 50%{ opacity:.86 } }
+
+/* Pause ambient motion while turning the wheel */
+body[data-interaction="wheel"] #wheelSheen,
+body[data-interaction="wheel"] .active-sector { animation-play-state:paused; }
+
 @media (prefers-reduced-motion: reduce) {
   #wheelSvg  { animation:none; }
   #tonicPulse{ animation:none; opacity:0; }
+  #wheelSheen{ animation:none; }
+  .active-sector { animation:none; }
 }
 
 /* ── Selection FX: ripple + centre bloom ──────────────── */

@@ -86,8 +86,14 @@ body.light .next-bubble {
     0 0 0 1px rgba(255,112,72,.14),
     inset 0 1px 0 rgba(255,255,255,.12) !important;
   animation:bubbleOrbitIn .55s cubic-bezier(.2,1.3,.3,1) both,
-    bubbleFloat 3.8s ease-in-out .65s infinite;
+    bubbleFloat 3.8s ease-in-out .65s infinite,
+    bestPulse 3.8s ease-in-out .65s infinite;
 }
+@keyframes bestPulse {
+  0%,100% { box-shadow:0 6px 15px rgba(232,68,26,.15), 0 0 0 1px rgba(255,112,72,.13), inset 0 1px 0 rgba(255,255,255,.12); }
+  50%     { box-shadow:0 9px 22px rgba(232,68,26,.30), 0 0 16px rgba(232,68,26,.20), 0 0 0 1px rgba(255,112,72,.28), inset 0 1px 0 rgba(255,255,255,.14); }
+}
+@media (prefers-reduced-motion: reduce) { .next-bubble.best { animation:none !important; } }
 .next-bubble:hover {
   transform:translateY(-6px) scale(1.07) !important;
   border-color:rgba(255,112,72,.8) !important;

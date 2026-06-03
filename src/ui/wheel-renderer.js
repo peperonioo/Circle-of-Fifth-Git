@@ -43,7 +43,7 @@ function renderWheel() {
       stroke: isActive ? 'rgba(255,120,80,.4)' : (isLight ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.08)'),
       'stroke-width': isActive ? '1.8' : '0.8',
     });
-    if (isActive) op.setAttribute('filter', 'url(#fGlow)');
+    if (isActive) { op.setAttribute('filter', 'url(#fGlow)'); op.setAttribute('class', 'active-sector'); }
     og.appendChild(op);
 
     // Primary label (major/minor view)
