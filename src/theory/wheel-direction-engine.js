@@ -238,13 +238,14 @@ const WheelDirectionGuide = {
     const wrap = this._buildPanels();
     // refresh text in case language changed
     wrap.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
+    if (typeof OverlayManager === 'object') OverlayManager.opened('dir-guide');
     wrap.classList.add('open');
     this._positionPanels();
     if (!this._boundReposition) {
       this._boundReposition = () => this._positionPanels();
       window.addEventListener('resize', this._boundReposition, { passive: true });
       window.addEventListener('scroll', this._boundReposition, { passive: true });
-      document.addEventListener('keydown', e => { if (e.key === 'Escape' && this.visible) this.toggle(); });
+      // Escape is handled centrally by OverlayManager (V3.21).
     }
   },
 

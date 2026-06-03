@@ -61,6 +61,7 @@ const ModeMenu = {
     if (!control || !menu) return;
     const open = !menu.classList.contains('portal-open');
     if (!open) { _closeModeMenu(); return; }
+    OverlayManager.opened('mode-menu');
     if (menu.parentElement !== document.body) document.body.appendChild(menu);
     renderModeMenu();
     control.classList.add('open');

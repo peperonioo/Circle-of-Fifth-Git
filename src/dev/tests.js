@@ -161,6 +161,15 @@
       assert('Mixolydian favours ♭VII from I',  safe(() => sugg(0).slice(0,2).some(s => s.to === 6), false), sugg(0).map(s => [s.chord.chord, s.fit]));
     });
 
+    // ── Overlay manager (Audit §8.2 / V3.21) ──
+    assert('OverlayManager exists', typeof OverlayManager === 'object' && typeof OverlayManager.opened === 'function');
+    if (typeof OverlayManager === 'object' && typeof WheelDirectionGuide === 'object') {
+      if (!WheelDirectionGuide.visible) safe(() => WheelDirectionGuide.toggle());     // open dir-guide
+      safe(() => OverlayManager.opened('mode-menu'));                                 // another overlay opens
+      assert('Opening an overlay closes the others', WheelDirectionGuide.visible === false);
+      if (WheelDirectionGuide.visible) safe(() => WheelDirectionGuide.toggle());      // leave closed
+    }
+
     const ok = results.every(r => r.ok);
     DevLog.push(ok ? 'info' : 'warn', `Tests ${ok ? 'passed' : 'finished with issues'} (${results.filter(r => r.ok).length}/${results.length})`, results);
     _updateDevPanel();

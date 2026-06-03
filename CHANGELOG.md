@@ -1,5 +1,25 @@
 # Easy Fifth Circle — Changelog
 
+## V3.21 — Overlay Manager (Audit §8.2)
+
+**Release date:** 2026-06-03
+
+- New `OverlayManager`: one contract for every floating layer (mode dropdown,
+  direction-guide banners, theory-help popovers, degree popup). Opening any
+  overlay closes the others, and one global Escape closes the topmost.
+- All overlay z-index already comes from design tokens (`--z-dropdown`,
+  `--z-popover`) — verified, no component invents its own.
+- Removed the direction-guide's private Escape handler in favour of the central
+  one. Added a regression test (opening an overlay closes the others).
+
+### Info guide refinement
+- Replaced big full-screen panels with small banners spread around the wheel
+  (no scrim): what/why + Fifths on the right, Fourths on the left.
+
+### Suggestion bubbles
+- Smaller overall (~32–80px desktop, 46–78px mobile) with a lighter design,
+  keeping strength-by-size difference.
+
 ## V3.20 — CSS De-override Pass (Audit §8.3)
 
 **Release date:** 2026-06-03
