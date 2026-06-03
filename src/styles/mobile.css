@@ -2,7 +2,6 @@
 @media (max-width:860px) {
   html,body {
     min-height:100svh;
-    overscroll-behavior-y:none;
     font-size:15px;
   }
   .app {

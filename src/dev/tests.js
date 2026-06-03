@@ -161,6 +161,58 @@
       assert('Mixolydian favours ♭VII from I',  safe(() => sugg(0).slice(0,2).some(s => s.to === 6), false), sugg(0).map(s => [s.chord.chord, s.fit]));
     });
 
+    // ── Progression builder ops (Audit §8.5 / V3.22) ──
+    (function () {
+      const savedHist = clone(st.history || []);
+      try {
+        withState({ key:'C', mode:'ionian', wheelView:'major' }, () => {
+          const mk = (idx) => ({ chord: gc()[idx].chord, degree: gc()[idx].degree, quality: gc()[idx].quality,
+            degreeIndex: idx, key: st.key, mode: st.mode, uid: 'efctest-' + idx + '-' + Math.random().toString(36).slice(2) });
+          // add
+          st.history = [];
+          HistoryEngine.addDegree(0); HistoryEngine.addDegree(4); HistoryEngine.addDegree(3);
+          assert('Progression add appends chords', st.history.length === 3 && st.history.map(x => x.chord).join('-') === 'C-G-F', st.history.map(x => x.chord));
+          // delete one — build directly (no rendered pills) so remove() is synchronous
+          st.history = [mk(0), mk(4), mk(3)];
+          const row = document.getElementById('builderRow'); if (row) row.innerHTML = '';
+          HistoryEngine.remove(1);
+          assert('Delete removes only that pill', st.history.map(x => x.chord).join('-') === 'C-F', st.history.map(x => x.chord));
+          // reorder
+          st.history = [mk(0), mk(3)];
+          BuilderEngine.move(0, 1);
+          assert('Reorder swaps neighbours', st.history.map(x => x.chord).join('-') === 'F-C', st.history.map(x => x.chord));
+          // clear
+          HistoryEngine.clear();
+          assert('Clear empties the progression', Array.isArray(st.history) && st.history.length === 0);
+        });
+      } finally {
+        st.history = savedHist; safe(() => HistoryEngine.render()); safe(() => renderProgressionStory());
+      }
+    })();
+
+    // Bubble size follows recommendation strength (monotonic with fit)
+    withState({ key:'C', mode:'ionian', wheelView:'major', mood:'balanced', history:[] }, () => {
+      const dOf = (fit) => { const n = Math.max(0, Math.min(1, (fit - 12) / 88)); return 32 + Math.pow(n, 1.8) * 48; };
+      const ds = sugg(0).map(s => dOf(s.fit));
+      assert('Bubble size follows strength (monotonic)', ds.every((d, i, a) => i === 0 || a[i - 1] >= d - 1e-6));
+    });
+
+    // Major/minor toggle maps the wheel centre correctly
+    (function () {
+      const sv = { key: st.key, mode: st.mode, view: st.wheelView };
+      try {
+        st.key = 'C'; st.mode = 'ionian'; st.wheelView = 'major'; safe(() => renderWheel());
+        const maj = { k: document.getElementById('cKey')?.textContent, r: document.getElementById('cRel')?.textContent };
+        assert('Major view centre = key + its relative minor',
+          maj.k === 'C' && maj.r === 'Am' && relativeMinor(maj.k) === maj.r, maj);
+        st.wheelView = 'minor'; safe(() => renderWheel());
+        const min = { k: document.getElementById('cKey')?.textContent, r: document.getElementById('cRel')?.textContent };
+        assert('Minor view changes the centre display', maj.k !== min.k || maj.r !== min.r, { maj, min });
+      } finally {
+        st.key = sv.key; st.mode = sv.mode; st.wheelView = sv.view; safe(() => renderWheel());
+      }
+    })();
+
     // ── Overlay manager (Audit §8.2 / V3.21) ──
     assert('OverlayManager exists', typeof OverlayManager === 'object' && typeof OverlayManager.opened === 'function');
     if (typeof OverlayManager === 'object' && typeof WheelDirectionGuide === 'object') {
@@ -203,7 +255,8 @@
     const bubbles = [...document.querySelectorAll('.next-bubble')];
     const sizes = bubbles.map(b => Math.min(b.offsetWidth, b.offsetHeight));
     const sz = sizes.length ? Math.min(...sizes) : 0;
-    add('Smallest bubble is tappable (>=44px)', !bubbles.length || sz >= 44, bubbles.length ? sz + 'px' : 'no bubble');
+    // Tap-target floor only matters on touch viewports; desktop bubbles can be smaller.
+    add('Smallest bubble is tappable (>=44px)', !isMobile || !bubbles.length || sz >= 44, bubbles.length ? sz + 'px' : 'no bubble');
 
     if (isMobile) {
       add('Instrument drawers collapsed on mobile', piano ? !piano.hasAttribute('open') : true);

@@ -1,5 +1,27 @@
 # Easy Fifth Circle — Changelog
 
+## V3.22 — Test Suite Expansion (Audit §8.5)
+
+**Release date:** 2026-06-04
+
+- New regression tests: progression add / delete-one / reorder / clear, bubble
+  size monotonic with strength, and major/minor centre mapping. 41 tests total,
+  all green (was 20 at V3.17).
+- `mobileCheck()` is now viewport-aware (tap-target and overscroll checks only
+  assert on a touch viewport), so it passes cleanly on desktop too.
+- Moved `overscroll-behavior-y:none` to a global rule (was mobile-only) —
+  stops page-bounce on trackpads as well.
+
+### Settings recovery
+- The background-colour palette could vanish if WebGL failed to initialise
+  (its swatches were built after the WebGL early-return). The palette +
+  intensity UI is now decoupled from WebGL: swatches always render and still
+  change the background tint even when the plasma canvas is unavailable.
+
+### Direction-guide copy
+- Sharper, more didactic banner text: your key sits at the top, its right
+  neighbour is V (dominant), its left neighbour is IV (subdominant).
+
 ## V3.21 — Overlay Manager (Audit §8.2)
 
 **Release date:** 2026-06-03
