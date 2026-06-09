@@ -59,7 +59,7 @@ function _buildBubblesHTML() {
 
   // Quantize each suggestion's strength into one of 4 sizes (the strongest is
   // clearly the biggest). Bubbles are then laid out in DEGREE order (I…VII).
-  const SIZES   = [46, 66, 90, 118];      // 4 tiers; biggest is quite big
+  const SIZES   = [38, 48, 60, 74];       // 4 tiers; biggest stays modest
   const fits    = all.map(x => x.fit);
   const mn = Math.min(...fits), mx = Math.max(...fits);
   const tier = (fit) => {
@@ -77,6 +77,7 @@ function _buildBubblesHTML() {
         style="--fit:${it.fit};--d:${d}px;--tier:${t}"
         onclick="addSuggestion(${it.to},event)"
         title="${it.chord.degree} · ${it.chord.chord} — ${it.reason || cat} · ${it.fit}% fit">
+      <span class="nb-deg">${it.chord.degree}</span>
       <span class="nb-chord">${it.chord.chord}</span>
     </button>`;
   }).join('');

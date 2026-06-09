@@ -35,7 +35,7 @@ body.light .next-orbit::-webkit-scrollbar-thumb { background:rgba(0,0,0,.14) }
 .next-bubble {
   --d: 66px;
   --fit: 50;
-  --diam: clamp(44px, var(--d), 120px);
+  --diam: clamp(40px, var(--d), 92px);
   width:var(--diam) !important; height:var(--diam) !important;
   min-width:var(--diam) !important; min-height:var(--diam) !important;
   max-width:var(--diam) !important; max-height:var(--diam) !important;
@@ -117,12 +117,20 @@ body.light .next-bubble {
   .next-bubble, .next-bubble.best { animation:none !important }
 }
 
-/* Bubble inner — only the chord, centered, sized to the bubble */
+/* Bubble inner — degree (subtle, on top) + chord, stacked & centered */
+.nb-deg {
+  font-family:'DM Mono',monospace !important;
+  font-size:clamp(6px, calc(var(--diam, 56px) * .15), 11px) !important;
+  line-height:1 !important; letter-spacing:.02em !important;
+  color:var(--muted) !important; opacity:.8 !important;
+  margin-bottom:1px !important; text-align:center !important; white-space:nowrap !important;
+}
+.next-bubble.best .nb-deg { color:var(--accent2) !important; opacity:.95 !important }
 .nb-chord  {
   font-family:var(--wheel-font) !important;
   font-weight:700 !important;
   letter-spacing:-.03em !important;
-  font-size:clamp(13px, calc(var(--diam, 56px) * .33), 36px) !important;
+  font-size:clamp(12px, calc(var(--diam, 56px) * .30), 30px) !important;
   line-height:.9 !important; text-align:center !important;
   white-space:nowrap !important;
   color:var(--ink) !important;

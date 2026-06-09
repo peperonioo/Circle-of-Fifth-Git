@@ -150,7 +150,7 @@ function renderWheel() {
   // Theme-aware background circles
   const bgCircle = document.querySelector('#wheelSvg > circle:first-of-type');
   if (bgCircle) bgCircle.setAttribute('fill', isLight ? 'rgba(255,255,255,.26)' : 'rgba(0,0,0,.24)');
-  const innerDisc = document.querySelectorAll('#wheelSvg > circle')[1];
+  const innerDisc = document.getElementById('centerDisc');
   if (innerDisc) innerDisc.setAttribute('fill', isLight ? 'rgba(248,245,240,.78)' : 'rgba(6,6,10,.72)');
 
   // Subtle wheel-pointer color

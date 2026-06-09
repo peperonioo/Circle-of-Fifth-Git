@@ -335,6 +335,7 @@ body[data-interaction="wheel"] #wheelSvg { animation-play-state:paused; }
 
 /* Ambient light sweep circling the rim — makes the wheel feel like a polished object */
 #wheelSheen {
+  fill:none !important;            /* it's a sweep arc, never a filled disc */
   stroke:rgba(255,255,255,.06);
   transform-box:fill-box; transform-origin:center;
   animation:sheenSweep 15s linear infinite;
@@ -675,7 +676,7 @@ body.light .next-orbit::-webkit-scrollbar-thumb { background:rgba(0,0,0,.14) }
 .next-bubble {
   --d: 66px;
   --fit: 50;
-  --diam: clamp(44px, var(--d), 120px);
+  --diam: clamp(40px, var(--d), 92px);
   width:var(--diam) !important; height:var(--diam) !important;
   min-width:var(--diam) !important; min-height:var(--diam) !important;
   max-width:var(--diam) !important; max-height:var(--diam) !important;
@@ -757,12 +758,20 @@ body.light .next-bubble {
   .next-bubble, .next-bubble.best { animation:none !important }
 }
 
-/* Bubble inner — only the chord, centered, sized to the bubble */
+/* Bubble inner — degree (subtle, on top) + chord, stacked & centered */
+.nb-deg {
+  font-family:'DM Mono',monospace !important;
+  font-size:clamp(6px, calc(var(--diam, 56px) * .15), 11px) !important;
+  line-height:1 !important; letter-spacing:.02em !important;
+  color:var(--muted) !important; opacity:.8 !important;
+  margin-bottom:1px !important; text-align:center !important; white-space:nowrap !important;
+}
+.next-bubble.best .nb-deg { color:var(--accent2) !important; opacity:.95 !important }
 .nb-chord  {
   font-family:var(--wheel-font) !important;
   font-weight:700 !important;
   letter-spacing:-.03em !important;
-  font-size:clamp(13px, calc(var(--diam, 56px) * .33), 36px) !important;
+  font-size:clamp(12px, calc(var(--diam, 56px) * .30), 30px) !important;
   line-height:.9 !important; text-align:center !important;
   white-space:nowrap !important;
   color:var(--ink) !important;
@@ -1130,7 +1139,7 @@ body.light .gravity-pill.metric.high { color:#fff }
   .builder-next-context { white-space:normal }
   .builder-next-moves .next-orbit { justify-content:flex-start !important; padding-inline:6px !important; gap:11px }
   /* Raise the floor so every bubble is tappable, but keep the size difference. */
-  .builder-next-moves .next-bubble { --diam:clamp(46px, var(--d), 100px) !important; padding:5px !important }
+  .builder-next-moves .next-bubble { --diam:clamp(44px, var(--d), 82px) !important; padding:5px !important }
   .info-row       { grid-template-columns:1fr }
   .prod-grid,.elements-section { grid-template-columns:1fr }
   .deg-popup-wrap { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) }
@@ -1223,7 +1232,7 @@ body.light .gravity-pill.metric.high { color:#fff }
           <!-- Ambient light sweep slowly circling the rim -->
           <circle id="wheelSheen" cx="300" cy="300" r="286" fill="none" stroke-width="10"
             stroke-dasharray="70 1727" stroke-linecap="round" pointer-events="none"/>
-          <circle cx="300" cy="300" r="148" fill="rgba(6,6,10,.94)" stroke="rgba(255,255,255,.07)" stroke-width="1"/>
+          <circle id="centerDisc" cx="300" cy="300" r="148" fill="rgba(6,6,10,.94)" stroke="rgba(255,255,255,.07)" stroke-width="1"/>
           <circle cx="300" cy="300" r="148" fill="url(#discGrad)"/>
           <!-- Tonic heartbeat: a soft ring at the centre rim that pulses slowly -->
           <circle id="tonicPulse" cx="300" cy="300" r="150" fill="none" stroke="var(--accent)" stroke-width="2" opacity="0"/>
@@ -2599,7 +2608,7 @@ function renderWheel() {
   // Theme-aware background circles
   const bgCircle = document.querySelector('#wheelSvg > circle:first-of-type');
   if (bgCircle) bgCircle.setAttribute('fill', isLight ? 'rgba(255,255,255,.26)' : 'rgba(0,0,0,.24)');
-  const innerDisc = document.querySelectorAll('#wheelSvg > circle')[1];
+  const innerDisc = document.getElementById('centerDisc');
   if (innerDisc) innerDisc.setAttribute('fill', isLight ? 'rgba(248,245,240,.78)' : 'rgba(6,6,10,.72)');
 
   // Subtle wheel-pointer color
@@ -3279,7 +3288,7 @@ function _buildBubblesHTML() {
 
   // Quantize each suggestion's strength into one of 4 sizes (the strongest is
   // clearly the biggest). Bubbles are then laid out in DEGREE order (I…VII).
-  const SIZES   = [46, 66, 90, 118];      // 4 tiers; biggest is quite big
+  const SIZES   = [38, 48, 60, 74];       // 4 tiers; biggest stays modest
   const fits    = all.map(x => x.fit);
   const mn = Math.min(...fits), mx = Math.max(...fits);
   const tier = (fit) => {
@@ -3297,6 +3306,7 @@ function _buildBubblesHTML() {
         style="--fit:${it.fit};--d:${d}px;--tier:${t}"
         onclick="addSuggestion(${it.to},event)"
         title="${it.chord.degree} · ${it.chord.chord} — ${it.reason || cat} · ${it.fit}% fit">
+      <span class="nb-deg">${it.chord.degree}</span>
       <span class="nb-chord">${it.chord.chord}</span>
     </button>`;
   }).join('');

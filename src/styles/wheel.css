@@ -25,6 +25,7 @@ body[data-interaction="wheel"] #wheelSvg { animation-play-state:paused; }
 
 /* Ambient light sweep circling the rim — makes the wheel feel like a polished object */
 #wheelSheen {
+  fill:none !important;            /* it's a sweep arc, never a filled disc */
   stroke:rgba(255,255,255,.06);
   transform-box:fill-box; transform-origin:center;
   animation:sheenSweep 15s linear infinite;
