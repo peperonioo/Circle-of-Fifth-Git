@@ -54,18 +54,29 @@ function renderGravityStatus() {
 
 function _buildBubblesHTML() {
   const from    = curDeg >= 0 ? curDeg : 0;
-  const all     = SuggestionEngine.getNextWithScores(from);
+  const all     = SuggestionEngine.getNextWithScores(from); // strongest first
   const current = gc()[from];
-  const bubbles = all.map((it, i) => {
-    // Compact scale, but keep a clear size difference between strong and weak
-    // suggestions. The bubble shows only the chord, centered.
-    const normalized = Math.max(0, Math.min(1, (it.fit - 12) / 88));
-    const d   = Math.round(32 + Math.pow(normalized, 1.8) * 48); // ~32px → ~80px
+
+  // Quantize each suggestion's strength into one of 4 sizes (the strongest is
+  // clearly the biggest). Bubbles are then laid out in DEGREE order (I…VII).
+  const SIZES   = [46, 66, 90, 118];      // 4 tiers; biggest is quite big
+  const fits    = all.map(x => x.fit);
+  const mn = Math.min(...fits), mx = Math.max(...fits);
+  const tier = (fit) => {
+    const n = mx > mn ? (fit - mn) / (mx - mn) : 1;
+    return Math.min(3, Math.floor(n * 4));
+  };
+  const bestTo  = all[0]?.to;
+  const byDegree = [...all].sort((a, b) => a.to - b.to);
+
+  const bubbles = byDegree.map((it) => {
+    const t   = tier(it.fit);
+    const d   = SIZES[t];
     const cat = friendlyCategory(it.transition?.category);
-    return `<button class="next-bubble ${i === 0 ? 'best' : ''}"
-        style="--fit:${it.fit};--d:${d}px;--rank:${i}"
+    return `<button class="next-bubble ${it.to === bestTo ? 'best' : ''}"
+        style="--fit:${it.fit};--d:${d}px;--tier:${t}"
         onclick="addSuggestion(${it.to},event)"
-        title="${it.chord.chord} · ${it.chord.degree} — ${it.reason || cat} · ${it.fit}% fit">
+        title="${it.chord.degree} · ${it.chord.chord} — ${it.reason || cat} · ${it.fit}% fit">
       <span class="nb-chord">${it.chord.chord}</span>
     </button>`;
   }).join('');
