@@ -45,10 +45,11 @@ const MODE_FRIENDLY = {
 };
 
 const PALETTES = [
-  {name:'Cosmos', bg:'#0a0a0b', colors:['#ff7b3b','#ff4500','#b22200']},
-  {name:'Aurora', bg:'#080d10', colors:['#00c8b4','#0088ff','#5500ff']},
-  {name:'Dusk',   bg:'#0c080f', colors:['#c060ff','#8800ff','#ff0088']},
-  {name:'Amber',  bg:'#0c0a06', colors:['#ffcc44','#ff8800','#ff3300']},
+  // 3 distinct hues per palette so the plasma flows with real colour
+  {name:'Cosmos', bg:'#0a0a0b', colors:['#ff8a3d','#ff2e63','#7b2ff7']}, // amber → pink → violet
+  {name:'Aurora', bg:'#080d10', colors:['#00e0b8','#2a7bff','#9b3cff']}, // teal → blue → purple
+  {name:'Dusk',   bg:'#0c080f', colors:['#ff5fa2','#a64bff','#ffb347']}, // pink → violet → amber
+  {name:'Amber',  bg:'#0c0a06', colors:['#ffd24a','#ff7a1a','#ff2e6e']}, // gold → orange → magenta
 ];
 
 const defaultState = {

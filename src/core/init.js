@@ -18,9 +18,16 @@ const PALETTES_DATA = PALETTES;
       uniform vec3 c1,c2,c3;uniform float d;
       void main(){
         vec2 v=gl_FragCoord.xy/u-.5;
-        float b=sin(v.x*3.+t*.5)*sin(v.y*3.+t*.3)+sin(length(v)*5.-t*.7)*.5;
-        b=b*.5+.5;
-        vec3 col=mix(mix(c1,c2,b),c3,sin(t*.2)*.5+.5);
+        v.x*=u.x/u.y;
+        // Two independent flowing fields so all three colours appear across the
+        // screen and drift over time (the old version mixed c3 globally, which
+        // looked flat and monochrome).
+        float a=sin(v.x*2.6+t*.55)*sin(v.y*2.3-t*.42)*.5+.5;
+        float e=sin(length(v)*3.4-t*.6)*.5+.5;
+        float f=sin((v.x+v.y)*2.0+t*.35)*.5+.5;
+        vec3 col=mix(mix(c1,c2,a),c3,e);
+        col=mix(col,c2,f*.35);
+        col+=.05*sin(t*.8+v.yxx*7.0);
         gl_FragColor=vec4(col*d,1);
       }`;
     const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; };
@@ -83,7 +90,7 @@ const PALETTES_DATA = PALETTES;
   const dimFactor = 1;
 
   let intensity = parseFloat(st.intensity) || 1;
-  const setIntensity = () => { if (hasGL) gl.uniform1f(dLoc, intensity * 0.38 * dimFactor); };
+  const setIntensity = () => { if (hasGL) gl.uniform1f(dLoc, intensity * 0.52 * dimFactor); };
 
   const intensityEl = document.getElementById('plasmaIntensity');
   if (intensityEl) {
