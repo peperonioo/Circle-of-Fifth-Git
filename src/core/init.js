@@ -113,11 +113,23 @@ const PALETTES_DATA = PALETTES;
   window.addEventListener('resize', resize, {passive:true}); resize();
   setIntensity();
 
-  let tVal = 0;
+  // On mobile, render at ~30fps (skip every other frame) and pause while the
+  // page is scrolling or hidden — the full-screen WebGL canvas repainting every
+  // frame is what made scrolling feel janky. Desktop stays at full rate.
+  let tVal = 0, frame = 0, scrolling = 0;
+  if (mobileBg) {
+    addEventListener('scroll', () => { scrolling = performance.now(); }, { passive: true });
+  }
+  // (rAF already pauses when the tab is truly hidden, so no explicit check.)
   (function loop() {
-    tVal += 0.014;
-    gl.uniform1f(tLoc, tVal);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    frame++;
+    const midScroll = mobileBg && performance.now() - scrolling < 120;
+    const draw = !midScroll && (!mobileBg || frame % 2 === 0);
+    if (draw) {
+      tVal += mobileBg ? 0.028 : 0.014;
+      gl.uniform1f(tLoc, tVal);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
     requestAnimationFrame(loop);
   })();
 })();

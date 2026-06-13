@@ -386,6 +386,7 @@ body[data-interaction="wheel"] .active-sector { animation-play-state:paused; }
   transition:all .18s var(--ease);
 }
 .wheel-toggle button.active { background:var(--accent); color:#fff; box-shadow:0 3px 12px rgba(232,68,26,.18) }
+.wheel-toggle-mobile { display:none }   /* shown only on mobile (mobile.css) */
 
 /* SVG text typography — single canonical rule */
 #wg text.wheel-label,
@@ -449,9 +450,17 @@ body.light #wheelDirectionGuide .dir-arrow { fill:rgba(20,20,20,.22) }
 .degree.active-deg .roman,
 .degree.active-deg .dn,
 .degree.active-deg .dq { color:var(--accent2) }
-.degree .roman { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.06em; color:var(--muted) }
-.degree .dn    { font-family:'DM Serif Display',serif; font-size:20px; margin-top:5px; line-height:1 }
-.degree .dq    { font-size:9px; color:var(--muted); margin-top:2px }
+/* Roman numeral carries the most weight (cased by quality in markup) */
+.degree .roman {
+  font-family:'DM Mono',monospace; font-size:14px; font-weight:600;
+  letter-spacing:.03em; color:var(--ink); opacity:.9;
+}
+.degree.q-min .roman, .degree.q-dim .roman { opacity:.62 }   /* minor/dim a touch softer */
+.degree .dn    { font-family:'DM Serif Display',serif; font-size:19px; margin-top:4px; line-height:1; color:var(--ink) }
+.degree .dq    { font-size:8.5px; color:var(--muted); margin-top:3px; text-transform:uppercase; letter-spacing:.05em }
+/* A little more presence overall */
+.degree { transition:background .15s, box-shadow .15s }
+.degree:hover { background:rgba(232,68,26,.08); box-shadow:inset 0 -2px 0 rgba(232,68,26,.35) }
 
 /* Degree popup */
 .deg-popup-wrap {
@@ -1118,7 +1127,11 @@ body.light .gravity-pill.metric.high { color:#fff }
   .main-row       { grid-template-columns:1fr; gap:8px; margin-bottom:10px }
   .side           { display:none }
   .circle-wrap    { order:0 }
-  #wheelSvg       { width:min(94vw,430px) !important; height:min(94vw,430px) !important; filter:drop-shadow(0 8px 28px rgba(0,0,0,.34)) }
+  /* Surface the Major/Minor toggle on mobile (the side cards are hidden) */
+  .wheel-toggle-mobile { display:flex; width:min(260px,80vw); margin:12px auto 2px }
+  .wheel-toggle-mobile button { font-size:12px; padding:9px 8px }
+  /* Lighter wheel on mobile so scrolling stays smooth */
+  #wheelSheen     { animation:none !important; opacity:0 !important }
   .theory-bottom  { gap:9px }
   .degrees-row    { border-radius:12px }
   .degree         { padding:10px 4px }
@@ -1183,8 +1196,8 @@ body.light .gravity-pill.metric.high { color:#fff }
           <div id="sideKey" class="big">C</div>
           <div id="sideMode" class="sub">Major</div>
           <div class="wheel-toggle" aria-label="Wheel label mode">
-            <button id="viewMajorBtn" class="active" onclick="setWheelView('major')" data-i18n="toggle.major">Major</button>
-            <button id="viewMinorBtn" onclick="setWheelView('minor')" data-i18n="toggle.minor">Minor</button>
+            <button id="viewMajorBtn" class="active" data-view="major" onclick="setWheelView('major')" data-i18n="toggle.major">Major</button>
+            <button id="viewMinorBtn" data-view="minor" onclick="setWheelView('minor')" data-i18n="toggle.minor">Minor</button>
           </div>
         </div>
         <div class="card">
@@ -1251,6 +1264,12 @@ body.light .gravity-pill.metric.high { color:#fff }
           <div id="scaleNotes" class="scale-orbs"></div>
         </div>
       </aside>
+    </div>
+
+    <!-- Mobile-only Major/Minor toggle (the side cards are hidden on phones) -->
+    <div class="wheel-toggle wheel-toggle-mobile" aria-label="Wheel label mode">
+      <button data-view="major" class="active" onclick="setWheelView('major')" data-i18n="toggle.major">Major</button>
+      <button data-view="minor" onclick="setWheelView('minor')" data-i18n="toggle.minor">Minor</button>
     </div>
 
     <!-- BOTTOM THEORY -->
@@ -1830,22 +1849,32 @@ const AudioEngine = {
 
   _freq(pitch) { return 261.63 * Math.pow(2, pitch / 12); }, // pitch 0 = middle C
 
-  // One warm voice: two slightly-detuned oscillators through a lowpass + ADSR.
+  // One Rhodes-ish voice via FM: a sine carrier shaped by a 1:1 "body"
+  // modulator plus a high-ratio "tine" modulator that gives the percussive
+  // bell attack. Modulation-index envelopes make it bright on attack and warm
+  // on sustain — the classic electric-piano character.
   _voice(freq, t0, dur, gainScale = 1) {
     const ctx = this.ctx;
-    const o1 = ctx.createOscillator(), o2 = ctx.createOscillator();
-    o1.type = 'triangle'; o2.type = 'sine'; o2.detune.value = 5;
-    o1.frequency.value = freq; o2.frequency.value = freq;
-    const g = ctx.createGain();
-    const lp = ctx.createBiquadFilter();
-    lp.type = 'lowpass'; lp.frequency.value = 2600; lp.Q.value = 0.6;
-    o1.connect(g); o2.connect(g); g.connect(lp); lp.connect(this.master);
-    const peak = 0.42 * gainScale, atk = 0.012, rel = 0.55;
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(peak, t0 + atk);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + rel);
-    o1.start(t0); o2.start(t0);
-    o1.stop(t0 + dur + rel + 0.05); o2.stop(t0 + dur + rel + 0.05);
+    const carrier = ctx.createOscillator(); carrier.type = 'sine'; carrier.frequency.value = freq;
+    const mod  = ctx.createOscillator(); mod.type  = 'sine'; mod.frequency.value  = freq;        // body (ratio 1)
+    const tine = ctx.createOscillator(); tine.type = 'sine'; tine.frequency.value = freq * 13;    // bell tine (high ratio)
+    const modIdx  = ctx.createGain();  mod.connect(modIdx);   modIdx.connect(carrier.frequency);
+    const tineIdx = ctx.createGain();  tine.connect(tineIdx); tineIdx.connect(carrier.frequency);
+    const amp = ctx.createGain();
+    const lp  = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3800; lp.Q.value = 0.4;
+    carrier.connect(amp); amp.connect(lp); lp.connect(this.master);
+
+    const peak = 0.40 * gainScale;
+    modIdx.gain.setValueAtTime(freq * 1.4, t0);
+    modIdx.gain.exponentialRampToValueAtTime(freq * 0.35, t0 + 0.5);
+    tineIdx.gain.setValueAtTime(freq * 2.2, t0);
+    tineIdx.gain.exponentialRampToValueAtTime(0.001, t0 + 0.12);     // fast bell decay
+    amp.gain.setValueAtTime(0.0001, t0);
+    amp.gain.exponentialRampToValueAtTime(peak, t0 + 0.006);          // percussive attack
+    amp.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + 0.7);    // bell-like release
+
+    const end = t0 + dur + 0.75;
+    [carrier, mod, tine].forEach(o => { o.start(t0); o.stop(end); });
   },
 
   // pitches: array of relative semitones (0 = middle C). Tiny strum for life.
@@ -1879,6 +1908,15 @@ const AudioEngine = {
     }
   },
 };
+
+// Unlock the AudioContext on the first real user gesture. Mobile Chrome/Safari
+// keep it suspended until then, which is why audio was silent on the phone.
+(function () {
+  const unlock = () => { try { AudioEngine.resume(); } catch (_) {} };
+  ['pointerdown', 'touchend', 'mousedown', 'keydown'].forEach(ev =>
+    document.addEventListener(ev, unlock, { passive: true })
+  );
+})();
 
 // ── Chord → pitches helpers ───────────────────────────
 // Build a triad (relative to middle C) from a chord's root + quality.
@@ -3077,18 +3115,25 @@ function renderTheory() {
   if (accEl)   accEl.textContent   = accStr === '0' ? '♮ None' : accStr;
   if (accType) accType.textContent = accStr === '0' ? 'Natural' : accStr.includes('♯') ? 'Sharps' : 'Flats';
 
-  // Major/minor toggle buttons
-  document.getElementById('viewMajorBtn')?.classList.toggle('active', st.wheelView !== 'minor');
-  document.getElementById('viewMinorBtn')?.classList.toggle('active', st.wheelView === 'minor');
+  // Major/minor toggle buttons (desktop + mobile share the data-view attr)
+  const view = st.wheelView === 'minor' ? 'minor' : 'major';
+  document.querySelectorAll('.wheel-toggle [data-view]').forEach(b =>
+    b.classList.toggle('active', b.getAttribute('data-view') === view));
 
-  // Degrees row
+  // Degrees row — the Roman numeral is cased by chord quality (major =
+  // UPPERCASE, minor/dim = lowercase, dim keeps its °).
+  const casedRoman = (roman, q) => {
+    let r = q === 'Maj' ? roman.toUpperCase() : roman.toLowerCase();
+    if (q === 'Dim' && !r.includes('°')) r += '°';
+    return r;
+  };
   const dRow = document.getElementById('degrees'); if (!dRow) return;
   const chords = gc();
   dRow.innerHTML = chords.map((c, i) => `
-    <div class="degree ${i === 0 ? 'tonic' : ''} ${i === curDeg ? 'active-deg' : ''}"
+    <div class="degree q-${(c.quality || '').toLowerCase()} ${i === 0 ? 'tonic' : ''} ${i === curDeg ? 'active-deg' : ''}"
       onclick="showDegreePopup(${i})"
       data-degree-index="${i}">
-      <div class="roman">${c.degree}</div>
+      <div class="roman">${casedRoman(c.degree, c.quality)}</div>
       <div class="dn">${c.chord}</div>
       <div class="dq">${c.quality}</div>
     </div>`).join('');
@@ -4060,11 +4105,23 @@ const PALETTES_DATA = PALETTES;
   window.addEventListener('resize', resize, {passive:true}); resize();
   setIntensity();
 
-  let tVal = 0;
+  // On mobile, render at ~30fps (skip every other frame) and pause while the
+  // page is scrolling or hidden — the full-screen WebGL canvas repainting every
+  // frame is what made scrolling feel janky. Desktop stays at full rate.
+  let tVal = 0, frame = 0, scrolling = 0;
+  if (mobileBg) {
+    addEventListener('scroll', () => { scrolling = performance.now(); }, { passive: true });
+  }
+  // (rAF already pauses when the tab is truly hidden, so no explicit check.)
   (function loop() {
-    tVal += 0.014;
-    gl.uniform1f(tLoc, tVal);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    frame++;
+    const midScroll = mobileBg && performance.now() - scrolling < 120;
+    const draw = !midScroll && (!mobileBg || frame % 2 === 0);
+    if (draw) {
+      tVal += mobileBg ? 0.028 : 0.014;
+      gl.uniform1f(tLoc, tVal);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
     requestAnimationFrame(loop);
   })();
 })();

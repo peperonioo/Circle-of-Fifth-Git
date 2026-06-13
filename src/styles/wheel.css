@@ -76,6 +76,7 @@ body[data-interaction="wheel"] .active-sector { animation-play-state:paused; }
   transition:all .18s var(--ease);
 }
 .wheel-toggle button.active { background:var(--accent); color:#fff; box-shadow:0 3px 12px rgba(232,68,26,.18) }
+.wheel-toggle-mobile { display:none }   /* shown only on mobile (mobile.css) */
 
 /* SVG text typography — single canonical rule */
 #wg text.wheel-label,

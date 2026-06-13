@@ -17,7 +17,11 @@
   .main-row       { grid-template-columns:1fr; gap:8px; margin-bottom:10px }
   .side           { display:none }
   .circle-wrap    { order:0 }
-  #wheelSvg       { width:min(94vw,430px) !important; height:min(94vw,430px) !important; filter:drop-shadow(0 8px 28px rgba(0,0,0,.34)) }
+  /* Surface the Major/Minor toggle on mobile (the side cards are hidden) */
+  .wheel-toggle-mobile { display:flex; width:min(260px,80vw); margin:12px auto 2px }
+  .wheel-toggle-mobile button { font-size:12px; padding:9px 8px }
+  /* Lighter wheel on mobile so scrolling stays smooth */
+  #wheelSheen     { animation:none !important; opacity:0 !important }
   .theory-bottom  { gap:9px }
   .degrees-row    { border-radius:12px }
   .degree         { padding:10px 4px }

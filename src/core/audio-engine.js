@@ -43,22 +43,32 @@ const AudioEngine = {
 
   _freq(pitch) { return 261.63 * Math.pow(2, pitch / 12); }, // pitch 0 = middle C
 
-  // One warm voice: two slightly-detuned oscillators through a lowpass + ADSR.
+  // One Rhodes-ish voice via FM: a sine carrier shaped by a 1:1 "body"
+  // modulator plus a high-ratio "tine" modulator that gives the percussive
+  // bell attack. Modulation-index envelopes make it bright on attack and warm
+  // on sustain — the classic electric-piano character.
   _voice(freq, t0, dur, gainScale = 1) {
     const ctx = this.ctx;
-    const o1 = ctx.createOscillator(), o2 = ctx.createOscillator();
-    o1.type = 'triangle'; o2.type = 'sine'; o2.detune.value = 5;
-    o1.frequency.value = freq; o2.frequency.value = freq;
-    const g = ctx.createGain();
-    const lp = ctx.createBiquadFilter();
-    lp.type = 'lowpass'; lp.frequency.value = 2600; lp.Q.value = 0.6;
-    o1.connect(g); o2.connect(g); g.connect(lp); lp.connect(this.master);
-    const peak = 0.42 * gainScale, atk = 0.012, rel = 0.55;
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(peak, t0 + atk);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + rel);
-    o1.start(t0); o2.start(t0);
-    o1.stop(t0 + dur + rel + 0.05); o2.stop(t0 + dur + rel + 0.05);
+    const carrier = ctx.createOscillator(); carrier.type = 'sine'; carrier.frequency.value = freq;
+    const mod  = ctx.createOscillator(); mod.type  = 'sine'; mod.frequency.value  = freq;        // body (ratio 1)
+    const tine = ctx.createOscillator(); tine.type = 'sine'; tine.frequency.value = freq * 13;    // bell tine (high ratio)
+    const modIdx  = ctx.createGain();  mod.connect(modIdx);   modIdx.connect(carrier.frequency);
+    const tineIdx = ctx.createGain();  tine.connect(tineIdx); tineIdx.connect(carrier.frequency);
+    const amp = ctx.createGain();
+    const lp  = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3800; lp.Q.value = 0.4;
+    carrier.connect(amp); amp.connect(lp); lp.connect(this.master);
+
+    const peak = 0.40 * gainScale;
+    modIdx.gain.setValueAtTime(freq * 1.4, t0);
+    modIdx.gain.exponentialRampToValueAtTime(freq * 0.35, t0 + 0.5);
+    tineIdx.gain.setValueAtTime(freq * 2.2, t0);
+    tineIdx.gain.exponentialRampToValueAtTime(0.001, t0 + 0.12);     // fast bell decay
+    amp.gain.setValueAtTime(0.0001, t0);
+    amp.gain.exponentialRampToValueAtTime(peak, t0 + 0.006);          // percussive attack
+    amp.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + 0.7);    // bell-like release
+
+    const end = t0 + dur + 0.75;
+    [carrier, mod, tine].forEach(o => { o.start(t0); o.stop(end); });
   },
 
   // pitches: array of relative semitones (0 = middle C). Tiny strum for life.
@@ -92,6 +102,15 @@ const AudioEngine = {
     }
   },
 };
+
+// Unlock the AudioContext on the first real user gesture. Mobile Chrome/Safari
+// keep it suspended until then, which is why audio was silent on the phone.
+(function () {
+  const unlock = () => { try { AudioEngine.resume(); } catch (_) {} };
+  ['pointerdown', 'touchend', 'mousedown', 'keydown'].forEach(ev =>
+    document.addEventListener(ev, unlock, { passive: true })
+  );
+})();
 
 // ── Chord → pitches helpers ───────────────────────────
 // Build a triad (relative to middle C) from a chord's root + quality.

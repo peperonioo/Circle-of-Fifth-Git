@@ -46,8 +46,8 @@
           <div id="sideKey" class="big">C</div>
           <div id="sideMode" class="sub">Major</div>
           <div class="wheel-toggle" aria-label="Wheel label mode">
-            <button id="viewMajorBtn" class="active" onclick="setWheelView('major')" data-i18n="toggle.major">Major</button>
-            <button id="viewMinorBtn" onclick="setWheelView('minor')" data-i18n="toggle.minor">Minor</button>
+            <button id="viewMajorBtn" class="active" data-view="major" onclick="setWheelView('major')" data-i18n="toggle.major">Major</button>
+            <button id="viewMinorBtn" data-view="minor" onclick="setWheelView('minor')" data-i18n="toggle.minor">Minor</button>
           </div>
         </div>
         <div class="card">
@@ -114,6 +114,12 @@
           <div id="scaleNotes" class="scale-orbs"></div>
         </div>
       </aside>
+    </div>
+
+    <!-- Mobile-only Major/Minor toggle (the side cards are hidden on phones) -->
+    <div class="wheel-toggle wheel-toggle-mobile" aria-label="Wheel label mode">
+      <button data-view="major" class="active" onclick="setWheelView('major')" data-i18n="toggle.major">Major</button>
+      <button data-view="minor" onclick="setWheelView('minor')" data-i18n="toggle.minor">Minor</button>
     </div>
 
     <!-- BOTTOM THEORY -->

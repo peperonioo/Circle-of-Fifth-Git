@@ -41,18 +41,25 @@ function renderTheory() {
   if (accEl)   accEl.textContent   = accStr === '0' ? '♮ None' : accStr;
   if (accType) accType.textContent = accStr === '0' ? 'Natural' : accStr.includes('♯') ? 'Sharps' : 'Flats';
 
-  // Major/minor toggle buttons
-  document.getElementById('viewMajorBtn')?.classList.toggle('active', st.wheelView !== 'minor');
-  document.getElementById('viewMinorBtn')?.classList.toggle('active', st.wheelView === 'minor');
+  // Major/minor toggle buttons (desktop + mobile share the data-view attr)
+  const view = st.wheelView === 'minor' ? 'minor' : 'major';
+  document.querySelectorAll('.wheel-toggle [data-view]').forEach(b =>
+    b.classList.toggle('active', b.getAttribute('data-view') === view));
 
-  // Degrees row
+  // Degrees row — the Roman numeral is cased by chord quality (major =
+  // UPPERCASE, minor/dim = lowercase, dim keeps its °).
+  const casedRoman = (roman, q) => {
+    let r = q === 'Maj' ? roman.toUpperCase() : roman.toLowerCase();
+    if (q === 'Dim' && !r.includes('°')) r += '°';
+    return r;
+  };
   const dRow = document.getElementById('degrees'); if (!dRow) return;
   const chords = gc();
   dRow.innerHTML = chords.map((c, i) => `
-    <div class="degree ${i === 0 ? 'tonic' : ''} ${i === curDeg ? 'active-deg' : ''}"
+    <div class="degree q-${(c.quality || '').toLowerCase()} ${i === 0 ? 'tonic' : ''} ${i === curDeg ? 'active-deg' : ''}"
       onclick="showDegreePopup(${i})"
       data-degree-index="${i}">
-      <div class="roman">${c.degree}</div>
+      <div class="roman">${casedRoman(c.degree, c.quality)}</div>
       <div class="dn">${c.chord}</div>
       <div class="dq">${c.quality}</div>
     </div>`).join('');
