@@ -1,7 +1,7 @@
 // ── CONSTANTS ─────────────────────────────────────────
 // Pure data. No DOM access. No state mutation.
 
-const APP_VERSION = 'V4.2';
+const APP_VERSION = 'V4.3';
 const STORAGE_KEY = 'easy-fifth-circle:v1';
 
 const NOTES  = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
@@ -39,6 +39,19 @@ const MAJOR_ROOTS = new Set(FIFTHS);
 const MINOR_ROOTS = new Set(Object.keys(MINOR_ROOT_TO_MAJOR));
 
 const MODE_ORDER   = ['ionian','aeolian','dorian','mixolydian','lydian','phrygian','locrian'];
+
+// ── Unified key/mode model (V4.3) ─────────────────────
+// A "sector" on the circle = a parent-major key signature. Every mode lives in
+// some sector; its tonic is one of the 7 notes of that sector's major scale.
+// These tables let us derive the sector from a (tonic, mode) pair and vice
+// versa, so the wheel, centre, scale, accidentals and degrees share one source
+// of truth and can never disagree.
+const MODE_FIFTHS_OFF = { ionian:0, lydian:1, mixolydian:-1, dorian:-2, aeolian:-3, phrygian:-4, locrian:-5 };
+const MODE_SECTOR_DEG = { ionian:0, dorian:1, phrygian:2, lydian:3, mixolydian:4, aeolian:5, locrian:6 };
+const MINOR_MODES     = new Set(['aeolian','dorian','phrygian','locrian']);
+const FLAT_KEYS       = new Set(['F','Bb','Eb','Ab','Db','Gb','Cb']);
+const IONIAN_STEPS    = [0,2,4,5,7,9,11];
+
 const MODE_FRIENDLY = {
   en: {ionian:['Major','bright, stable'],aeolian:['Minor','emotional, natural'],dorian:['Dorian','minor but soulful'],mixolydian:['Mixolydian','major but bluesy'],lydian:['Lydian','floating / dreamy'],phrygian:['Phrygian','dark / Spanish'],locrian:['Locrian','unstable / tense']},
   es: {ionian:['Mayor','brillante, estable'],aeolian:['Menor','emocional, natural'],dorian:['Dórico','menor con lift soul'],mixolydian:['Mixolidio','mayor con color blues'],lydian:['Lidio','flotante / dreamy'],phrygian:['Frigio','oscuro / español'],locrian:['Locrio','inestable / tenso']},

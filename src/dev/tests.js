@@ -249,11 +249,25 @@
     })();
 
     // Wheel anchor follows the clicked SECTOR in minor view (no jump)
-    withState({ key:'Dm', mode:'aeolian', wheelView:'minor' }, () => {
+    withState({ key:'D', mode:'aeolian', wheelView:'minor' }, () => {
       assert('Minor view: wheel anchors on the relative-major sector', wheelKey() === 'F', { st_key: st.key, wheelKey: wheelKey() });
     });
     withState({ key:'C', mode:'ionian', wheelView:'major' }, () => {
       assert('Major view: wheel anchors on the key itself', wheelKey() === 'C');
+    });
+
+    // ── Unified key/mode model (V4.3) ──
+    assert('modeIsMinor classifies minor modes', modeIsMinor('aeolian') && modeIsMinor('dorian') && !modeIsMinor('ionian') && !modeIsMinor('lydian'));
+    assert('parentMajor of A aeolian is C', parentMajor('A', 'aeolian') === 'C');
+    assert('parentMajor of D dorian is C',  parentMajor('D', 'dorian')  === 'C');
+    assert('parentMajor of E phrygian is C', parentMajor('E', 'phrygian') === 'C');
+    assert('tonic of C-sector aeolian is A', tonicForSectorMode('C', 'aeolian') === 'A');
+    assert('tonic of F-sector aeolian is D', tonicForSectorMode('F', 'aeolian') === 'D');
+    assert('tonic of C-sector ionian is C',  tonicForSectorMode('C', 'ionian')  === 'C');
+    // Relative toggle keeps the sector + key signature stable
+    withState({ key:'C', mode:'ionian' }, () => {
+      applyKeyMode(tonicForSectorMode(parentMajor(st.key, st.mode), 'aeolian'), 'aeolian');
+      assert('Toggle Minor from C major → A aeolian, same sector', st.key === 'A' && st.mode === 'aeolian' && wheelKey() === 'C');
     });
 
     // ── Audio engine (V4.1) ──

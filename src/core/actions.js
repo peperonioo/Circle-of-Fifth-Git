@@ -6,27 +6,39 @@ const ActionDispatcher = {
   dispatch(type, payload = {}) {
     try {
       switch (type) {
-        case 'SET_KEY':
-          st.key = payload.key;
-          normalizeKeyState();
+        case 'SET_KEY': {
+          // payload.key is the clicked SECTOR (a parent-major key). Keep the
+          // current mode and move the tonic to that sector.
+          let sector = payload.key;
+          if (!MAJOR_ROOTS.has(sector)) sector = MINOR_ROOT_TO_MAJOR[sector] || wheelKey();
+          applyKeyMode(tonicForSectorMode(sector, st.mode), st.mode);
           curDeg = -1;
           closePopup(false);
           RenderEngine.full();
           if (typeof WheelFX === 'object') WheelFX.select();
           break;
-        case 'SET_MODE':
-          st.mode = payload.mode;
+        }
+        case 'SET_MODE': {
+          // Dropdown overrides the mode while keeping the current sector /
+          // signature; the tonic re-roots to the chosen mode.
+          const sector = parentMajor(st.key, st.mode);
+          applyKeyMode(tonicForSectorMode(sector, payload.mode), payload.mode);
           curDeg = -1;
           closePopup(false);
           RenderEngine.full();
           break;
-        case 'SET_WHEEL_VIEW':
-          st.wheelView = payload.view === 'minor' ? 'minor' : 'major';
+        }
+        case 'SET_WHEEL_VIEW': {
+          // The Major/Minor toggle is the relative switch: Major = ionian,
+          // Minor = aeolian, same sector (so the wheel never jumps).
+          const targetMode = payload.view === 'minor' ? 'aeolian' : 'ionian';
+          const sector = parentMajor(st.key, st.mode);
+          applyKeyMode(tonicForSectorMode(sector, targetMode), targetMode);
           curDeg = -1;
-          normalizeKeyState();
           closePopup(false);
           RenderEngine.full();
           break;
+        }
         case 'SELECT_DEGREE': {
           const idx = payload.idx;
           if (idx < 0 || idx > 6) break;

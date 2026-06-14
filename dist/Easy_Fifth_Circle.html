@@ -1580,7 +1580,7 @@ body.light .metro-step { border-color:rgba(0,0,0,.12); background:rgba(0,0,0,.04
 // ── CONSTANTS ─────────────────────────────────────────
 // Pure data. No DOM access. No state mutation.
 
-const APP_VERSION = 'V4.2';
+const APP_VERSION = 'V4.3';
 const STORAGE_KEY = 'easy-fifth-circle:v1';
 
 const NOTES  = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
@@ -1618,6 +1618,19 @@ const MAJOR_ROOTS = new Set(FIFTHS);
 const MINOR_ROOTS = new Set(Object.keys(MINOR_ROOT_TO_MAJOR));
 
 const MODE_ORDER   = ['ionian','aeolian','dorian','mixolydian','lydian','phrygian','locrian'];
+
+// ── Unified key/mode model (V4.3) ─────────────────────
+// A "sector" on the circle = a parent-major key signature. Every mode lives in
+// some sector; its tonic is one of the 7 notes of that sector's major scale.
+// These tables let us derive the sector from a (tonic, mode) pair and vice
+// versa, so the wheel, centre, scale, accidentals and degrees share one source
+// of truth and can never disagree.
+const MODE_FIFTHS_OFF = { ionian:0, lydian:1, mixolydian:-1, dorian:-2, aeolian:-3, phrygian:-4, locrian:-5 };
+const MODE_SECTOR_DEG = { ionian:0, dorian:1, phrygian:2, lydian:3, mixolydian:4, aeolian:5, locrian:6 };
+const MINOR_MODES     = new Set(['aeolian','dorian','phrygian','locrian']);
+const FLAT_KEYS       = new Set(['F','Bb','Eb','Ab','Db','Gb','Cb']);
+const IONIAN_STEPS    = [0,2,4,5,7,9,11];
+
 const MODE_FRIENDLY = {
   en: {ionian:['Major','bright, stable'],aeolian:['Minor','emotional, natural'],dorian:['Dorian','minor but soulful'],mixolydian:['Mixolydian','major but bluesy'],lydian:['Lydian','floating / dreamy'],phrygian:['Phrygian','dark / Spanish'],locrian:['Locrian','unstable / tense']},
   es: {ionian:['Mayor','brillante, estable'],aeolian:['Menor','emocional, natural'],dorian:['Dórico','menor con lift soul'],mixolydian:['Mixolidio','mayor con color blues'],lydian:['Lidio','flotante / dreamy'],phrygian:['Frigio','oscuro / español'],locrian:['Locrio','inestable / tenso']},
@@ -1930,11 +1943,13 @@ const gm  = ()  => MODES.find(m => m.id === st.mode);
 const gs  = ()  => { const r = ni(st.key); return gm().intervals.map(i => dn(na(r + i))); };
 const gr  = ()  => { const r = ni(st.key); return gm().intervals.map(i => na(r + i)); };
 const gc  = ()  => { const s = gs(), m = gm(); return s.map((n, i) => ({ degree: m.degrees[i], note: n, quality: m.qualities[i], chord: n + (m.qualities[i] === 'Min' ? 'm' : m.qualities[i] === 'Dim' ? '°' : '') })); };
+// The relative key shown on the side card: relative MAJOR when we're in a minor
+// mode, relative MINOR when we're in a major mode — derived from the sector.
 const grel = () => {
-  const r = ni(st.key);
-  if (st.mode === 'ionian')  return dn(na(r + 9)) + ' ' + t('common.minor');
-  if (st.mode === 'aeolian') return dn(na(r + 3)) + ' ' + t('common.major');
-  return dn(na(r)) + ' ' + gm().name;
+  const sector = parentMajor(st.key, st.mode);
+  if (modeIsMinor(st.mode)) return sector + ' ' + t('common.major');
+  const relRoot = stripMinorSuffix(relativeMinor(sector) || '');
+  return (relRoot ? spellForSector(ni(relRoot), sector) : '') + ' ' + t('common.minor');
 };
 
 function clamp(v, min = 0, max = 100) { return Math.max(min, Math.min(max, Math.round(v))); }
@@ -1943,46 +1958,62 @@ function modeFriendly(id) {
   return (MODE_FRIENDLY[st.lang || 'en'] || MODE_FRIENDLY.en)[id] || [id, ''];
 }
 
+// ── Unified key/mode model (V4.3) ─────────────────────
+// Single source of truth: st.key = the TONIC note, st.mode = the mode. The
+// "sector" (parent-major key signature) is derived, and st.wheelView is just a
+// mirror of whether the mode is minor — never an independent control.
+
+const modeIsMinor   = mode => MINOR_MODES.has(mode);
+const fifthsIndexOf = note => ((ni(note) * 7) % 12 + 12) % 12;
+
+// The parent-major key (FIFTHS sector) for a given tonic + mode.
+function parentMajor(tonic, mode) {
+  const idx = ((fifthsIndexOf(tonic) + (MODE_FIFTHS_OFF[mode] ?? 0)) % 12 + 12) % 12;
+  return FIFTHS[idx];
+}
+
+// Spell a pitch class to match the sector's signature (flats in flat keys).
+function spellForSector(pitch, sectorMajor) {
+  const sharp = na(((pitch % 12) + 12) % 12);
+  return FLAT_KEYS.has(sectorMajor) ? (FM[sharp] || sharp) : sharp;
+}
+
+// The tonic note when the active sector is `sectorMajor` and the mode is `mode`.
+// (Ionian keeps the sector's own nicely-spelled name.)
+function tonicForSectorMode(sectorMajor, mode) {
+  const deg = MODE_SECTOR_DEG[mode] ?? 0;
+  if (deg === 0) return sectorMajor;
+  return spellForSector(ni(sectorMajor) + IONIAN_STEPS[deg], sectorMajor);
+}
+
+// The ONE place key/mode are mutated together, keeping wheelView in sync.
+function applyKeyMode(tonic, mode) {
+  st.key = tonic;
+  st.mode = mode;
+  st.wheelView = modeIsMinor(mode) ? 'minor' : 'major';
+}
+
 function normalizeKeyState() {
   if (!st.key) st.key = 'C';
-  const isMinorRoot = MINOR_ROOTS.has(st.key);
-  const isMajorRoot = MAJOR_ROOTS.has(stripMinorSuffix(st.key));
-  if (!isMajorRoot && !isMinorRoot) st.key = 'C';
-  if (st.wheelView === 'minor' && !isMinorRoot) {
-    const rel = REL[stripMinorSuffix(st.key)];
-    if (rel) st.key = rel;
+  // Legacy state migration: a minor-suffixed key ('Am') becomes its plain tonic
+  // ('A') paired with a minor mode.
+  if (typeof st.key === 'string' && /m$/.test(st.key) && MINOR_ROOTS.has(st.key)) {
+    st.key = stripMinorSuffix(st.key);
+    if (!modeIsMinor(st.mode)) st.mode = 'aeolian';
   }
-  if (st.wheelView === 'major' && isMinorRoot) {
-    const maj = MINOR_ROOT_TO_MAJOR[st.key];
-    if (maj) st.key = maj;
-  }
+  if (!(NOTES.includes(st.key) || (st.key in ENH))) st.key = 'C';
+  if (!gm()) st.mode = 'ionian';
+  st.wheelView = modeIsMinor(st.mode) ? 'minor' : 'major';
 }
 
-function anchorKey() {
-  if (st.wheelView === 'minor') return stripMinorSuffix(st.key);
-  return stripMinorSuffix(st.key);
-}
+// The FIFTHS (major) key whose SECTOR the current selection occupies — what the
+// wheel rotates/highlights by. Stable when toggling major↔relative-minor.
+function wheelKey()  { return parentMajor(st.key, st.mode); }
+function anchorKey() { return parentMajor(st.key, st.mode); }
 
-// The FIFTHS (major) key whose SECTOR the current selection occupies. In minor
-// view a minor key (e.g. Am) is shown on the sector of its relative major (C),
-// so the wheel must rotate/highlight by that sector — not by the minor root's
-// own major position, which sent the wheel to the wrong sector.
-function wheelKey() {
-  if (st.wheelView === 'minor') {
-    return MINOR_ROOT_TO_MAJOR[st.key]
-        || MINOR_ROOT_TO_MAJOR[stripMinorSuffix(st.key) + 'm']
-        || stripMinorSuffix(st.key);
-  }
-  return stripMinorSuffix(st.key);
-}
-
+// The tonic, spelled for its sector — the big centre label.
 function displayKeyLabel() {
-  if (st.wheelView === 'minor') {
-    const root = stripMinorSuffix(st.key);
-    const rel = MINOR_ROOT_TO_MAJOR[st.key] || MINOR_ROOT_TO_MAJOR[root + 'm'];
-    return rel ? dn(rel) : dn(root);
-  }
-  return dn(stripMinorSuffix(st.key));
+  return spellForSector(ni(st.key), parentMajor(st.key, st.mode));
 }
 
 function metricClass(value) {
@@ -4605,27 +4636,39 @@ const ActionDispatcher = {
   dispatch(type, payload = {}) {
     try {
       switch (type) {
-        case 'SET_KEY':
-          st.key = payload.key;
-          normalizeKeyState();
+        case 'SET_KEY': {
+          // payload.key is the clicked SECTOR (a parent-major key). Keep the
+          // current mode and move the tonic to that sector.
+          let sector = payload.key;
+          if (!MAJOR_ROOTS.has(sector)) sector = MINOR_ROOT_TO_MAJOR[sector] || wheelKey();
+          applyKeyMode(tonicForSectorMode(sector, st.mode), st.mode);
           curDeg = -1;
           closePopup(false);
           RenderEngine.full();
           if (typeof WheelFX === 'object') WheelFX.select();
           break;
-        case 'SET_MODE':
-          st.mode = payload.mode;
+        }
+        case 'SET_MODE': {
+          // Dropdown overrides the mode while keeping the current sector /
+          // signature; the tonic re-roots to the chosen mode.
+          const sector = parentMajor(st.key, st.mode);
+          applyKeyMode(tonicForSectorMode(sector, payload.mode), payload.mode);
           curDeg = -1;
           closePopup(false);
           RenderEngine.full();
           break;
-        case 'SET_WHEEL_VIEW':
-          st.wheelView = payload.view === 'minor' ? 'minor' : 'major';
+        }
+        case 'SET_WHEEL_VIEW': {
+          // The Major/Minor toggle is the relative switch: Major = ionian,
+          // Minor = aeolian, same sector (so the wheel never jumps).
+          const targetMode = payload.view === 'minor' ? 'aeolian' : 'ionian';
+          const sector = parentMajor(st.key, st.mode);
+          applyKeyMode(tonicForSectorMode(sector, targetMode), targetMode);
           curDeg = -1;
-          normalizeKeyState();
           closePopup(false);
           RenderEngine.full();
           break;
+        }
         case 'SELECT_DEGREE': {
           const idx = payload.idx;
           if (idx < 0 || idx > 6) break;
@@ -5160,11 +5203,25 @@ function toggleTheme() {
     })();
 
     // Wheel anchor follows the clicked SECTOR in minor view (no jump)
-    withState({ key:'Dm', mode:'aeolian', wheelView:'minor' }, () => {
+    withState({ key:'D', mode:'aeolian', wheelView:'minor' }, () => {
       assert('Minor view: wheel anchors on the relative-major sector', wheelKey() === 'F', { st_key: st.key, wheelKey: wheelKey() });
     });
     withState({ key:'C', mode:'ionian', wheelView:'major' }, () => {
       assert('Major view: wheel anchors on the key itself', wheelKey() === 'C');
+    });
+
+    // ── Unified key/mode model (V4.3) ──
+    assert('modeIsMinor classifies minor modes', modeIsMinor('aeolian') && modeIsMinor('dorian') && !modeIsMinor('ionian') && !modeIsMinor('lydian'));
+    assert('parentMajor of A aeolian is C', parentMajor('A', 'aeolian') === 'C');
+    assert('parentMajor of D dorian is C',  parentMajor('D', 'dorian')  === 'C');
+    assert('parentMajor of E phrygian is C', parentMajor('E', 'phrygian') === 'C');
+    assert('tonic of C-sector aeolian is A', tonicForSectorMode('C', 'aeolian') === 'A');
+    assert('tonic of F-sector aeolian is D', tonicForSectorMode('F', 'aeolian') === 'D');
+    assert('tonic of C-sector ionian is C',  tonicForSectorMode('C', 'ionian')  === 'C');
+    // Relative toggle keeps the sector + key signature stable
+    withState({ key:'C', mode:'ionian' }, () => {
+      applyKeyMode(tonicForSectorMode(parentMajor(st.key, st.mode), 'aeolian'), 'aeolian');
+      assert('Toggle Minor from C major → A aeolian, same sector', st.key === 'A' && st.mode === 'aeolian' && wheelKey() === 'C');
     });
 
     // ── Audio engine (V4.1) ──

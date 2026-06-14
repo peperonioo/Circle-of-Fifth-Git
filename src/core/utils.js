@@ -11,11 +11,13 @@ const gm  = ()  => MODES.find(m => m.id === st.mode);
 const gs  = ()  => { const r = ni(st.key); return gm().intervals.map(i => dn(na(r + i))); };
 const gr  = ()  => { const r = ni(st.key); return gm().intervals.map(i => na(r + i)); };
 const gc  = ()  => { const s = gs(), m = gm(); return s.map((n, i) => ({ degree: m.degrees[i], note: n, quality: m.qualities[i], chord: n + (m.qualities[i] === 'Min' ? 'm' : m.qualities[i] === 'Dim' ? '°' : '') })); };
+// The relative key shown on the side card: relative MAJOR when we're in a minor
+// mode, relative MINOR when we're in a major mode — derived from the sector.
 const grel = () => {
-  const r = ni(st.key);
-  if (st.mode === 'ionian')  return dn(na(r + 9)) + ' ' + t('common.minor');
-  if (st.mode === 'aeolian') return dn(na(r + 3)) + ' ' + t('common.major');
-  return dn(na(r)) + ' ' + gm().name;
+  const sector = parentMajor(st.key, st.mode);
+  if (modeIsMinor(st.mode)) return sector + ' ' + t('common.major');
+  const relRoot = stripMinorSuffix(relativeMinor(sector) || '');
+  return (relRoot ? spellForSector(ni(relRoot), sector) : '') + ' ' + t('common.minor');
 };
 
 function clamp(v, min = 0, max = 100) { return Math.max(min, Math.min(max, Math.round(v))); }
@@ -24,46 +26,62 @@ function modeFriendly(id) {
   return (MODE_FRIENDLY[st.lang || 'en'] || MODE_FRIENDLY.en)[id] || [id, ''];
 }
 
+// ── Unified key/mode model (V4.3) ─────────────────────
+// Single source of truth: st.key = the TONIC note, st.mode = the mode. The
+// "sector" (parent-major key signature) is derived, and st.wheelView is just a
+// mirror of whether the mode is minor — never an independent control.
+
+const modeIsMinor   = mode => MINOR_MODES.has(mode);
+const fifthsIndexOf = note => ((ni(note) * 7) % 12 + 12) % 12;
+
+// The parent-major key (FIFTHS sector) for a given tonic + mode.
+function parentMajor(tonic, mode) {
+  const idx = ((fifthsIndexOf(tonic) + (MODE_FIFTHS_OFF[mode] ?? 0)) % 12 + 12) % 12;
+  return FIFTHS[idx];
+}
+
+// Spell a pitch class to match the sector's signature (flats in flat keys).
+function spellForSector(pitch, sectorMajor) {
+  const sharp = na(((pitch % 12) + 12) % 12);
+  return FLAT_KEYS.has(sectorMajor) ? (FM[sharp] || sharp) : sharp;
+}
+
+// The tonic note when the active sector is `sectorMajor` and the mode is `mode`.
+// (Ionian keeps the sector's own nicely-spelled name.)
+function tonicForSectorMode(sectorMajor, mode) {
+  const deg = MODE_SECTOR_DEG[mode] ?? 0;
+  if (deg === 0) return sectorMajor;
+  return spellForSector(ni(sectorMajor) + IONIAN_STEPS[deg], sectorMajor);
+}
+
+// The ONE place key/mode are mutated together, keeping wheelView in sync.
+function applyKeyMode(tonic, mode) {
+  st.key = tonic;
+  st.mode = mode;
+  st.wheelView = modeIsMinor(mode) ? 'minor' : 'major';
+}
+
 function normalizeKeyState() {
   if (!st.key) st.key = 'C';
-  const isMinorRoot = MINOR_ROOTS.has(st.key);
-  const isMajorRoot = MAJOR_ROOTS.has(stripMinorSuffix(st.key));
-  if (!isMajorRoot && !isMinorRoot) st.key = 'C';
-  if (st.wheelView === 'minor' && !isMinorRoot) {
-    const rel = REL[stripMinorSuffix(st.key)];
-    if (rel) st.key = rel;
+  // Legacy state migration: a minor-suffixed key ('Am') becomes its plain tonic
+  // ('A') paired with a minor mode.
+  if (typeof st.key === 'string' && /m$/.test(st.key) && MINOR_ROOTS.has(st.key)) {
+    st.key = stripMinorSuffix(st.key);
+    if (!modeIsMinor(st.mode)) st.mode = 'aeolian';
   }
-  if (st.wheelView === 'major' && isMinorRoot) {
-    const maj = MINOR_ROOT_TO_MAJOR[st.key];
-    if (maj) st.key = maj;
-  }
+  if (!(NOTES.includes(st.key) || (st.key in ENH))) st.key = 'C';
+  if (!gm()) st.mode = 'ionian';
+  st.wheelView = modeIsMinor(st.mode) ? 'minor' : 'major';
 }
 
-function anchorKey() {
-  if (st.wheelView === 'minor') return stripMinorSuffix(st.key);
-  return stripMinorSuffix(st.key);
-}
+// The FIFTHS (major) key whose SECTOR the current selection occupies — what the
+// wheel rotates/highlights by. Stable when toggling major↔relative-minor.
+function wheelKey()  { return parentMajor(st.key, st.mode); }
+function anchorKey() { return parentMajor(st.key, st.mode); }
 
-// The FIFTHS (major) key whose SECTOR the current selection occupies. In minor
-// view a minor key (e.g. Am) is shown on the sector of its relative major (C),
-// so the wheel must rotate/highlight by that sector — not by the minor root's
-// own major position, which sent the wheel to the wrong sector.
-function wheelKey() {
-  if (st.wheelView === 'minor') {
-    return MINOR_ROOT_TO_MAJOR[st.key]
-        || MINOR_ROOT_TO_MAJOR[stripMinorSuffix(st.key) + 'm']
-        || stripMinorSuffix(st.key);
-  }
-  return stripMinorSuffix(st.key);
-}
-
+// The tonic, spelled for its sector — the big centre label.
 function displayKeyLabel() {
-  if (st.wheelView === 'minor') {
-    const root = stripMinorSuffix(st.key);
-    const rel = MINOR_ROOT_TO_MAJOR[st.key] || MINOR_ROOT_TO_MAJOR[root + 'm'];
-    return rel ? dn(rel) : dn(root);
-  }
-  return dn(stripMinorSuffix(st.key));
+  return spellForSector(ni(st.key), parentMajor(st.key, st.mode));
 }
 
 function metricClass(value) {
