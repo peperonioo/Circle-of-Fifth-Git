@@ -2462,6 +2462,50 @@ const GRAVITY_ARCHETYPES = [
   {name:'Edge',       tension:92, stability:24, brightness:44, darkness:62, movement:82, resolution:18, surprise:72},
 ];
 
+// ── Genre harmony profiles (V4.3) ─────────────────────
+// Each genre nudges which scale degrees and cadence styles it favours, so the
+// same key feels different in House vs Neo-Soul. `cadence` weights strong
+// resolutions; `loop` weights staying in a vamp; `prefer` lists signature
+// degrees. A neutral default keeps not-yet-tuned genres sane.
+const GENRE_HARMONY = {
+  house:   { prefer:[0,3,5,6], cadence:0.55, loop:1.0, note:'loop-friendly for house' },
+  neosoul: { prefer:[1,2,4,5], cadence:0.9,  loop:0.7, note:'extended ii–V colour for neo-soul' },
+  afrobeat:{ prefer:[0,3,4,5], cadence:0.7,  loop:0.95,note:'bright, cyclical groove' },
+  jazz:    { prefer:[1,4,5,2], cadence:1.0,  loop:0.5, note:'ii–V–I motion for jazz' },
+  techno:  { prefer:[0,5,6],   cadence:0.4,  loop:1.0, note:'hypnotic, few cadences' },
+  _default:{ prefer:[0,3,4],   cadence:0.8,  loop:0.8, note:'' },
+};
+function genreProfile() { return GENRE_HARMONY[curGenre] || GENRE_HARMONY._default; }
+
+// How well a target degree fits the current genre's signature palette.
+function genreFit(toIdx) {
+  const g = genreProfile();
+  let s = 0;
+  // Kept small so it colours the ranking without overriding a primary cadence
+  // (V→I, ii→V) — those carry bigger validation bonuses.
+  if (g.prefer.includes(toIdx)) s += 8;
+  if (toIdx === 0)              s += (g.cadence - 0.7) * 10;   // genres differ on landing home
+  return Math.round(s);
+}
+
+// One extra step of foresight: after landing on `toIdx`, how strong are the best
+// continuations available? Rewards moves that set up a strong NEXT move (e.g.
+// ii because it opens V→I). Discounted by the caller so it only nudges ranking.
+function lookaheadScore(toIdx) {
+  const cadenceW = genreProfile().cadence;
+  let best = 0;
+  for (let nx = 0; nx < 7; nx++) {
+    if (nx === toIdx) continue;
+    let v = transitionProfile(toIdx, nx).score;
+    if (nx === 0)                    v += 8 * (0.5 + cadenceW);  // can get home
+    if (toIdx === 1 && nx === 4)     v += 14;                    // ii sets up V
+    if (toIdx === 4 && nx === 0)     v += 16;                    // V sets up I
+    if (toIdx === 3 && nx === 4)     v += 8;                     // IV sets up V
+    best = Math.max(best, v);
+  }
+  return best;   // ~50–120
+}
+
 function degreeWeight(idx) {
   const role  = ['Resolution / home','Connector','Colour','Lift','Tension','Emotion','Instability'][idx] || 'Colour';
   const score = [95,62,48,70,90,66,84][idx] || 60;
@@ -2546,8 +2590,8 @@ function validationScore(from, to, tr) {
   if (mode === 'dorian'     && to === 3) { bonus += 11; reasons.push('Dorian major-IV colour'); }
   if (mode === 'mixolydian' && to === 6) { bonus += 11; reasons.push('Mixolydian bVII signature'); }
   if (mode === 'lydian'     && to === 1) { bonus += 11; reasons.push('Lydian raised-II colour'); }
-  if (curGenre === 'house'   && [0,3,6].includes(to)) { bonus += 4; reasons.push('loop-friendly for house'); }
-  if (curGenre === 'neosoul' && [1,4,5].includes(to)) { bonus += 5; reasons.push('works well with extended voicings'); }
+  const gp = genreProfile();
+  if (gp.prefer.includes(to) && gp.note) { bonus += 5; reasons.push(gp.note); }
   return { bonus, reason: reasons[0] || tr.route };
 }
 
@@ -2578,6 +2622,9 @@ const HarmonyEngine = {
   transition:  transitionProfile,
   moodFit,
   validationScore,
+  genreFit,
+  lookahead: lookaheadScore,
+  genreProfile,
 };
 
 
@@ -2720,20 +2767,33 @@ const SuggestionEngine = {
       const transition = transitionProfile(fromIdx, to);
       const validation = validationScore(fromIdx, to, transition);
       const m          = harmonyMetrics(to);
-      let   fit        = clamp(Math.round(moodFit(to, fromIdx) + (validation.bonus || 0)), 8, 100);
+
+      // Accumulate a RAW score (may exceed 100). We sort by raw so a strong
+      // cadence still wins even when several options saturate the 0–100 display
+      // range; the shown `fit` is the clamped value.
+      let raw = moodFit(to, fromIdx) + (validation.bonus || 0);
 
       // Modal signature boost so modes sound modal, not major-by-default.
-      if ((MODAL_PREFER[st.mode] || []).includes(to)) fit = clamp(fit + 16, 8, 100);
+      if ((MODAL_PREFER[st.mode] || []).includes(to)) raw += 16;
+
+      // Genre context: favour each genre's signature palette + cadence style.
+      raw += genreFit(to);
+
+      // Look-ahead (2-step): reward moves that OPEN a strong continuation, so the
+      // engine prefers e.g. ii (sets up V→I) over a dead-end colour. Reward-only
+      // (never penalises a terminal/home chord) so it can't bury a primary cadence.
+      raw += Math.max(0, lookaheadScore(to) - 92) * 0.18;
 
       // Context-aware adjustments (the engine's "memory"):
-      if (ctx.expect === to)                       fit = clamp(fit + 16, 8, 100); // cadence pull
-      if (ctx.isVamp && to === ctx.last)           fit = clamp(fit + 6,  8, 100); // staying is a valid loop
-      if (ctx.isVamp && [3,4,5].includes(to))      fit = clamp(fit + 4,  8, 100); // but offer a clean exit
-      if (ctx.length <= 1 && fromIdx === 0 && to === 0) fit = clamp(fit - 12, 8, 100); // don't open by sitting on I
+      if (ctx.expect === to)                       raw += 16; // cadence pull
+      if (ctx.isVamp && to === ctx.last)           raw += 6;  // staying is a valid loop
+      if (ctx.isVamp && [3,4,5].includes(to))      raw += 4;  // but offer a clean exit
+      if (ctx.length <= 1 && fromIdx === 0 && to === 0) raw -= 12; // don't open by sitting on I
 
+      const fit    = clamp(Math.round(raw), 8, 100);
       const reason = suggestionReason(fromIdx, to, ctx, st.mode);
-      return { ...base, to, chord: c, transition, validation, m, fit, reason };
-    }).sort((a, b) => b.fit - a.fit);
+      return { ...base, to, chord: c, transition, validation, m, fit, _raw: raw, reason };
+    }).sort((a, b) => b._raw - a._raw);
   },
 };
 
@@ -5113,6 +5173,21 @@ function toggleTheme() {
     // Modal behaviour: Mixolydian should favour the ♭VII signature.
     withState({ key:'C', mode:'mixolydian', wheelView:'major', mood:'balanced', history:[] }, () => {
       assert('Mixolydian favours ♭VII from I',  safe(() => sugg(0).slice(0,2).some(s => s.to === 6), false), sugg(0).map(s => [s.chord.chord, s.fit]));
+    });
+
+    // ── Genre context + 2-step look-ahead (V4.3) ──
+    withState({ key:'C', mode:'ionian', wheelView:'major', mood:'balanced', history:[] }, () => {
+      assert('Look-ahead rates ii (opens V→I) above iii',
+        safe(() => HarmonyEngine.lookahead(1) > HarmonyEngine.lookahead(2), false),
+        { ii: safe(() => HarmonyEngine.lookahead(1), 0), iii: safe(() => HarmonyEngine.lookahead(2), 0) });
+      assert('Look-ahead rates V (opens →I) above vi',
+        safe(() => HarmonyEngine.lookahead(4) > HarmonyEngine.lookahead(5), false));
+      const savedGenre = curGenre;
+      try {
+        curGenre = 'jazz';  const jazzII  = safe(() => HarmonyEngine.genreFit(1), 0);
+        curGenre = 'house'; const houseII = safe(() => HarmonyEngine.genreFit(1), 0);
+        assert('Genre changes degree fit (jazz favours ii over house)', jazzII > houseII, { jazzII, houseII });
+      } finally { curGenre = savedGenre; }
     });
 
     // ── Progression builder ops (Audit §8.5 / V3.22) ──

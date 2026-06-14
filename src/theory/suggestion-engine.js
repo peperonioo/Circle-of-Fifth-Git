@@ -136,19 +136,32 @@ const SuggestionEngine = {
       const transition = transitionProfile(fromIdx, to);
       const validation = validationScore(fromIdx, to, transition);
       const m          = harmonyMetrics(to);
-      let   fit        = clamp(Math.round(moodFit(to, fromIdx) + (validation.bonus || 0)), 8, 100);
+
+      // Accumulate a RAW score (may exceed 100). We sort by raw so a strong
+      // cadence still wins even when several options saturate the 0–100 display
+      // range; the shown `fit` is the clamped value.
+      let raw = moodFit(to, fromIdx) + (validation.bonus || 0);
 
       // Modal signature boost so modes sound modal, not major-by-default.
-      if ((MODAL_PREFER[st.mode] || []).includes(to)) fit = clamp(fit + 16, 8, 100);
+      if ((MODAL_PREFER[st.mode] || []).includes(to)) raw += 16;
+
+      // Genre context: favour each genre's signature palette + cadence style.
+      raw += genreFit(to);
+
+      // Look-ahead (2-step): reward moves that OPEN a strong continuation, so the
+      // engine prefers e.g. ii (sets up V→I) over a dead-end colour. Reward-only
+      // (never penalises a terminal/home chord) so it can't bury a primary cadence.
+      raw += Math.max(0, lookaheadScore(to) - 92) * 0.18;
 
       // Context-aware adjustments (the engine's "memory"):
-      if (ctx.expect === to)                       fit = clamp(fit + 16, 8, 100); // cadence pull
-      if (ctx.isVamp && to === ctx.last)           fit = clamp(fit + 6,  8, 100); // staying is a valid loop
-      if (ctx.isVamp && [3,4,5].includes(to))      fit = clamp(fit + 4,  8, 100); // but offer a clean exit
-      if (ctx.length <= 1 && fromIdx === 0 && to === 0) fit = clamp(fit - 12, 8, 100); // don't open by sitting on I
+      if (ctx.expect === to)                       raw += 16; // cadence pull
+      if (ctx.isVamp && to === ctx.last)           raw += 6;  // staying is a valid loop
+      if (ctx.isVamp && [3,4,5].includes(to))      raw += 4;  // but offer a clean exit
+      if (ctx.length <= 1 && fromIdx === 0 && to === 0) raw -= 12; // don't open by sitting on I
 
+      const fit    = clamp(Math.round(raw), 8, 100);
       const reason = suggestionReason(fromIdx, to, ctx, st.mode);
-      return { ...base, to, chord: c, transition, validation, m, fit, reason };
-    }).sort((a, b) => b.fit - a.fit);
+      return { ...base, to, chord: c, transition, validation, m, fit, _raw: raw, reason };
+    }).sort((a, b) => b._raw - a._raw);
   },
 };

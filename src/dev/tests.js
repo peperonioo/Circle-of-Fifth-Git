@@ -161,6 +161,21 @@
       assert('Mixolydian favours ♭VII from I',  safe(() => sugg(0).slice(0,2).some(s => s.to === 6), false), sugg(0).map(s => [s.chord.chord, s.fit]));
     });
 
+    // ── Genre context + 2-step look-ahead (V4.3) ──
+    withState({ key:'C', mode:'ionian', wheelView:'major', mood:'balanced', history:[] }, () => {
+      assert('Look-ahead rates ii (opens V→I) above iii',
+        safe(() => HarmonyEngine.lookahead(1) > HarmonyEngine.lookahead(2), false),
+        { ii: safe(() => HarmonyEngine.lookahead(1), 0), iii: safe(() => HarmonyEngine.lookahead(2), 0) });
+      assert('Look-ahead rates V (opens →I) above vi',
+        safe(() => HarmonyEngine.lookahead(4) > HarmonyEngine.lookahead(5), false));
+      const savedGenre = curGenre;
+      try {
+        curGenre = 'jazz';  const jazzII  = safe(() => HarmonyEngine.genreFit(1), 0);
+        curGenre = 'house'; const houseII = safe(() => HarmonyEngine.genreFit(1), 0);
+        assert('Genre changes degree fit (jazz favours ii over house)', jazzII > houseII, { jazzII, houseII });
+      } finally { curGenre = savedGenre; }
+    });
+
     // ── Progression builder ops (Audit §8.5 / V3.22) ──
     (function () {
       const savedHist = clone(st.history || []);

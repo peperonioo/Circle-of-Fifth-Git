@@ -22,6 +22,50 @@ const GRAVITY_ARCHETYPES = [
   {name:'Edge',       tension:92, stability:24, brightness:44, darkness:62, movement:82, resolution:18, surprise:72},
 ];
 
+// ── Genre harmony profiles (V4.3) ─────────────────────
+// Each genre nudges which scale degrees and cadence styles it favours, so the
+// same key feels different in House vs Neo-Soul. `cadence` weights strong
+// resolutions; `loop` weights staying in a vamp; `prefer` lists signature
+// degrees. A neutral default keeps not-yet-tuned genres sane.
+const GENRE_HARMONY = {
+  house:   { prefer:[0,3,5,6], cadence:0.55, loop:1.0, note:'loop-friendly for house' },
+  neosoul: { prefer:[1,2,4,5], cadence:0.9,  loop:0.7, note:'extended ii–V colour for neo-soul' },
+  afrobeat:{ prefer:[0,3,4,5], cadence:0.7,  loop:0.95,note:'bright, cyclical groove' },
+  jazz:    { prefer:[1,4,5,2], cadence:1.0,  loop:0.5, note:'ii–V–I motion for jazz' },
+  techno:  { prefer:[0,5,6],   cadence:0.4,  loop:1.0, note:'hypnotic, few cadences' },
+  _default:{ prefer:[0,3,4],   cadence:0.8,  loop:0.8, note:'' },
+};
+function genreProfile() { return GENRE_HARMONY[curGenre] || GENRE_HARMONY._default; }
+
+// How well a target degree fits the current genre's signature palette.
+function genreFit(toIdx) {
+  const g = genreProfile();
+  let s = 0;
+  // Kept small so it colours the ranking without overriding a primary cadence
+  // (V→I, ii→V) — those carry bigger validation bonuses.
+  if (g.prefer.includes(toIdx)) s += 8;
+  if (toIdx === 0)              s += (g.cadence - 0.7) * 10;   // genres differ on landing home
+  return Math.round(s);
+}
+
+// One extra step of foresight: after landing on `toIdx`, how strong are the best
+// continuations available? Rewards moves that set up a strong NEXT move (e.g.
+// ii because it opens V→I). Discounted by the caller so it only nudges ranking.
+function lookaheadScore(toIdx) {
+  const cadenceW = genreProfile().cadence;
+  let best = 0;
+  for (let nx = 0; nx < 7; nx++) {
+    if (nx === toIdx) continue;
+    let v = transitionProfile(toIdx, nx).score;
+    if (nx === 0)                    v += 8 * (0.5 + cadenceW);  // can get home
+    if (toIdx === 1 && nx === 4)     v += 14;                    // ii sets up V
+    if (toIdx === 4 && nx === 0)     v += 16;                    // V sets up I
+    if (toIdx === 3 && nx === 4)     v += 8;                     // IV sets up V
+    best = Math.max(best, v);
+  }
+  return best;   // ~50–120
+}
+
 function degreeWeight(idx) {
   const role  = ['Resolution / home','Connector','Colour','Lift','Tension','Emotion','Instability'][idx] || 'Colour';
   const score = [95,62,48,70,90,66,84][idx] || 60;
@@ -106,8 +150,8 @@ function validationScore(from, to, tr) {
   if (mode === 'dorian'     && to === 3) { bonus += 11; reasons.push('Dorian major-IV colour'); }
   if (mode === 'mixolydian' && to === 6) { bonus += 11; reasons.push('Mixolydian bVII signature'); }
   if (mode === 'lydian'     && to === 1) { bonus += 11; reasons.push('Lydian raised-II colour'); }
-  if (curGenre === 'house'   && [0,3,6].includes(to)) { bonus += 4; reasons.push('loop-friendly for house'); }
-  if (curGenre === 'neosoul' && [1,4,5].includes(to)) { bonus += 5; reasons.push('works well with extended voicings'); }
+  const gp = genreProfile();
+  if (gp.prefer.includes(to) && gp.note) { bonus += 5; reasons.push(gp.note); }
   return { bonus, reason: reasons[0] || tr.route };
 }
 
@@ -138,4 +182,7 @@ const HarmonyEngine = {
   transition:  transitionProfile,
   moodFit,
   validationScore,
+  genreFit,
+  lookahead: lookaheadScore,
+  genreProfile,
 };
