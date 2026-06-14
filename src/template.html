@@ -35,6 +35,37 @@
     </div>
   </header>
 
+  <!-- METRONOME — Dynamic-Island-style bubble -->
+  <div id="metronome">
+    <button class="metro-pill" onclick="Metronome.toggleOpen()" aria-label="Metronome">
+      <span class="metro-led"></span>
+      <span class="metro-bpm">100</span>
+      <span class="metro-unit">BPM</span>
+    </button>
+    <div class="metro-panel">
+      <div class="metro-head">
+        <span class="metro-title" data-i18n="metro.title">Metronome</span>
+        <button class="metro-x" onclick="Metronome.toggleOpen()" aria-label="Close">✕</button>
+      </div>
+      <div class="metro-dialwrap">
+        <svg id="metroDial" viewBox="0 0 180 180">
+          <path id="metroTrack" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="6" stroke-linecap="round"/>
+          <path id="metroArc" fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/>
+          <circle id="metroHandle" r="9" fill="#fff" stroke="var(--accent)" stroke-width="3"/>
+        </svg>
+        <div class="metro-center">
+          <div class="metro-bpm metro-bpm-big">100</div>
+          <div class="metro-unit">BPM</div>
+        </div>
+      </div>
+      <div class="metro-row">
+        <button class="metro-step" onclick="Metronome.setBpm((st.bpm||100)-1)" aria-label="Slower">−</button>
+        <button class="metro-play" id="metroPlay" onclick="Metronome.toggle()" aria-label="Start/stop">▶</button>
+        <button class="metro-step" onclick="Metronome.setBpm((st.bpm||100)+1)" aria-label="Faster">+</button>
+      </div>
+    </div>
+  </div>
+
   <!-- THEORY PANEL -->
   <div id="panel-theory">
     <!-- MAIN ROW -->

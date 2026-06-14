@@ -203,6 +203,7 @@ function toggleTheme() {
 
   initWheelRoulette();
   WheelDirectionGuide.addInfoButton();
+  if (typeof Metronome === 'object') Metronome.init();
 
   normalizeKeyState();
   RenderEngine.full();

@@ -73,6 +73,34 @@ const AudioEngine = {
     o.start(t0); o.stop(t0 + 0.08);
   },
 
+  // Classic analog-metronome click, schedulable at an exact time. Beat 1 is
+  // accented (brighter, louder) like a real mechanical metronome.
+  metroClick(accent, when) {
+    if (!this.resume()) return;
+    const ctx = this.ctx, t0 = when != null ? when : ctx.currentTime;
+    // mechanical click = short noise burst through a bandpass
+    const len = Math.floor(ctx.sampleRate * 0.03);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 8);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass';
+    bp.frequency.value = accent ? 2700 : 1950; bp.Q.value = 1.1;
+    const ng = ctx.createGain(); ng.gain.value = accent ? 0.5 : 0.34;
+    src.connect(bp); bp.connect(ng); ng.connect(this.master);
+    src.start(t0);
+    // a pitched body so it reads as a "tock"
+    const o = ctx.createOscillator(); o.type = 'sine';
+    o.frequency.value = accent ? 2050 : 1550;
+    const og = ctx.createGain(); o.connect(og); og.connect(this.master);
+    og.gain.setValueAtTime(0.0001, t0);
+    og.gain.exponentialRampToValueAtTime(accent ? 0.32 : 0.2, t0 + 0.001);
+    og.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.045);
+    o.start(t0); o.stop(t0 + 0.06);
+  },
+
+  now() { return this.ctx ? this.ctx.currentTime : 0; },
+
   // A soft pleasant shimmer when the wheel is flicked hard.
   swoosh(intensity = 1) {
     if (!this.resume()) return;

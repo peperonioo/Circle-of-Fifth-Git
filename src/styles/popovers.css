@@ -166,3 +166,49 @@
 }
 .info-help-anchor { position:relative }
 /* .info-row stacking merged into layout.css (single canonical rule) */
+
+/* ── Metronome — Dynamic-Island-style bubble (V4.2) ──── */
+#metronome {
+  position:fixed; top:calc(9px + var(--mobile-safe-top, 0px)); left:50%;
+  transform:translateX(-50%); z-index:var(--z-dropdown) !important;
+  display:flex; flex-direction:column; align-items:center;
+}
+.metro-pill {
+  display:flex; align-items:center; gap:7px; padding:6px 13px; border-radius:999px;
+  background:rgba(12,12,16,.8); backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.13);
+  color:#f0ede8; cursor:pointer; box-shadow:0 8px 24px rgba(0,0,0,.3);
+  font-family:'DM Mono',monospace; font-size:12.5px;
+  transition:opacity .22s var(--ease), transform .28s cubic-bezier(.34,1.4,.4,1);
+}
+body.light .metro-pill, body.light .metro-panel { background:rgba(255,255,255,.9); color:#1a1a1a; border-color:rgba(0,0,0,.1) }
+.metro-led { width:8px; height:8px; border-radius:50%; background:var(--muted); flex:0 0 auto }
+#metronome.running .metro-led { background:var(--accent) }
+.metro-pill .metro-bpm { font-weight:600 }
+.metro-unit { font-size:8.5px; opacity:.55; letter-spacing:.06em }
+
+.metro-panel {
+  position:absolute; top:0; left:50%; transform:translateX(-50%) scale(.82);
+  width:248px; padding:14px 16px 16px; border-radius:28px;
+  background:rgba(12,12,16,.92); backdrop-filter:blur(28px); border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 26px 70px rgba(0,0,0,.42); color:#f0ede8;
+  opacity:0; pointer-events:none; transform-origin:top center;
+  transition:opacity .3s var(--ease), transform .42s cubic-bezier(.34,1.45,.4,1);
+}
+#metronome.open .metro-pill   { opacity:0; transform:scale(.6); pointer-events:none }
+#metronome.open .metro-panel  { opacity:1; transform:translateX(-50%) scale(1); pointer-events:auto }
+.metro-head  { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px }
+.metro-title { font-family:'DM Mono',monospace; font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; opacity:.65 }
+.metro-x     { background:none; border:0; color:var(--muted); font-size:13px; cursor:pointer; padding:2px 4px }
+.metro-dialwrap { position:relative; width:180px; height:180px; margin:2px auto 8px; touch-action:none }
+#metroDial   { width:180px; height:180px; cursor:grab; display:block }
+#metroDial:active { cursor:grabbing }
+.metro-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none }
+.metro-bpm-big { font-family:'DM Serif Display',serif; font-size:42px; line-height:1 }
+.metro-center .metro-unit { font-size:10px; letter-spacing:.12em; opacity:.6; margin-top:3px }
+.metro-row   { display:flex; align-items:center; justify-content:center; gap:16px }
+.metro-step  { width:42px; height:42px; border-radius:50%; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:inherit; font-size:22px; cursor:pointer; line-height:1 }
+body.light .metro-step { border-color:rgba(0,0,0,.12); background:rgba(0,0,0,.04) }
+.metro-play  { width:56px; height:56px; border-radius:50%; border:0; background:var(--accent); color:#fff; font-size:20px; cursor:pointer; box-shadow:0 6px 18px rgba(232,68,26,.32) }
+#metronome.beat .metro-led, #metronome.beat .metro-play { animation:metroBeat .13s ease }
+@keyframes metroBeat { 0%{transform:scale(1)} 45%{transform:scale(1.16)} 100%{transform:scale(1)} }
+@media (prefers-reduced-motion: reduce) { #metronome.beat .metro-led, #metronome.beat .metro-play { animation:none } }

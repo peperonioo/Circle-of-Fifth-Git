@@ -15,6 +15,7 @@ const I18N_ES = {
   'builder.title':     'Constructor de progresión',
   'builder.subtitle':  'Toca un grado o burbuja para añadirlo a tu progresión.',
   'builder.play':      '▶ Reproducir',
+  'metro.title':       'Metrónomo',
   'builder.add':       'Añadir seleccionado',
   'builder.duplicate': 'Duplicar',
   'builder.copy':      'Copiar',

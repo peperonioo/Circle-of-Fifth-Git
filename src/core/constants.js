@@ -1,7 +1,7 @@
 // ── CONSTANTS ─────────────────────────────────────────
 // Pure data. No DOM access. No state mutation.
 
-const APP_VERSION = 'V4.1';
+const APP_VERSION = 'V4.2';
 const STORAGE_KEY = 'easy-fifth-circle:v1';
 
 const NOTES  = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
@@ -55,5 +55,5 @@ const PALETTES = [
 const defaultState = {
   key:'C', mode:'ionian', theme:'dark', genre:'house',
   palette:0, intensity:1, wheelView:'major', lang:'en',
-  history:[], mood:'balanced',
+  history:[], mood:'balanced', bpm:100,
 };

@@ -204,8 +204,8 @@ function playProgression() {
   // Nothing built yet → just sound the currently selected chord.
   if (!h.length) { AudioEngine.playChord(chordPitchesForDegree(curDeg >= 0 ? curDeg : 0)); return; }
 
-  const step = 0.62;
-  AudioEngine.playSequence(h.map(it => chordPitchesForItem(it)), step, 0.72);
+  const step = 60 / (st.bpm || 100);     // one chord per beat, synced to the metronome BPM
+  AudioEngine.playSequence(h.map(it => chordPitchesForItem(it)), step, Math.min(0.85, step * 1.05));
 
   const pills = [...document.querySelectorAll('#flowRow .builder-step')];
   pills.forEach((p, i) => {

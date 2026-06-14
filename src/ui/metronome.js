@@ -1,0 +1,106 @@
+// ── METRONOME (V4.2) ──────────────────────────────────
+// A small Dynamic-Island-style bubble: tap to expand a rotary BPM dial with a
+// classic analog tick. The BPM is shared (st.bpm) so the progression Play uses
+// the same tempo.
+
+const Metronome = {
+  open: false, playing: false, _timer: null, _next: 0, _beat: 0,
+  MIN: 40, MAX: 240, SWEEP: 270,   // degrees of dial travel (gap at the bottom)
+
+  init() {
+    this._dialDrag();
+    this.render();
+  },
+
+  bpm() { return Math.max(this.MIN, Math.min(this.MAX, st.bpm || 100)); },
+  setBpm(v) {
+    st.bpm = Math.max(this.MIN, Math.min(this.MAX, Math.round(v)));
+    saveState();
+    this.render();
+  },
+
+  toggleOpen() {
+    this.open = !this.open;
+    document.getElementById('metronome')?.classList.toggle('open', this.open);
+  },
+  toggle() { this.playing ? this.stop() : this.start(); },
+
+  start() {
+    if (typeof AudioEngine !== 'object' || !AudioEngine.resume()) return;
+    this.playing = true; this._beat = 0;
+    this._next = AudioEngine.now() + 0.08;
+    this._timer = setInterval(() => this._schedule(), 25);
+    document.getElementById('metronome')?.classList.add('running');
+    this._playBtn();
+  },
+  stop() {
+    this.playing = false;
+    clearInterval(this._timer); this._timer = null;
+    document.getElementById('metronome')?.classList.remove('running');
+    this._playBtn();
+  },
+
+  _schedule() {
+    const ctx = AudioEngine.ctx; if (!ctx) return;
+    const spb = 60 / this.bpm();
+    while (this._next < ctx.currentTime + 0.12) {
+      const accent = this._beat % 4 === 0;
+      AudioEngine.metroClick(accent, this._next);
+      this._flash(this._next - ctx.currentTime, accent);
+      this._next += spb; this._beat++;
+    }
+  },
+  _flash(delay, accent) {
+    setTimeout(() => {
+      const el = document.getElementById('metronome'); if (!el) return;
+      el.classList.toggle('accent', accent);
+      el.classList.remove('beat'); void el.offsetWidth; el.classList.add('beat');
+    }, Math.max(0, delay * 1000));
+  },
+  _playBtn() {
+    const b = document.getElementById('metroPlay');
+    if (b) b.textContent = this.playing ? '■' : '▶';
+  },
+
+  // ── Dial geometry (from-top, clockwise) ──────────────
+  _pt(r, deg) {
+    const a = deg * Math.PI / 180;
+    return [90 + r * Math.sin(a), 90 - r * Math.cos(a)];
+  },
+  _arc(r, a0, a1) {
+    const [x0, y0] = this._pt(r, a0), [x1, y1] = this._pt(r, a1);
+    const large = (a1 - a0) > 180 ? 1 : 0;
+    return `M${x0.toFixed(1)},${y0.toFixed(1)} A${r},${r} 0 ${large} 1 ${x1.toFixed(1)},${y1.toFixed(1)}`;
+  },
+
+  render() {
+    document.querySelectorAll('#metronome .metro-bpm').forEach(e => e.textContent = this.bpm());
+    const a0 = -this.SWEEP / 2, a1 = this.SWEEP / 2;
+    const frac = (this.bpm() - this.MIN) / (this.MAX - this.MIN);
+    const ang = a0 + frac * this.SWEEP;
+    const track = document.getElementById('metroTrack');
+    const prog  = document.getElementById('metroArc');
+    const hand  = document.getElementById('metroHandle');
+    if (track) track.setAttribute('d', this._arc(70, a0, a1));
+    if (prog)  prog.setAttribute('d', this._arc(70, a0, ang));
+    if (hand) { const [hx, hy] = this._pt(70, ang); hand.setAttribute('cx', hx.toFixed(1)); hand.setAttribute('cy', hy.toFixed(1)); }
+  },
+
+  _dialDrag() {
+    const dial = document.getElementById('metroDial'); if (!dial) return;
+    let dragging = false;
+    const fromEvt = (e) => {
+      const r = dial.getBoundingClientRect();
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const x = (e.clientX ?? e.touches?.[0]?.clientX) - cx;
+      const y = (e.clientY ?? e.touches?.[0]?.clientY) - cy;
+      let deg = Math.atan2(x, -y) * 180 / Math.PI;       // 0 = top, clockwise
+      deg = Math.max(-this.SWEEP / 2, Math.min(this.SWEEP / 2, deg));
+      const frac = (deg + this.SWEEP / 2) / this.SWEEP;
+      this.setBpm(this.MIN + frac * (this.MAX - this.MIN));
+    };
+    dial.addEventListener('pointerdown', e => { dragging = true; dial.setPointerCapture?.(e.pointerId); fromEvt(e); });
+    dial.addEventListener('pointermove', e => { if (dragging) fromEvt(e); });
+    window.addEventListener('pointerup', () => { dragging = false; });
+  },
+};
