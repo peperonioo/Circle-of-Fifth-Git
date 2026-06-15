@@ -259,38 +259,43 @@ body.light .bar-tools .step-tool { background:rgba(0,0,0,.06) }
 }
 .bar-tools .step-tool.danger:hover { background:rgba(232,68,26,.24); color:#fff }
 
-/* ── Chord chooser — vertical: chips fan above & below the bar ── */
+/* ── Chord chooser — Dynamic-Island: opaque black panels fan above & below ── */
 .chord-variants {
   position:fixed; display:none; z-index:var(--z-modal, 9500);
-  width:78px; pointer-events:none; opacity:0;
-  transition:opacity .16s var(--ease);
+  width:104px; pointer-events:none; opacity:0;
+  transition:opacity .14s var(--ease);
 }
 .chord-variants.open { opacity:1 }
-.cv-above, .cv-below { display:flex; flex-direction:column; align-items:stretch; gap:5px; pointer-events:none }
-.cv-above { opacity:0; transform:translateY(12px); transition:transform .26s cubic-bezier(.34,1.45,.4,1), opacity .2s }
-.cv-below { opacity:0; transform:translateY(-12px); transition:transform .26s cubic-bezier(.34,1.45,.4,1), opacity .2s }
+/* The two opaque-black islands. They spring out from the bar (above grows up,
+   below grows down) leaving the transparent gap so the chord stays visible. */
+.cv-above, .cv-below {
+  pointer-events:auto; display:flex; flex-direction:column; align-items:stretch; gap:2px;
+  padding:5px; border-radius:16px;
+  background:#0b0b0d; border:1px solid rgba(255,255,255,.09);
+  box-shadow:0 18px 44px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.05);
+}
+body.light .cv-above, body.light .cv-below { background:#15151a; border-color:rgba(255,255,255,.08) }
+.cv-above { transform-origin:bottom center; opacity:0; transform:translateY(16px) scale(.86);
+  transition:transform .36s cubic-bezier(.34,1.56,.4,1), opacity .22s var(--ease) }
+.cv-below { transform-origin:top center;    opacity:0; transform:translateY(-16px) scale(.86);
+  transition:transform .36s cubic-bezier(.34,1.56,.4,1), opacity .22s var(--ease) }
 .chord-variants.open .cv-above, .chord-variants.open .cv-below { opacity:1; transform:none }
 .cv-mid { width:100%; pointer-events:none }            /* transparent gap over the bar */
 .cv-chip {
   pointer-events:auto; cursor:pointer; color:#f0ede8;
-  padding:7px 4px; border-radius:9px; text-align:center;
-  border:1px solid rgba(255,255,255,.14); background:rgba(16,16,20,.94);
-  backdrop-filter:blur(16px); box-shadow:0 6px 18px rgba(0,0,0,.34);
-  font-family:'DM Serif Display',Georgia,serif; font-size:13px; line-height:1;
-  transition:transform .12s var(--ui-ease), background .12s, border-color .12s;
+  padding:7px 6px; border-radius:10px; text-align:center; border:0; background:transparent;
+  font-family:'DM Serif Display',Georgia,serif; font-size:14px; line-height:1;
+  transition:background .12s, color .12s;
 }
-body.light .cv-chip { background:rgba(255,255,255,.95); color:#1a1a1a; border-color:rgba(0,0,0,.1) }
-.cv-chip:hover  { transform:translateX(2px); border-color:rgba(232,68,26,.55) }
-.cv-chip.active { background:var(--accent); border-color:transparent; color:#fff }
-.cv-foot { display:flex; gap:5px; margin-top:2px }
+.cv-chip:hover  { background:rgba(255,255,255,.08) }
+.cv-chip.active { background:var(--accent); color:#fff }
+.cv-foot { display:flex; gap:4px; margin-top:3px; padding-top:5px; border-top:1px solid rgba(255,255,255,.08) }
 .cv-act {
-  pointer-events:auto; flex:1; padding:6px 0; border-radius:9px; cursor:pointer;
-  border:1px solid rgba(255,255,255,.14); background:rgba(16,16,20,.94); color:#f0ede8;
-  box-shadow:0 6px 18px rgba(0,0,0,.34); font-size:13px; line-height:1;
+  pointer-events:auto; flex:1; padding:6px 0; border-radius:10px; cursor:pointer;
+  border:0; background:rgba(255,255,255,.07); color:#f0ede8; font-size:14px; line-height:1;
 }
-body.light .cv-act { background:rgba(255,255,255,.95); color:#1a1a1a; border-color:rgba(0,0,0,.1) }
-.cv-act:hover { border-color:rgba(232,68,26,.5) }
-.cv-act.danger:hover { background:rgba(232,68,26,.85); color:#fff; border-color:transparent }
+.cv-act:hover { background:rgba(255,255,255,.14) }
+.cv-act.danger:hover { background:rgba(232,68,26,.9); color:#fff }
 @media (prefers-reduced-motion: reduce){
   .cv-above, .cv-below { transition:opacity .15s; transform:none }
 }

@@ -136,14 +136,20 @@ const ChordVariants = {
   },
 
   _dup() {
-    const ctx = this.ctx; if (!ctx || ctx.kind !== 'bar') return;
-    if (typeof BuilderEngine === 'object') BuilderEngine.duplicate(ctx.barIdx);
+    const ctx = this.ctx; if (!ctx) return;
+    const idx = ctx.barIdx;
     this.close();
+    const h = st.history;
+    if (!Array.isArray(h) || !h[idx]) return;
+    const copy = { ...h[idx], uid: Date.now() + '-' + Math.random().toString(36).slice(2), __justAdded: true };
+    h.splice(idx + 1, 0, copy);               // exact copy (variant + beats) right after
+    HistoryEngine.render(); renderProgressionStory(); saveState();
   },
   _del() {
-    const ctx = this.ctx; if (!ctx || ctx.kind !== 'bar') return;
-    if (typeof HistoryEngine === 'object') HistoryEngine.remove(ctx.barIdx);
+    const ctx = this.ctx; if (!ctx) return;
+    const idx = ctx.barIdx;
     this.close();
+    if (typeof HistoryEngine === 'object') HistoryEngine.remove(idx);
   },
 
   close() {

@@ -70,19 +70,36 @@ const AudioEngine = {
 
   ready() { return !!this.ctx; },
 
-  // A soft, low "tock" — the wheel ratchet on each key crossing. Triangle wave
-  // through a lowpass keeps it warm and woody instead of a sharp high beep.
-  tick(freq = 320, vol = 0.1) {
+  // A warm woodblock/rim "tok" — the wheel ratchet on each key crossing. A short
+  // body tone with a fast downward pitch chirp through a resonant bandpass, plus
+  // a tiny wooden noise click. Low and organic instead of a sharp synthetic beep.
+  tick(freq = 200, vol = 0.13) {
     if (!this.resume()) return;
-    const ctx = this.ctx, t0 = ctx.currentTime;
-    const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = freq;
-    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = freq * 4; lp.Q.value = 0.5;
+    const ctx = this.ctx, t0 = ctx.currentTime, out = this.dry || this.master;
+
+    // Hollow body: triangle that drops in pitch quickly (the "tok").
+    const o = ctx.createOscillator(); o.type = 'triangle';
+    o.frequency.setValueAtTime(freq * 2.1, t0);
+    o.frequency.exponentialRampToValueAtTime(freq, t0 + 0.028);
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass';
+    bp.frequency.value = freq * 3; bp.Q.value = 4.5;        // wooden resonance
     const g = ctx.createGain();
-    o.connect(lp); lp.connect(g); g.connect(this.dry || this.master);
+    o.connect(bp); bp.connect(g); g.connect(out);
     g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.004);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.075);
-    o.start(t0); o.stop(t0 + 0.09);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.055);   // short, dry decay
+    o.start(t0); o.stop(t0 + 0.07);
+
+    // Tiny wooden "edge" click for attack realism.
+    const len = Math.floor(ctx.sampleRate * 0.005);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const cf = ctx.createBiquadFilter(); cf.type = 'bandpass'; cf.frequency.value = 1400; cf.Q.value = 0.7;
+    const ng = ctx.createGain(); ng.gain.value = vol * 0.3;
+    src.connect(cf); cf.connect(ng); ng.connect(out);
+    src.start(t0);
   },
 
   // Classic analog-metronome click, schedulable at an exact time. Beat 1 is
@@ -182,11 +199,12 @@ const AudioEngine = {
   },
 
   // pitches: array of relative semitones (0 = middle C). Tiny strum for life.
-  // An octave-down copy of the root is added for a fuller, rounder voicing.
-  playChord(pitches, dur = 0.95, when = 0) {
+  // By default an octave-down copy of the root is added for a fuller voicing;
+  // pass addBass=false when the caller already supplies a complete voicing.
+  playChord(pitches, dur = 0.95, when = 0, addBass = true) {
     if (!this.resume() || !Array.isArray(pitches) || !pitches.length) return;
     const t0 = this.ctx.currentTime + when;
-    const voiced = [pitches[0] - 12].concat(pitches);
+    const voiced = addBass ? [pitches[0] - 12].concat(pitches) : pitches;
     voiced.forEach((p, i) => this._voice(this._freq(p), t0 + i * 0.014, dur, i === 0 ? 0.7 : 0.9));
   },
 
@@ -210,15 +228,34 @@ const AudioEngine = {
   // at their cumulative beat offset and sustained for their own duration, so a
   // 4-beat chord rings four times as long as a 1-beat one. `secPerBeat` comes
   // from the metronome BPM. Returns { token, totalSec } for the playhead.
+  // Voice a chord (pitch classes relative to middle C) close to the previous
+  // chord's upper voicing — minimal movement, kept common tones — plus a low
+  // root. Returns { all, upper } so the next chord can lead from `upper`.
+  _leadVoicing(prevUpper, pcs) {
+    const center = (prevUpper && prevUpper.length)
+      ? prevUpper.reduce((a, b) => a + b, 0) / prevUpper.length
+      : 5; // first chord sits around E above middle C
+    const upper = pcs.map(pc => {
+      let n = pc;
+      while (n - center > 6.5) n -= 12;
+      while (center - n > 6.5) n += 12;
+      return n;
+    }).sort((a, b) => a - b);
+    const bass = pcs[0] - 12;                 // low root anchors the harmony
+    return { all: [bass, ...upper], upper };
+  },
+
   playTimeline(entries, secPerBeat = 0.5, startOffset = 0) {
     if (!this.resume() || !Array.isArray(entries) || !entries.length) return { token: 0, totalSec: 0 };
     const token = ++this._playToken;
-    let beatAcc = 0;
+    let beatAcc = 0, prevUpper = null;
     entries.forEach(e => {
       const beats = Math.max(0.25, e.beats || 1);
       if (e.pitches && e.pitches.length) {
         const dur = Math.min(2.4, beats * secPerBeat * 0.96);
-        this.playChord(e.pitches, dur, startOffset + beatAcc * secPerBeat);
+        const v = this._leadVoicing(prevUpper, e.pitches);   // smooth voice leading
+        this.playChord(v.all, dur, startOffset + beatAcc * secPerBeat, false);
+        prevUpper = v.upper;
       }
       beatAcc += beats;
     });

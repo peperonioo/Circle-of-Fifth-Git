@@ -62,21 +62,24 @@ const HistoryEngine = {
   },
 
   remove(index) {
-    if (!Array.isArray(st.history)) return;
-    const btn = document.querySelector(`[data-uid="${st.history[index]?.uid}"]`);
-    if (btn) {
-      btn.classList.add('just-removed');
-      btn.addEventListener('animationend', () => {
-        st.history.splice(index, 1);
-        this.render();
-        renderProgressionStory();
-        saveState();
-      }, { once: true });
-    } else {
-      st.history.splice(index, 1);
+    if (!Array.isArray(st.history) || !st.history[index]) return;
+    const uid = st.history[index].uid;
+    const btn = document.querySelector(`[data-uid="${uid}"]`);
+    let done = false;
+    const finish = () => {
+      if (done) return; done = true;
+      const i = st.history.findIndex(x => x.uid === uid);   // re-find in case order shifted
+      if (i >= 0) st.history.splice(i, 1);
       this.render();
       renderProgressionStory();
       saveState();
+    };
+    if (btn) {
+      btn.classList.add('just-removed');
+      btn.addEventListener('animationend', finish, { once: true });
+      setTimeout(finish, 280);   // fallback: reduced-motion / backgrounded tab won't fire animationend
+    } else {
+      finish();
     }
   },
 
@@ -172,7 +175,7 @@ const DurationDrag = {
       item.beats = nb;
       bar.style.setProperty('--beats', nb);
       const lab = bar.querySelector('.step-len'); if (lab) lab.textContent = fmtBeats(nb);
-      if (nb !== lastBeats) { lastBeats = nb; if (typeof AudioEngine === 'object') AudioEngine.tick(360, 0.07); }
+      if (nb !== lastBeats) { lastBeats = nb; if (typeof AudioEngine === 'object') AudioEngine.tick(240, 0.08); }
     };
     const up = () => {
       bar.classList.remove('resizing');
