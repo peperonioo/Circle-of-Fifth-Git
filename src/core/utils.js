@@ -9,9 +9,28 @@ const dn = n => (['Ab','Bb','Db','Eb','Gb'].includes(n) ? n : (FM[n] || n));
 
 const gm  = ()  => MODES.find(m => m.id === st.mode);
 
-// V4.5 — the wheel + its info cards follow ONLY Major/Minor (st.tonality); the
-// selected mode recolours the degrees / suggestions / progression but never
-// moves the circle. wheelMode() is the ionian/aeolian base for the wheel.
+// ── TONALITY / MODE MODEL (contract) ─────────────────────────────────────────
+// State (single source of truth):
+//   st.key       the TONIC note (a plain note name, e.g. 'C', 'A', 'Bb').
+//   st.tonality  the Major/Minor base of the circle: 'major' | 'minor'.
+//   st.mode      the active church mode ('ionian'…'locrian') — a *flavour*.
+//   st.wheelView mirrors st.tonality (kept in sync; never set independently).
+//
+// Two layers, decoupled on purpose so modes can't confuse the circle:
+//   • CIRCLE  (wheel + centre + accidentals + scale-notes + relative card) is
+//     driven ONLY by st.tonality via wheelMode() → ionian (major) / aeolian
+//     (minor). It uses gs() and never reads st.mode.
+//   • CHORDS  (degree row + suggestions + built progression) are driven by
+//     st.mode via gc()/modeScale()/gr(), parallel on the same st.key.
+//
+// Operations (actions.js):
+//   SET_WHEEL_VIEW  toggle = the base tonality. Sets st.tonality, moves the
+//                   tonic to the sector's major / relative-minor, and resets the
+//                   mode to ionian/aeolian (same sector → the wheel never jumps).
+//   SET_MODE        dropdown = a parallel flavour. Sets st.mode only; key,
+//                   tonality and the whole circle stay put.
+//   SET_KEY         a wheel click re-roots the tonic per wheelMode(); mode kept.
+// ─────────────────────────────────────────────────────────────────────────────
 const wheelMode = () => (st.tonality === 'minor' ? 'aeolian' : 'ionian');
 const wmObj     = () => MODES.find(m => m.id === wheelMode());
 

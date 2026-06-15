@@ -228,21 +228,48 @@ const AudioEngine = {
   // at their cumulative beat offset and sustained for their own duration, so a
   // 4-beat chord rings four times as long as a 1-beat one. `secPerBeat` comes
   // from the metronome BPM. Returns { token, totalSec } for the playhead.
-  // Voice a chord (pitch classes relative to middle C) close to the previous
-  // chord's upper voicing — minimal movement, kept common tones — plus a low
-  // root. Returns { all, upper } so the next chord can lead from `upper`.
-  _leadVoicing(prevUpper, pcs) {
-    const center = (prevUpper && prevUpper.length)
-      ? prevUpper.reduce((a, b) => a + b, 0) / prevUpper.length
-      : 5; // first chord sits around E above middle C
-    const upper = pcs.map(pc => {
-      let n = pc;
-      while (n - center > 6.5) n -= 12;
-      while (center - n > 6.5) n += 12;
-      return n;
-    }).sort((a, b) => a - b);
-    const bass = pcs[0] - 12;                 // low root anchors the harmony
-    return { all: [bass, ...upper], upper };
+  // Voice-leading 2.0. Given the previous chord's upper voicing and the new
+  // chord's pitch classes, build a smooth voicing:
+  //   • anchor the soprano (top voice) near the previous soprano — common tones
+  //     are held, otherwise it moves by the smallest step (implicit inversions);
+  //   • stack the remaining tones in the octave just below the soprano (closed),
+  //     or drop the 2nd-from-top an octave for an open/spread voicing;
+  //   • no doubled tones; a low root anchors the bass; register kept in a band.
+  // Returns { all, upper } so the next chord leads from `upper`.
+  _leadVoicing(prevUpper, pcs, opts = {}) {
+    const open = !!(opts.open != null ? opts.open : (typeof st === 'object' && st.voicingOpen));
+    const root = ((pcs[0] % 12) + 12) % 12;
+    const pcset = [...new Set(pcs.map(p => ((p % 12) + 12) % 12))];        // unique → no doubling
+    const prev = (prevUpper && prevUpper.length) ? prevUpper : [0, 4, 7];  // default C E G
+    const prevTop = Math.max(...prev);
+
+    // Soprano = the chord tone whose nearest octave is closest to prevTop.
+    const near = (pc, target) => { let n = pc; while (n - target > 6) n -= 12; while (target - n > 6) n += 12; return n; };
+    let soprano = pcset
+      .map(pc => near(pc, prevTop))
+      .reduce((best, n) => (Math.abs(n - prevTop) < Math.abs(best - prevTop) ? n : best));
+
+    // Remaining tones sit just below the soprano (within an octave).
+    const sopPc = ((soprano % 12) + 12) % 12;
+    const below = pcset.filter(pc => pc !== sopPc).map(pc => {
+      let n = pc; while (n >= soprano) n -= 12; while (soprano - n > 12) n += 12; return n;
+    });
+    let notes = [...below, soprano].sort((a, b) => a - b);
+    if (open && notes.length >= 3) { notes[notes.length - 2] -= 12; notes.sort((a, b) => a - b); }
+
+    // Register control — keep the body in a comfortable band around middle C.
+    const avg = notes.reduce((a, b) => a + b, 0) / notes.length;
+    if (avg > 11) notes = notes.map(n => n - 12);
+    else if (avg < -3) notes = notes.map(n => n + 12);
+
+    // Bass = the chord root in a steady low register (nearest ~ -9 semitones,
+    // roughly C2–B2) so it doesn't drift octave-by-octave through a progression,
+    // and always clearly below the voicing (octave doubling ok, unison not).
+    let bass = root - 12;
+    while (-9 - bass > 6) bass += 12;
+    while (bass - (-9) > 6) bass -= 12;
+    while (bass > notes[0] - 3) bass -= 12;
+    return { all: [bass, ...notes], upper: notes };
   },
 
   playTimeline(entries, secPerBeat = 0.5, startOffset = 0) {

@@ -90,27 +90,6 @@ const HistoryEngine = {
     saveState();
   },
 
-  recall(index) {
-    const item = st.history[index];
-    if (!item) return;
-    AppActions.selectDegree(item.degreeIndex, { fromHistory: true });
-  },
-
-  dragStart(e, i) { e.dataTransfer.setData('text/plain', i); },
-
-  drop(e, target) {
-    e.preventDefault();
-    const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
-    if (isNaN(from) || from === target) return;
-    const h   = st.history;
-    const tmp = h[from];
-    h.splice(from, 1);
-    h.splice(target, 0, tmp);
-    this.render();
-    renderProgressionStory();
-    saveState();
-  },
-
   render() {
     const root = document.getElementById('flowRow'); if (!root) return;
     const h    = Array.isArray(st.history) ? st.history : [];
@@ -198,29 +177,7 @@ const BuilderEngine = {
       <b>${progressionNarrative()}</b>`;
   },
 
-  addCurrent() {
-    if (curDeg < 0) return;
-    AppActions.selectDegree(curDeg, { force: true });
-  },
-
-  // Hear a single bar's chord (no wheel side-effect).
-  hear(index) {
-    const it = (st.history || [])[index];
-    if (it && typeof AudioEngine === 'object') AudioEngine.playChord(chordPitchesForItem(it));
-  },
-
-  duplicateLast() {
-    const h = st.history;
-    if (!Array.isArray(h) || !h.length) return;
-    HistoryEngine.addDegree(h[h.length - 1].degreeIndex);
-  },
-
-  duplicate(index) {
-    const h = st.history;
-    if (!h?.[index]) return;
-    setTimeout(() => HistoryEngine.addDegree(h[index].degreeIndex, { force: true }), 0);
-  },
-
+  // Swap a bar with its neighbour (used by tests + programmatic reorder).
   move(index, dir) {
     const h = st.history;
     if (!Array.isArray(h)) return;
@@ -232,18 +189,6 @@ const BuilderEngine = {
     HistoryEngine.render();
     renderProgressionStory();
     saveState();
-  },
-
-  copy() {
-    const text = progressionNarrative();
-    navigator.clipboard?.writeText(text).then(() => {
-      const toast = document.getElementById('copyToast');
-      if (toast) {
-        toast.textContent = 'Copied: ' + text;
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 2000);
-      }
-    }).catch(() => {});
   },
 };
 
@@ -333,7 +278,7 @@ function toggleProgPlay() {
 // Playback option toggles (7th chords, count-in). Persisted in state.
 function togglePlayOpt(key, el) {
   st[key] = !st[key]; saveState();
-  if (el) el.classList.toggle('active', !!st[key]);
+  if (el) { el.classList.toggle('active', !!st[key]); el.setAttribute('aria-pressed', !!st[key]); }
   // Preview the 7ths change on the currently selected chord.
   if (key === 'sevenths' && curDeg >= 0 && typeof AudioEngine === 'object')
     AudioEngine.playChord(chordPitchesForDegree(curDeg));
@@ -341,7 +286,8 @@ function togglePlayOpt(key, el) {
 
 // Reflect persisted option state on the toggle buttons at boot.
 function initPlayOpts() {
-  const c = document.getElementById('countInBtn'); if (c) c.classList.toggle('active', !!st.countIn);
+  const c = document.getElementById('countInBtn'); if (c) { c.classList.toggle('active', !!st.countIn); c.setAttribute('aria-pressed', !!st.countIn); }
+  const v = document.getElementById('voicingBtn'); if (v) { v.classList.toggle('active', !!st.voicingOpen); v.setAttribute('aria-pressed', !!st.voicingOpen); }
 }
 
 function playProgression() {

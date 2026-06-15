@@ -66,25 +66,6 @@ body.light .builder-step  { background:rgba(0,0,0,.04) }
 .builder-step .step-num    { font-family:'DM Mono',monospace; font-size:8px; color:var(--muted); width:15px; height:15px; border-radius:50%; display:grid; place-items:center; background:var(--sel-bg); flex:0 0 auto }
 .builder-step .step-chord  { font-family:'DM Serif Display',serif; font-size:19px; line-height:1; color:var(--ink); flex:0 0 auto }
 .builder-step .step-degree { font-family:'DM Mono',monospace; font-size:9px; color:var(--muted); flex:0 0 auto; margin-right:1px }
-/* Tools float ABOVE the bar so they never steal width from the duration —
-   revealed on hover (desktop) or tap-focus (touch, .show-tools). */
-.builder-step .step-tools  {
-  position:absolute; left:50%; top:-34px; transform:translateX(-50%) translateY(4px);
-  display:flex; gap:3px; padding:4px 5px; border-radius:999px;
-  background:var(--card); border:1px solid var(--card-bd);
-  box-shadow:0 6px 18px rgba(0,0,0,.28); backdrop-filter:blur(10px);
-  opacity:0; pointer-events:none; transition:opacity .14s var(--ui-ease), transform .14s var(--ui-ease);
-  z-index:5; white-space:nowrap;
-}
-.builder-step:hover .step-tools,
-.builder-step.show-tools .step-tools { opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0) }
-.step-tool {
-  width:20px; height:20px; border:0; border-radius:50%;
-  background:rgba(255,255,255,.08); color:var(--muted); font-size:10px;
-  line-height:1; cursor:pointer; display:grid; place-items:center;
-}
-body.light .step-tool  { background:rgba(0,0,0,.06) }
-.step-tool:hover       { background:rgba(232,68,26,.18); color:var(--accent2) }
 .builder-arrow   {
   font-family:'DM Mono',monospace; font-size:12px; color:var(--accent); flex:0 0 auto;
   opacity:.42; animation:arrowFlow 2.6s ease-in-out infinite;

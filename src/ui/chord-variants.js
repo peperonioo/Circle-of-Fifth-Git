@@ -55,7 +55,7 @@ function chordDisplay(it) {
 // chips fan ABOVE and BELOW the tapped bar (the bar itself stays visible and
 // tappable in the gap). Bars only — suggestions stay a fast tap-to-add.
 const ChordVariants = {
-  el: null, ctx: null, _anchorRect: null, _outside: null, _key: null,
+  el: null, ctx: null, _anchorRect: null,
 
   _ensure() {
     if (this.el) return this.el;
@@ -76,7 +76,6 @@ const ChordVariants = {
   },
 
   _open(ctx, anchorEl) {
-    if (this._outside) document.removeEventListener('click', this._outside, true);
     this.ctx = ctx;
     this._anchorRect = anchorEl ? anchorEl.getBoundingClientRect() : null;
     const el = this._ensure();
@@ -103,13 +102,8 @@ const ChordVariants = {
     el.style.display = 'block';
     this._place();
     requestAnimationFrame(() => el.classList.add('open'));
-    this._outside = e => {
-      if (e.target.closest('#chordVariants') || e.target.closest('.builder-step')) return;
-      this.close();
-    };
-    setTimeout(() => document.addEventListener('click', this._outside, true), 0);
-    this._key = e => { if (e.key === 'Escape') this.close(); };
-    document.addEventListener('keydown', this._key, true);
+    // Escape + click-outside handled centrally by OverlayManager ('chord-variants').
+    if (typeof OverlayManager === 'object') OverlayManager.opened('chord-variants');
   },
 
   _place() {
@@ -153,13 +147,12 @@ const ChordVariants = {
   },
 
   close() {
+    if (!this.ctx && this.el && this.el.style.display === 'none') return;   // already closed
     if (this.el) {
       this.el.classList.remove('open');
       const el = this.el;
       setTimeout(() => { if (el && !el.classList.contains('open')) el.style.display = 'none'; }, 220);
     }
-    if (this._outside) document.removeEventListener('click', this._outside, true);
-    if (this._key) document.removeEventListener('keydown', this._key, true);
-    this._outside = null; this._key = null; this.ctx = null;
+    this.ctx = null;
   },
 };

@@ -75,13 +75,8 @@ const ModeMenu = {
   },
 };
 
-// Close on outside click (capture phase)
-document.addEventListener('click', e => {
-  const c = document.getElementById('modeControl');
-  const m = document.getElementById('modeMenu');
-  if (c?.contains(e.target) || m?.contains(e.target)) return;
-  _closeModeMenu();
-}, true);
+// Click-outside + Escape are handled centrally by OverlayManager (registered as
+// 'mode-menu' in popover-manager.js). Only reposition on resize/scroll here.
 window.addEventListener('resize', () => {
   if (document.getElementById('modeMenu')?.classList.contains('portal-open')) _placeModeMenu();
 }, { passive: true });

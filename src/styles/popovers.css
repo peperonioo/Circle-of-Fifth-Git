@@ -236,29 +236,6 @@ body.light .metro-tap { border-color:rgba(0,0,0,.12); background:rgba(0,0,0,.04)
 @keyframes metroBeat { 0%{transform:scale(1)} 45%{transform:scale(1.16)} 100%{transform:scale(1)} }
 @media (prefers-reduced-motion: reduce) { #metronome.beat .metro-led, #metronome.beat .metro-play { animation:none } }
 
-/* ── Per-bar toolbar (portaled to <body>) ─────────────── */
-.bar-tools {
-  position:fixed; display:none; align-items:center; gap:3px;
-  z-index:var(--z-dropdown, 9000); padding:5px 6px; border-radius:999px;
-  background:var(--card); border:1px solid var(--card-bd);
-  box-shadow:0 10px 30px rgba(0,0,0,.34); backdrop-filter:blur(14px);
-  opacity:0; transform:translateY(4px) scale(.96);
-  transition:opacity .14s var(--ui-ease), transform .16s var(--ui-ease);
-}
-.bar-tools.show { opacity:1; transform:none }
-.bar-tools .step-tool {
-  width:26px; height:26px; border-radius:50%; border:0; cursor:pointer;
-  background:rgba(255,255,255,.08); color:var(--muted); font-size:13px;
-  line-height:1; display:grid; place-items:center;
-}
-body.light .bar-tools .step-tool { background:rgba(0,0,0,.06) }
-.bar-tools .step-tool:hover { background:rgba(232,68,26,.18); color:var(--accent2) }
-.bar-tools .step-tool.wide {
-  width:auto; padding:0 11px; border-radius:13px;
-  font-family:'DM Mono',monospace; font-size:9.5px; letter-spacing:.04em;
-}
-.bar-tools .step-tool.danger:hover { background:rgba(232,68,26,.24); color:#fff }
-
 /* ── Chord chooser — Dynamic-Island: opaque black panels fan above & below ── */
 .chord-variants {
   position:fixed; display:none; z-index:var(--z-modal, 9500);

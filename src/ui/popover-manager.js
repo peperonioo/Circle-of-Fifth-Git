@@ -15,6 +15,10 @@ const OverlayManager = {
     let it = this._items.find(x => x.id === id);
     if (!it) { it = { id, order: 0 }; this._items.push(it); }
     it.isOpen = api.isOpen; it.close = api.close;
+    // Optional: a predicate that returns true when a click target belongs to
+    // this overlay (panel or trigger). Overlays that provide it get centralised
+    // click-outside dismissal — no per-component document listeners needed.
+    it.contains = api.contains;
     return it;
   },
   _open(it)  { try { return !!it.isOpen?.(); } catch (_) { return false; } },
@@ -41,10 +45,35 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && OverlayManager.closeTopmost()) e.stopPropagation();
 });
 
+// One global click handler: any overlay that declares `contains` is dismissed
+// when a click lands outside it (and its trigger). Capturing phase so it runs
+// before the click's own handlers; an overlay that is being opened by this very
+// click is still closed (its `contains` covers its trigger).
+document.addEventListener('click', e => {
+  OverlayManager._items.forEach(it => {
+    if (it.contains && OverlayManager._open(it)) {
+      let inside = true;
+      try { inside = !!it.contains(e.target); } catch (_) {}
+      if (!inside) OverlayManager._close(it);
+    }
+  });
+}, true);
+
 // Register the known overlays (callbacks resolve globals at call time).
 OverlayManager.register('mode-menu', {
-  isOpen: () => !!document.getElementById('modeMenu')?.classList.contains('portal-open'),
-  close:  () => { if (typeof _closeModeMenu === 'function') _closeModeMenu(); },
+  isOpen:   () => !!document.getElementById('modeMenu')?.classList.contains('portal-open'),
+  close:    () => { if (typeof _closeModeMenu === 'function') _closeModeMenu(); },
+  contains: (t) => !!(t.closest('#modeControl') || t.closest('#modeMenu')),
+});
+OverlayManager.register('metronome', {
+  isOpen:   () => !!(typeof Metronome === 'object' && Metronome.open),
+  close:    () => { if (typeof Metronome === 'object' && Metronome.open) Metronome.toggleOpen(); },
+  contains: (t) => !!t.closest('#metronome'),
+});
+OverlayManager.register('chord-variants', {
+  isOpen:   () => !!(typeof ChordVariants === 'object' && ChordVariants.ctx),
+  close:    () => { if (typeof ChordVariants === 'object') ChordVariants.close(); },
+  contains: (t) => !!(t.closest('#chordVariants') || t.closest('.builder-step')),
 });
 OverlayManager.register('dir-guide', {
   isOpen: () => !!(typeof WheelDirectionGuide === 'object' && WheelDirectionGuide.visible),

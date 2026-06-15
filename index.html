@@ -578,25 +578,6 @@ body.light .builder-step  { background:rgba(0,0,0,.04) }
 .builder-step .step-num    { font-family:'DM Mono',monospace; font-size:8px; color:var(--muted); width:15px; height:15px; border-radius:50%; display:grid; place-items:center; background:var(--sel-bg); flex:0 0 auto }
 .builder-step .step-chord  { font-family:'DM Serif Display',serif; font-size:19px; line-height:1; color:var(--ink); flex:0 0 auto }
 .builder-step .step-degree { font-family:'DM Mono',monospace; font-size:9px; color:var(--muted); flex:0 0 auto; margin-right:1px }
-/* Tools float ABOVE the bar so they never steal width from the duration —
-   revealed on hover (desktop) or tap-focus (touch, .show-tools). */
-.builder-step .step-tools  {
-  position:absolute; left:50%; top:-34px; transform:translateX(-50%) translateY(4px);
-  display:flex; gap:3px; padding:4px 5px; border-radius:999px;
-  background:var(--card); border:1px solid var(--card-bd);
-  box-shadow:0 6px 18px rgba(0,0,0,.28); backdrop-filter:blur(10px);
-  opacity:0; pointer-events:none; transition:opacity .14s var(--ui-ease), transform .14s var(--ui-ease);
-  z-index:5; white-space:nowrap;
-}
-.builder-step:hover .step-tools,
-.builder-step.show-tools .step-tools { opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0) }
-.step-tool {
-  width:20px; height:20px; border:0; border-radius:50%;
-  background:rgba(255,255,255,.08); color:var(--muted); font-size:10px;
-  line-height:1; cursor:pointer; display:grid; place-items:center;
-}
-body.light .step-tool  { background:rgba(0,0,0,.06) }
-.step-tool:hover       { background:rgba(232,68,26,.18); color:var(--accent2) }
 .builder-arrow   {
   font-family:'DM Mono',monospace; font-size:12px; color:var(--accent); flex:0 0 auto;
   opacity:.42; animation:arrowFlow 2.6s ease-in-out infinite;
@@ -1136,29 +1117,6 @@ body.light .metro-tap { border-color:rgba(0,0,0,.12); background:rgba(0,0,0,.04)
 @keyframes metroBeat { 0%{transform:scale(1)} 45%{transform:scale(1.16)} 100%{transform:scale(1)} }
 @media (prefers-reduced-motion: reduce) { #metronome.beat .metro-led, #metronome.beat .metro-play { animation:none } }
 
-/* ── Per-bar toolbar (portaled to <body>) ─────────────── */
-.bar-tools {
-  position:fixed; display:none; align-items:center; gap:3px;
-  z-index:var(--z-dropdown, 9000); padding:5px 6px; border-radius:999px;
-  background:var(--card); border:1px solid var(--card-bd);
-  box-shadow:0 10px 30px rgba(0,0,0,.34); backdrop-filter:blur(14px);
-  opacity:0; transform:translateY(4px) scale(.96);
-  transition:opacity .14s var(--ui-ease), transform .16s var(--ui-ease);
-}
-.bar-tools.show { opacity:1; transform:none }
-.bar-tools .step-tool {
-  width:26px; height:26px; border-radius:50%; border:0; cursor:pointer;
-  background:rgba(255,255,255,.08); color:var(--muted); font-size:13px;
-  line-height:1; display:grid; place-items:center;
-}
-body.light .bar-tools .step-tool { background:rgba(0,0,0,.06) }
-.bar-tools .step-tool:hover { background:rgba(232,68,26,.18); color:var(--accent2) }
-.bar-tools .step-tool.wide {
-  width:auto; padding:0 11px; border-radius:13px;
-  font-family:'DM Mono',monospace; font-size:9.5px; letter-spacing:.04em;
-}
-.bar-tools .step-tool.danger:hover { background:rgba(232,68,26,.24); color:#fff }
-
 /* ── Chord chooser — Dynamic-Island: opaque black panels fan above & below ── */
 .chord-variants {
   position:fixed; display:none; z-index:var(--z-modal, 9500);
@@ -1603,6 +1561,7 @@ body.light .cv-above, body.light .cv-below { background:#15151a; border-color:rg
           <div class="builder-actions">
             <button class="builder-btn play" id="playProgBtn" onclick="toggleProgPlay()" data-i18n="builder.play">▶ Play</button>
             <button class="builder-btn opt" id="countInBtn" onclick="togglePlayOpt('countIn',this)" title="One-bar count-in before play" aria-label="Count-in before play" aria-pressed="false">⏱</button>
+            <button class="builder-btn opt" id="voicingBtn" onclick="togglePlayOpt('voicingOpen',this)" title="Open (spread) voicing" aria-label="Open voicing" aria-pressed="false">◇</button>
             <button class="builder-btn" onclick="shareProgression()" data-i18n="builder.share" title="Copy a shareable link">🔗 Share</button>
             <button class="builder-btn" onclick="exportMIDI()" data-i18n="builder.midi" title="Download as a MIDI file">↓ MIDI</button>
             <button class="builder-btn danger" onclick="HistoryEngine.clear()" data-i18n="builder.clear">Clear</button>
@@ -1694,7 +1653,7 @@ body.light .cv-above, body.light .cv-below { background:#15151a; border-color:rg
 // ── CONSTANTS ─────────────────────────────────────────
 // Pure data. No DOM access. No state mutation.
 
-const APP_VERSION = 'V4.7';
+const APP_VERSION = 'V4.8';
 const STORAGE_KEY = 'easy-fifth-circle:v1';
 
 const NOTES  = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
@@ -1762,7 +1721,7 @@ const defaultState = {
   key:'C', mode:'ionian', tonality:'major', theme:'dark', genre:'house',
   palette:0, intensity:1, wheelView:'major', lang:'en',
   history:[], mood:'balanced', bpm:100,
-  sevenths:false, countIn:false,
+  sevenths:false, countIn:false, voicingOpen:false,
 };
 
 
@@ -1786,9 +1745,6 @@ const I18N_EN = {
   'builder.play':      '▶ Play',
   'metro.title':       'Metronome',
   'mode.advanced':     'Advanced mode — it recolours the <b>chords below</b> only. The circle stays on your Major/Minor key.',
-  'builder.add':       'Add selected',
-  'builder.duplicate': 'Duplicate',
-  'builder.copy':      'Copy',
   'builder.share':     '🔗 Share',
   'builder.midi':      '↓ MIDI',
   'builder.clear':     'Clear',
@@ -1849,9 +1805,6 @@ const I18N_ES = {
   'builder.play':      '▶ Reproducir',
   'metro.title':       'Metrónomo',
   'mode.advanced':     'Modo avanzado — solo recolorea los <b>acordes de abajo</b>. El círculo se queda en tu tonalidad Mayor/Menor.',
-  'builder.add':       'Añadir seleccionado',
-  'builder.duplicate': 'Duplicar',
-  'builder.copy':      'Copiar',
   'builder.share':     '🔗 Compartir',
   'builder.midi':      '↓ MIDI',
   'builder.clear':     'Limpiar',
@@ -2057,9 +2010,28 @@ const dn = n => (['Ab','Bb','Db','Eb','Gb'].includes(n) ? n : (FM[n] || n));
 
 const gm  = ()  => MODES.find(m => m.id === st.mode);
 
-// V4.5 — the wheel + its info cards follow ONLY Major/Minor (st.tonality); the
-// selected mode recolours the degrees / suggestions / progression but never
-// moves the circle. wheelMode() is the ionian/aeolian base for the wheel.
+// ── TONALITY / MODE MODEL (contract) ─────────────────────────────────────────
+// State (single source of truth):
+//   st.key       the TONIC note (a plain note name, e.g. 'C', 'A', 'Bb').
+//   st.tonality  the Major/Minor base of the circle: 'major' | 'minor'.
+//   st.mode      the active church mode ('ionian'…'locrian') — a *flavour*.
+//   st.wheelView mirrors st.tonality (kept in sync; never set independently).
+//
+// Two layers, decoupled on purpose so modes can't confuse the circle:
+//   • CIRCLE  (wheel + centre + accidentals + scale-notes + relative card) is
+//     driven ONLY by st.tonality via wheelMode() → ionian (major) / aeolian
+//     (minor). It uses gs() and never reads st.mode.
+//   • CHORDS  (degree row + suggestions + built progression) are driven by
+//     st.mode via gc()/modeScale()/gr(), parallel on the same st.key.
+//
+// Operations (actions.js):
+//   SET_WHEEL_VIEW  toggle = the base tonality. Sets st.tonality, moves the
+//                   tonic to the sector's major / relative-minor, and resets the
+//                   mode to ionian/aeolian (same sector → the wheel never jumps).
+//   SET_MODE        dropdown = a parallel flavour. Sets st.mode only; key,
+//                   tonality and the whole circle stay put.
+//   SET_KEY         a wheel click re-roots the tonic per wheelMode(); mode kept.
+// ─────────────────────────────────────────────────────────────────────────────
 const wheelMode = () => (st.tonality === 'minor' ? 'aeolian' : 'ionian');
 const wmObj     = () => MODES.find(m => m.id === wheelMode());
 
@@ -2410,21 +2382,48 @@ const AudioEngine = {
   // at their cumulative beat offset and sustained for their own duration, so a
   // 4-beat chord rings four times as long as a 1-beat one. `secPerBeat` comes
   // from the metronome BPM. Returns { token, totalSec } for the playhead.
-  // Voice a chord (pitch classes relative to middle C) close to the previous
-  // chord's upper voicing — minimal movement, kept common tones — plus a low
-  // root. Returns { all, upper } so the next chord can lead from `upper`.
-  _leadVoicing(prevUpper, pcs) {
-    const center = (prevUpper && prevUpper.length)
-      ? prevUpper.reduce((a, b) => a + b, 0) / prevUpper.length
-      : 5; // first chord sits around E above middle C
-    const upper = pcs.map(pc => {
-      let n = pc;
-      while (n - center > 6.5) n -= 12;
-      while (center - n > 6.5) n += 12;
-      return n;
-    }).sort((a, b) => a - b);
-    const bass = pcs[0] - 12;                 // low root anchors the harmony
-    return { all: [bass, ...upper], upper };
+  // Voice-leading 2.0. Given the previous chord's upper voicing and the new
+  // chord's pitch classes, build a smooth voicing:
+  //   • anchor the soprano (top voice) near the previous soprano — common tones
+  //     are held, otherwise it moves by the smallest step (implicit inversions);
+  //   • stack the remaining tones in the octave just below the soprano (closed),
+  //     or drop the 2nd-from-top an octave for an open/spread voicing;
+  //   • no doubled tones; a low root anchors the bass; register kept in a band.
+  // Returns { all, upper } so the next chord leads from `upper`.
+  _leadVoicing(prevUpper, pcs, opts = {}) {
+    const open = !!(opts.open != null ? opts.open : (typeof st === 'object' && st.voicingOpen));
+    const root = ((pcs[0] % 12) + 12) % 12;
+    const pcset = [...new Set(pcs.map(p => ((p % 12) + 12) % 12))];        // unique → no doubling
+    const prev = (prevUpper && prevUpper.length) ? prevUpper : [0, 4, 7];  // default C E G
+    const prevTop = Math.max(...prev);
+
+    // Soprano = the chord tone whose nearest octave is closest to prevTop.
+    const near = (pc, target) => { let n = pc; while (n - target > 6) n -= 12; while (target - n > 6) n += 12; return n; };
+    let soprano = pcset
+      .map(pc => near(pc, prevTop))
+      .reduce((best, n) => (Math.abs(n - prevTop) < Math.abs(best - prevTop) ? n : best));
+
+    // Remaining tones sit just below the soprano (within an octave).
+    const sopPc = ((soprano % 12) + 12) % 12;
+    const below = pcset.filter(pc => pc !== sopPc).map(pc => {
+      let n = pc; while (n >= soprano) n -= 12; while (soprano - n > 12) n += 12; return n;
+    });
+    let notes = [...below, soprano].sort((a, b) => a - b);
+    if (open && notes.length >= 3) { notes[notes.length - 2] -= 12; notes.sort((a, b) => a - b); }
+
+    // Register control — keep the body in a comfortable band around middle C.
+    const avg = notes.reduce((a, b) => a + b, 0) / notes.length;
+    if (avg > 11) notes = notes.map(n => n - 12);
+    else if (avg < -3) notes = notes.map(n => n + 12);
+
+    // Bass = the chord root in a steady low register (nearest ~ -9 semitones,
+    // roughly C2–B2) so it doesn't drift octave-by-octave through a progression,
+    // and always clearly below the voicing (octave doubling ok, unison not).
+    let bass = root - 12;
+    while (-9 - bass > 6) bass += 12;
+    while (bass - (-9) > 6) bass -= 12;
+    while (bass > notes[0] - 3) bass -= 12;
+    return { all: [bass, ...notes], upper: notes };
   },
 
   playTimeline(entries, secPerBeat = 0.5, startOffset = 0) {
@@ -3601,6 +3600,10 @@ const OverlayManager = {
     let it = this._items.find(x => x.id === id);
     if (!it) { it = { id, order: 0 }; this._items.push(it); }
     it.isOpen = api.isOpen; it.close = api.close;
+    // Optional: a predicate that returns true when a click target belongs to
+    // this overlay (panel or trigger). Overlays that provide it get centralised
+    // click-outside dismissal — no per-component document listeners needed.
+    it.contains = api.contains;
     return it;
   },
   _open(it)  { try { return !!it.isOpen?.(); } catch (_) { return false; } },
@@ -3627,10 +3630,35 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && OverlayManager.closeTopmost()) e.stopPropagation();
 });
 
+// One global click handler: any overlay that declares `contains` is dismissed
+// when a click lands outside it (and its trigger). Capturing phase so it runs
+// before the click's own handlers; an overlay that is being opened by this very
+// click is still closed (its `contains` covers its trigger).
+document.addEventListener('click', e => {
+  OverlayManager._items.forEach(it => {
+    if (it.contains && OverlayManager._open(it)) {
+      let inside = true;
+      try { inside = !!it.contains(e.target); } catch (_) {}
+      if (!inside) OverlayManager._close(it);
+    }
+  });
+}, true);
+
 // Register the known overlays (callbacks resolve globals at call time).
 OverlayManager.register('mode-menu', {
-  isOpen: () => !!document.getElementById('modeMenu')?.classList.contains('portal-open'),
-  close:  () => { if (typeof _closeModeMenu === 'function') _closeModeMenu(); },
+  isOpen:   () => !!document.getElementById('modeMenu')?.classList.contains('portal-open'),
+  close:    () => { if (typeof _closeModeMenu === 'function') _closeModeMenu(); },
+  contains: (t) => !!(t.closest('#modeControl') || t.closest('#modeMenu')),
+});
+OverlayManager.register('metronome', {
+  isOpen:   () => !!(typeof Metronome === 'object' && Metronome.open),
+  close:    () => { if (typeof Metronome === 'object' && Metronome.open) Metronome.toggleOpen(); },
+  contains: (t) => !!t.closest('#metronome'),
+});
+OverlayManager.register('chord-variants', {
+  isOpen:   () => !!(typeof ChordVariants === 'object' && ChordVariants.ctx),
+  close:    () => { if (typeof ChordVariants === 'object') ChordVariants.close(); },
+  contains: (t) => !!(t.closest('#chordVariants') || t.closest('.builder-step')),
 });
 OverlayManager.register('dir-guide', {
   isOpen: () => !!(typeof WheelDirectionGuide === 'object' && WheelDirectionGuide.visible),
@@ -3821,13 +3849,8 @@ const ModeMenu = {
   },
 };
 
-// Close on outside click (capture phase)
-document.addEventListener('click', e => {
-  const c = document.getElementById('modeControl');
-  const m = document.getElementById('modeMenu');
-  if (c?.contains(e.target) || m?.contains(e.target)) return;
-  _closeModeMenu();
-}, true);
+// Click-outside + Escape are handled centrally by OverlayManager (registered as
+// 'mode-menu' in popover-manager.js). Only reposition on resize/scroll here.
 window.addEventListener('resize', () => {
   if (document.getElementById('modeMenu')?.classList.contains('portal-open')) _placeModeMenu();
 }, { passive: true });
@@ -4016,27 +4039,6 @@ const HistoryEngine = {
     saveState();
   },
 
-  recall(index) {
-    const item = st.history[index];
-    if (!item) return;
-    AppActions.selectDegree(item.degreeIndex, { fromHistory: true });
-  },
-
-  dragStart(e, i) { e.dataTransfer.setData('text/plain', i); },
-
-  drop(e, target) {
-    e.preventDefault();
-    const from = parseInt(e.dataTransfer.getData('text/plain'), 10);
-    if (isNaN(from) || from === target) return;
-    const h   = st.history;
-    const tmp = h[from];
-    h.splice(from, 1);
-    h.splice(target, 0, tmp);
-    this.render();
-    renderProgressionStory();
-    saveState();
-  },
-
   render() {
     const root = document.getElementById('flowRow'); if (!root) return;
     const h    = Array.isArray(st.history) ? st.history : [];
@@ -4124,29 +4126,7 @@ const BuilderEngine = {
       <b>${progressionNarrative()}</b>`;
   },
 
-  addCurrent() {
-    if (curDeg < 0) return;
-    AppActions.selectDegree(curDeg, { force: true });
-  },
-
-  // Hear a single bar's chord (no wheel side-effect).
-  hear(index) {
-    const it = (st.history || [])[index];
-    if (it && typeof AudioEngine === 'object') AudioEngine.playChord(chordPitchesForItem(it));
-  },
-
-  duplicateLast() {
-    const h = st.history;
-    if (!Array.isArray(h) || !h.length) return;
-    HistoryEngine.addDegree(h[h.length - 1].degreeIndex);
-  },
-
-  duplicate(index) {
-    const h = st.history;
-    if (!h?.[index]) return;
-    setTimeout(() => HistoryEngine.addDegree(h[index].degreeIndex, { force: true }), 0);
-  },
-
+  // Swap a bar with its neighbour (used by tests + programmatic reorder).
   move(index, dir) {
     const h = st.history;
     if (!Array.isArray(h)) return;
@@ -4158,18 +4138,6 @@ const BuilderEngine = {
     HistoryEngine.render();
     renderProgressionStory();
     saveState();
-  },
-
-  copy() {
-    const text = progressionNarrative();
-    navigator.clipboard?.writeText(text).then(() => {
-      const toast = document.getElementById('copyToast');
-      if (toast) {
-        toast.textContent = 'Copied: ' + text;
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 2000);
-      }
-    }).catch(() => {});
   },
 };
 
@@ -4259,7 +4227,7 @@ function toggleProgPlay() {
 // Playback option toggles (7th chords, count-in). Persisted in state.
 function togglePlayOpt(key, el) {
   st[key] = !st[key]; saveState();
-  if (el) el.classList.toggle('active', !!st[key]);
+  if (el) { el.classList.toggle('active', !!st[key]); el.setAttribute('aria-pressed', !!st[key]); }
   // Preview the 7ths change on the currently selected chord.
   if (key === 'sevenths' && curDeg >= 0 && typeof AudioEngine === 'object')
     AudioEngine.playChord(chordPitchesForDegree(curDeg));
@@ -4267,7 +4235,8 @@ function togglePlayOpt(key, el) {
 
 // Reflect persisted option state on the toggle buttons at boot.
 function initPlayOpts() {
-  const c = document.getElementById('countInBtn'); if (c) c.classList.toggle('active', !!st.countIn);
+  const c = document.getElementById('countInBtn'); if (c) { c.classList.toggle('active', !!st.countIn); c.setAttribute('aria-pressed', !!st.countIn); }
+  const v = document.getElementById('voicingBtn'); if (v) { v.classList.toggle('active', !!st.voicingOpen); v.setAttribute('aria-pressed', !!st.voicingOpen); }
 }
 
 function playProgression() {
@@ -4595,7 +4564,7 @@ function chordDisplay(it) {
 // chips fan ABOVE and BELOW the tapped bar (the bar itself stays visible and
 // tappable in the gap). Bars only — suggestions stay a fast tap-to-add.
 const ChordVariants = {
-  el: null, ctx: null, _anchorRect: null, _outside: null, _key: null,
+  el: null, ctx: null, _anchorRect: null,
 
   _ensure() {
     if (this.el) return this.el;
@@ -4616,7 +4585,6 @@ const ChordVariants = {
   },
 
   _open(ctx, anchorEl) {
-    if (this._outside) document.removeEventListener('click', this._outside, true);
     this.ctx = ctx;
     this._anchorRect = anchorEl ? anchorEl.getBoundingClientRect() : null;
     const el = this._ensure();
@@ -4643,13 +4611,8 @@ const ChordVariants = {
     el.style.display = 'block';
     this._place();
     requestAnimationFrame(() => el.classList.add('open'));
-    this._outside = e => {
-      if (e.target.closest('#chordVariants') || e.target.closest('.builder-step')) return;
-      this.close();
-    };
-    setTimeout(() => document.addEventListener('click', this._outside, true), 0);
-    this._key = e => { if (e.key === 'Escape') this.close(); };
-    document.addEventListener('keydown', this._key, true);
+    // Escape + click-outside handled centrally by OverlayManager ('chord-variants').
+    if (typeof OverlayManager === 'object') OverlayManager.opened('chord-variants');
   },
 
   _place() {
@@ -4693,14 +4656,13 @@ const ChordVariants = {
   },
 
   close() {
+    if (!this.ctx && this.el && this.el.style.display === 'none') return;   // already closed
     if (this.el) {
       this.el.classList.remove('open');
       const el = this.el;
       setTimeout(() => { if (el && !el.classList.contains('open')) el.style.display = 'none'; }, 220);
     }
-    if (this._outside) document.removeEventListener('click', this._outside, true);
-    if (this._key) document.removeEventListener('keydown', this._key, true);
-    this._outside = null; this._key = null; this.ctx = null;
+    this.ctx = null;
   },
 };
 
@@ -4820,12 +4782,8 @@ const Metronome = {
     this.open = !this.open;
     document.getElementById('metronome')?.classList.toggle('open', this.open);
     document.querySelector('#metronome .metro-pill')?.setAttribute('aria-expanded', this.open ? 'true' : 'false');
-    if (this.open) {
-      this._esc = e => { if (e.key === 'Escape') this.toggleOpen(); };
-      document.addEventListener('keydown', this._esc, true);
-    } else if (this._esc) {
-      document.removeEventListener('keydown', this._esc, true); this._esc = null;
-    }
+    // Escape + click-outside are handled centrally by OverlayManager ('metronome').
+    if (this.open && typeof OverlayManager === 'object') OverlayManager.opened('metronome');
   },
   toggle() { this.playing ? this.stop() : this.start(); },
 

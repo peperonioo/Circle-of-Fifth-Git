@@ -23,12 +23,8 @@ const Metronome = {
     this.open = !this.open;
     document.getElementById('metronome')?.classList.toggle('open', this.open);
     document.querySelector('#metronome .metro-pill')?.setAttribute('aria-expanded', this.open ? 'true' : 'false');
-    if (this.open) {
-      this._esc = e => { if (e.key === 'Escape') this.toggleOpen(); };
-      document.addEventListener('keydown', this._esc, true);
-    } else if (this._esc) {
-      document.removeEventListener('keydown', this._esc, true); this._esc = null;
-    }
+    // Escape + click-outside are handled centrally by OverlayManager ('metronome').
+    if (this.open && typeof OverlayManager === 'object') OverlayManager.opened('metronome');
   },
   toggle() { this.playing ? this.stop() : this.start(); },
 
