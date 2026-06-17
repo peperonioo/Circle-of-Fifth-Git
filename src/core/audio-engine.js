@@ -256,41 +256,53 @@ const AudioEngine = {
     o.connect(g); g.connect(bus); o.start(t0); o.stop(t0 + 0.05);
   },
 
-  // ── Karplus-Strong plucked-string voice ───────────────
-  // Physical-model synthesis: a noise burst excites a feedback delay loop
-  // whose period equals 1/freq. A lowpass filter in the loop damps higher
-  // harmonics each cycle, producing the warm, decaying timbre of a plucked
-  // guitar string. Only used by playGuitarNote — chord previews use Rhodes.
+  // ── Karplus-Strong plucked-string voice (pure JS) ────
+  // Web Audio's DelayNode adds a render-quantum latency (~128 samples / 2.9ms)
+  // to any feedback loop — enough to detune high-frequency notes completely.
+  // Solution: run K-S in JavaScript, write to an AudioBuffer, play it back.
+  // O(sr * duration) ≈ 110k iterations → < 1ms computation, no perceptible lag.
   _guitarVoice(freq, t0, gainScale) {
-    const ctx = this.ctx, out = this.master;
-    const sr = ctx.sampleRate;
-    // Exactly one period of noise — critical: longer bursts cause harmonic buildup
-    const noiseLen = Math.max(2, Math.round(sr / freq));
-    const buf = ctx.createBuffer(1, noiseLen, sr);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < noiseLen; i++) d[i] = (Math.random() * 2 - 1) * 0.45;
-    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = false;
-    // Delay tuned to string fundamental
-    const delay = ctx.createDelay(0.06); delay.delayTime.value = 1 / freq;
-    // Tight lowpass — the filter that shapes string brightness (damps harmonics each cycle)
-    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass';
-    lp.frequency.value = Math.min(freq * 2, 2400);
-    lp.Q.value = 0.3;
-    // Feedback gain — lower = more damping, shorter sustain
-    const fb = ctx.createGain(); fb.gain.value = 0.97;
-    const decaySec = Math.max(1.4, 3.4 - freq / 500);
+    const ctx = this.ctx, sr = ctx.sampleRate;
+    const period = Math.round(sr / freq);
+    // Duration: high notes decay quickly (natural guitar physics), bass notes ring longer.
+    const dur = Math.min(2.8, Math.max(0.6, 4.0 - freq / 380));
+    const N = Math.floor(sr * dur);
+    const samples = new Float32Array(N);
+    const ring = new Float32Array(period);
+
+    // Seed delay line with one period of noise, then pre-smooth to soften attack.
+    for (let i = 0; i < period; i++) ring[i] = Math.random() * 2 - 1;
+    for (let p = 0; p < 2; p++)
+      for (let i = 1; i < period; i++) ring[i] = (ring[i] + ring[i - 1]) * 0.5;
+
+    // K-S: output = ring[ptr]; ring[ptr] = avg(ring[ptr], ring[next]) * decay
+    const decay = 0.9998;
+    let ptr = 0;
+    for (let i = 0; i < N; i++) {
+      const next = (ptr + 1) % period;
+      samples[i] = ring[ptr];
+      ring[ptr] = (ring[ptr] + ring[next]) * 0.5 * decay;
+      ptr = next;
+    }
+
+    // Normalize to target gain — prevents any clipping regardless of frequency.
+    let peak = 0;
+    for (let i = 0; i < N; i++) { const a = Math.abs(samples[i]); if (a > peak) peak = a; }
+    if (peak > 0.001) {
+      const g = (gainScale * 0.52) / peak;
+      for (let i = 0; i < N; i++) samples[i] *= g;
+    }
+
+    const audioBuf = ctx.createBuffer(1, N, sr);
+    audioBuf.copyToChannel(samples, 0);
+    const src = ctx.createBufferSource(); src.buffer = audioBuf;
     const amp = ctx.createGain();
-    amp.gain.setValueAtTime(gainScale * 0.42, t0);
-    amp.gain.exponentialRampToValueAtTime(0.0001, t0 + decaySec);
-    src.connect(delay); delay.connect(lp); lp.connect(fb); fb.connect(delay);
-    delay.connect(amp); amp.connect(out);
-    // Stop after exactly one period — prevents inter-cycle buildup
-    src.start(t0); src.stop(t0 + noiseLen / sr);
+    src.connect(amp); amp.connect(this.master);
+    src.start(t0);
     if (this._active) {
       const entry = { oscs: [src], amp };
       this._active.add(entry);
-      const wallMs = Math.max(100, (t0 - ctx.currentTime + decaySec) * 1000);
-      setTimeout(() => { if (this._active) this._active.delete(entry); }, wallMs);
+      src.onended = () => { if (this._active) this._active.delete(entry); };
     }
   },
 
