@@ -119,6 +119,19 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
 @media (max-width:860px){
   .instr-zoom { padding:0 }
   .iz-panel { width:100vw; height:100vh; max-height:100vh; border-radius:0 }
-  /* On phones the piano reads best rotated to use the long edge */
   .piano.zoom { height:min(72vw, 320px) }
+}
+/* Portrait phone: rotate the zoom panel to landscape so instruments use the long axis */
+@media (max-width:860px) and (orientation:portrait) {
+  .instr-zoom .iz-panel {
+    position:absolute;
+    width:100dvh; height:100dvw; max-height:none;
+    top:calc(50dvh - 50dvw); left:calc(50dvw - 50dvh);
+    border-radius:0;
+    transform:rotate(-90deg) scale(.95) !important;
+    transition:transform .3s cubic-bezier(.34,1.4,.4,1);
+  }
+  .instr-zoom.open .iz-panel { transform:rotate(-90deg) !important }
+  .piano.zoom { height:min(44dvw, 260px) }
+  .fretboard-wrap.zoom { max-height:100dvw }
 }

@@ -1325,8 +1325,21 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
 @media (max-width:860px){
   .instr-zoom { padding:0 }
   .iz-panel { width:100vw; height:100vh; max-height:100vh; border-radius:0 }
-  /* On phones the piano reads best rotated to use the long edge */
   .piano.zoom { height:min(72vw, 320px) }
+}
+/* Portrait phone: rotate the zoom panel to landscape so instruments use the long axis */
+@media (max-width:860px) and (orientation:portrait) {
+  .instr-zoom .iz-panel {
+    position:absolute;
+    width:100dvh; height:100dvw; max-height:none;
+    top:calc(50dvh - 50dvw); left:calc(50dvw - 50dvh);
+    border-radius:0;
+    transform:rotate(-90deg) scale(.95) !important;
+    transition:transform .3s cubic-bezier(.34,1.4,.4,1);
+  }
+  .instr-zoom.open .iz-panel { transform:rotate(-90deg) !important }
+  .piano.zoom { height:min(44dvw, 260px) }
+  .fretboard-wrap.zoom { max-height:100dvw }
 }
 
 /* == production.css == */
@@ -1429,6 +1442,14 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
 .bb:nth-child(5){ height:12px; animation:bass-p 1.6s .1s infinite }
 
 /* == mobile.css == */
+/* ── MODE FAB + QUICK SHEET (hidden on desktop) ───────*/
+.mode-fab, .mobile-mode-sheet { display:none }
+
+/* Open state lives outside the media query so it works when JS adds the class */
+.mobile-mode-sheet.open {
+  transform:none; opacity:1; pointer-events:auto;
+}
+
 /* ── MOBILE ───────────────────────────────────────────*/
 @media (max-width:860px) {
   html,body {
@@ -1488,6 +1509,45 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
   .builder-row.is-timeline { --px-beat:38px; gap:4px }
   .builder-row.is-timeline .builder-step .step-chord { font-size:16px }
   .builder-step .step-resize { width:20px }   /* easier to grab with a thumb */
+
+  /* Mode FAB — bottom-left pill, mirrors the metronome FAB on the right */
+  .mode-fab {
+    display:flex; align-items:center; gap:5px;
+    position:fixed;
+    bottom:calc(16px + var(--mobile-safe-bottom, 0px));
+    left:14px;
+    z-index:var(--z-overlay, 9200);
+    padding:8px 13px 8px 10px;
+    border:1px solid var(--ui-border); border-radius:22px;
+    background:var(--ui-surface-strong); backdrop-filter:blur(20px);
+    color:var(--ink); font-size:12px; font-weight:600; font-family:'DM Sans',sans-serif;
+    cursor:pointer; transition:transform .15s var(--ease);
+    box-shadow:0 4px 18px rgba(0,0,0,.28);
+  }
+  .mode-fab:active { transform:scale(.93) }
+  .mf-icon { font-size:14px; opacity:.7 }
+
+  /* Quick sheet pops up above the FAB */
+  .mobile-mode-sheet {
+    display:flex; flex-direction:column; gap:10px;
+    position:fixed;
+    bottom:calc(68px + var(--mobile-safe-bottom, 0px));
+    left:14px;
+    z-index:var(--z-modal, 9500);
+    min-width:200px; max-width:calc(100vw - 28px);
+    padding:14px 14px 12px;
+    background:var(--ui-surface-strong); backdrop-filter:blur(26px);
+    border:1px solid var(--ui-border-strong); border-radius:18px;
+    box-shadow:0 20px 60px rgba(0,0,0,.44);
+    transform:translateY(10px) scale(.97);
+    opacity:0; pointer-events:none;
+    transition:transform .2s var(--ease), opacity .18s var(--ease);
+  }
+  .mms-key-row { display:flex; align-items:baseline; gap:7px }
+  .mms-key-row b { font-family:'DM Serif Display',serif; font-size:30px; line-height:1 }
+  .mms-mode-tag { font-size:11px; color:var(--muted); font-weight:500 }
+  .mms-toggle   { width:100% }
+  .mms-mode-btn { width:100%; margin-top:2px }
 
   /* Metronome: the full header occupies the top on phones, so dock it as a
      floating FAB at the bottom-right; the panel expands upward from there. */
@@ -1802,6 +1862,26 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
   </div>
 </div>
 
+<!-- MOBILE MODE FAB + QUICK SHEET (≤860px only) -->
+<button id="modeFab" class="mode-fab" aria-label="Key &amp; Mode" onclick="MobileModePanel.toggle()">
+  <span class="mf-icon">♩</span><span id="modeFabLabel">Maj</span>
+</button>
+<div id="mobileModeSheet" class="mobile-mode-sheet" role="dialog" aria-label="Key &amp; Mode">
+  <div class="mms-key-row">
+    <b id="mmsKeyDisplay">C</b>
+    <span id="mmsModeDisplay" class="mms-mode-tag">Major</span>
+  </div>
+  <div class="wheel-toggle mms-toggle" role="group" aria-label="Major / Minor">
+    <button id="mmsMajBtn" class="active" onclick="setWheelView('major')">Major</button>
+    <button id="mmsMinBtn" onclick="setWheelView('minor')">Minor</button>
+  </div>
+  <button class="mode-display mms-mode-btn" id="mmsModeBtn" type="button" onclick="ModeMenu.toggle(event)">
+    <span id="mmsModeMain">Major</span>
+    <small id="mmsModeSub">bright, stable</small>
+    <i>⌄</i>
+  </button>
+</div>
+
 <!-- PROGRESSION LIBRARY -->
 <div id="libraryBackdrop" class="lib-backdrop" onclick="Library.close()"></div>
 <div id="libraryPanel" class="lib-panel" role="dialog" aria-modal="true" aria-label="Progression library">
@@ -1827,7 +1907,7 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
 // ── CONSTANTS ─────────────────────────────────────────
 // Pure data. No DOM access. No state mutation.
 
-const APP_VERSION = 'V5.5';
+const APP_VERSION = 'V5.6';
 const STORAGE_KEY = 'easy-fifth-circle:v1';
 
 const NOTES  = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
@@ -3685,6 +3765,7 @@ const RenderEngine = {
     renderPiano();
     renderGuitar();
     applyI18n();
+    if (typeof MobileModePanel !== 'undefined') MobileModePanel._sync();
   },
 
   partial(set) {
@@ -3696,6 +3777,8 @@ const RenderEngine = {
     if (set.includes('trails'))      { renderProgressionStory(); }
     if (set.includes('degrees'))     { renderTheory(); }
     if (set.includes('instruments')) { renderPiano(); renderGuitar(); }
+    if (set.includes('wheel') || set.includes('theory') || set.includes('degrees'))
+      if (typeof MobileModePanel !== 'undefined') MobileModePanel._sync();
   },
 };
 
@@ -3733,6 +3816,7 @@ function renderWheel() {
 
   // Sectors whose root is in the current scale are "diatonic" — everything else dims.
   const scalePCs = new Set(gs().map(n => ni(n)));
+  const baRgb = getComputedStyle(document.documentElement).getPropertyValue('--ba-rgb').trim() || '232,68,26';
 
   FIFTHS.forEach((k, i) => {
     const isActive  = k === aKey;
@@ -3746,12 +3830,16 @@ function renderWheel() {
     const og = se('g', { cursor:'pointer' });
     const op = se('path', {
       d: od,
-      fill:   isActive ? (isLight ? 'rgba(232,68,26,.88)' : 'rgba(232,68,26,.82)') : (isLight ? 'rgba(255,255,255,.38)' : 'rgba(255,255,255,.032)'),
-      stroke: isActive ? 'rgba(255,120,80,.4)' : (isLight ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.08)'),
-      'stroke-width': isActive ? '1.8' : '0.8',
+      fill:   isActive   ? (isLight ? 'rgba(232,68,26,.88)' : 'rgba(232,68,26,.82)')
+            : isDiatonic ? (isLight ? `rgba(${baRgb},.14)` : `rgba(${baRgb},.09)`)
+            :               (isLight ? 'rgba(255,255,255,.38)' : 'rgba(255,255,255,.032)'),
+      stroke: isActive   ? 'rgba(255,120,80,.4)'
+            : isDiatonic ? `rgba(${baRgb},.36)`
+            :               (isLight ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.08)'),
+      'stroke-width': isActive ? '1.8' : isDiatonic ? '1.4' : '0.8',
     });
     if (isActive) { op.setAttribute('filter', 'url(#fGlow)'); op.setAttribute('class', 'active-sector'); }
-    if (!isActive && !isDiatonic) og.setAttribute('opacity', '0.4');
+    if (!isActive && !isDiatonic) og.setAttribute('opacity', '0.22');
     og.appendChild(op);
 
     // Primary label (major/minor view)
@@ -3780,6 +3868,11 @@ function renderWheel() {
     });
     at.textContent = ACC[i] === '0' ? '♮' : ACC[i];
     og.appendChild(at);
+    // Small accent pip at outer rim for diatonic non-active sectors
+    if (!isActive && isDiatonic) {
+      const [px, py] = polar(281, sa);
+      og.appendChild(se('circle', { cx: String(px), cy: String(py), r: '2.8', fill: `rgba(${baRgb},.65)`, class: 'diatonic-pip' }));
+    }
     og.addEventListener('click', e => {
       if (suppressWheelClick) { e.preventDefault(); e.stopPropagation(); return; }
       e.stopPropagation();
@@ -3796,7 +3889,7 @@ function renderWheel() {
     const [ix3,iy3] = polar(150,a2), [ix4,iy4] = polar(150,a1);
     const id2 = `M${ix1} ${iy1} A194 194 0 0 1 ${ix2} ${iy2} L${ix3} ${iy3} A150 150 0 0 0 ${ix4} ${iy4}Z`;
     const ig  = se('g', { cursor:'pointer' });
-    if (!isActive && !isDiatonic) ig.setAttribute('opacity', '0.4');
+    if (!isActive && !isDiatonic) ig.setAttribute('opacity', '0.22');
     const ip  = se('path', {
       d: id2,
       fill:   isActive ? (isLight ? 'rgba(232,68,26,.30)' : 'rgba(160,40,10,.46)') : (isLight ? 'rgba(255,255,255,.34)' : 'rgba(255,255,255,.04)'),
@@ -3991,7 +4084,12 @@ document.addEventListener('click', e => {
 OverlayManager.register('mode-menu', {
   isOpen:   () => !!document.getElementById('modeMenu')?.classList.contains('portal-open'),
   close:    () => { if (typeof _closeModeMenu === 'function') _closeModeMenu(); },
-  contains: (t) => !!(t.closest('#modeControl') || t.closest('#modeMenu')),
+  contains: (t) => !!(t.closest('#modeControl') || t.closest('#modeMenu') || t.closest('#mmsModeBtn')),
+});
+OverlayManager.register('mobile-mode', {
+  isOpen:   () => !!document.getElementById('mobileModeSheet')?.classList.contains('open'),
+  close:    () => { if (typeof MobileModePanel !== 'undefined') MobileModePanel.close(); },
+  contains: (t) => !!(t.closest('#mobileModeSheet') || t.closest('#modeFab')),
 });
 OverlayManager.register('metronome', {
   isOpen:   () => !!(typeof Metronome === 'object' && Metronome.open),
@@ -4149,7 +4247,10 @@ function renderModeMenu() {
 }
 
 function _placeModeMenu() {
-  const display = document.getElementById('modeDisplay');
+  // On mobile the sidebar is hidden; fall back to the FAB's mode button.
+  const d1 = document.getElementById('modeDisplay');
+  const display = (d1 && d1.getBoundingClientRect().width > 0)
+    ? d1 : (document.getElementById('mmsModeBtn') || d1);
   const menu    = document.getElementById('modeMenu');
   if (!display || !menu) return;
   if (menu.parentElement !== document.body) document.body.appendChild(menu);
@@ -4199,6 +4300,35 @@ const ModeMenu = {
   choose(id) {
     AppActions.setMode(id);
     _closeModeMenu();
+  },
+};
+
+// ── Mobile mode quick sheet ────────────────────────────
+const MobileModePanel = {
+  _open: false,
+  toggle() { this._open ? this.close() : this.open(); },
+  open() {
+    this._sync();
+    document.getElementById('mobileModeSheet')?.classList.add('open');
+    if (typeof OverlayManager === 'object') OverlayManager.opened('mobile-mode');
+    this._open = true;
+  },
+  close() {
+    document.getElementById('mobileModeSheet')?.classList.remove('open');
+    this._open = false;
+  },
+  _sync() {
+    const key = (typeof displayKeyLabel === 'function') ? displayKeyLabel() : (st?.key || 'C');
+    const [name, desc] = (typeof modeFriendly === 'function') ? modeFriendly(st?.mode || 'ionian') : ['Major',''];
+    const isMaj = st?.tonality !== 'minor';
+    const el = id => document.getElementById(id);
+    if (el('mmsKeyDisplay'))  el('mmsKeyDisplay').textContent  = key;
+    if (el('mmsModeDisplay')) el('mmsModeDisplay').textContent = name;
+    if (el('mmsModeMain'))    el('mmsModeMain').textContent    = name;
+    if (el('mmsModeSub'))     el('mmsModeSub').textContent     = desc;
+    if (el('modeFabLabel'))   el('modeFabLabel').textContent   = name.slice(0,3);
+    el('mmsMajBtn')?.classList.toggle('active',  isMaj);
+    el('mmsMinBtn')?.classList.toggle('active', !isMaj);
   },
 };
 

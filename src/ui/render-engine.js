@@ -14,6 +14,7 @@ const RenderEngine = {
     renderPiano();
     renderGuitar();
     applyI18n();
+    if (typeof MobileModePanel !== 'undefined') MobileModePanel._sync();
   },
 
   partial(set) {
@@ -25,5 +26,7 @@ const RenderEngine = {
     if (set.includes('trails'))      { renderProgressionStory(); }
     if (set.includes('degrees'))     { renderTheory(); }
     if (set.includes('instruments')) { renderPiano(); renderGuitar(); }
+    if (set.includes('wheel') || set.includes('theory') || set.includes('degrees'))
+      if (typeof MobileModePanel !== 'undefined') MobileModePanel._sync();
   },
 };

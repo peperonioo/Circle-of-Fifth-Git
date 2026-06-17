@@ -312,6 +312,26 @@
   </div>
 </div>
 
+<!-- MOBILE MODE FAB + QUICK SHEET (≤860px only) -->
+<button id="modeFab" class="mode-fab" aria-label="Key &amp; Mode" onclick="MobileModePanel.toggle()">
+  <span class="mf-icon">♩</span><span id="modeFabLabel">Maj</span>
+</button>
+<div id="mobileModeSheet" class="mobile-mode-sheet" role="dialog" aria-label="Key &amp; Mode">
+  <div class="mms-key-row">
+    <b id="mmsKeyDisplay">C</b>
+    <span id="mmsModeDisplay" class="mms-mode-tag">Major</span>
+  </div>
+  <div class="wheel-toggle mms-toggle" role="group" aria-label="Major / Minor">
+    <button id="mmsMajBtn" class="active" onclick="setWheelView('major')">Major</button>
+    <button id="mmsMinBtn" onclick="setWheelView('minor')">Minor</button>
+  </div>
+  <button class="mode-display mms-mode-btn" id="mmsModeBtn" type="button" onclick="ModeMenu.toggle(event)">
+    <span id="mmsModeMain">Major</span>
+    <small id="mmsModeSub">bright, stable</small>
+    <i>⌄</i>
+  </button>
+</div>
+
 <!-- PROGRESSION LIBRARY -->
 <div id="libraryBackdrop" class="lib-backdrop" onclick="Library.close()"></div>
 <div id="libraryPanel" class="lib-panel" role="dialog" aria-modal="true" aria-label="Progression library">

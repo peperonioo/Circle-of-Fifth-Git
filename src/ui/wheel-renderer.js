@@ -30,6 +30,7 @@ function renderWheel() {
 
   // Sectors whose root is in the current scale are "diatonic" — everything else dims.
   const scalePCs = new Set(gs().map(n => ni(n)));
+  const baRgb = getComputedStyle(document.documentElement).getPropertyValue('--ba-rgb').trim() || '232,68,26';
 
   FIFTHS.forEach((k, i) => {
     const isActive  = k === aKey;
@@ -43,12 +44,16 @@ function renderWheel() {
     const og = se('g', { cursor:'pointer' });
     const op = se('path', {
       d: od,
-      fill:   isActive ? (isLight ? 'rgba(232,68,26,.88)' : 'rgba(232,68,26,.82)') : (isLight ? 'rgba(255,255,255,.38)' : 'rgba(255,255,255,.032)'),
-      stroke: isActive ? 'rgba(255,120,80,.4)' : (isLight ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.08)'),
-      'stroke-width': isActive ? '1.8' : '0.8',
+      fill:   isActive   ? (isLight ? 'rgba(232,68,26,.88)' : 'rgba(232,68,26,.82)')
+            : isDiatonic ? (isLight ? `rgba(${baRgb},.14)` : `rgba(${baRgb},.09)`)
+            :               (isLight ? 'rgba(255,255,255,.38)' : 'rgba(255,255,255,.032)'),
+      stroke: isActive   ? 'rgba(255,120,80,.4)'
+            : isDiatonic ? `rgba(${baRgb},.36)`
+            :               (isLight ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.08)'),
+      'stroke-width': isActive ? '1.8' : isDiatonic ? '1.4' : '0.8',
     });
     if (isActive) { op.setAttribute('filter', 'url(#fGlow)'); op.setAttribute('class', 'active-sector'); }
-    if (!isActive && !isDiatonic) og.setAttribute('opacity', '0.4');
+    if (!isActive && !isDiatonic) og.setAttribute('opacity', '0.22');
     og.appendChild(op);
 
     // Primary label (major/minor view)
@@ -77,6 +82,11 @@ function renderWheel() {
     });
     at.textContent = ACC[i] === '0' ? '♮' : ACC[i];
     og.appendChild(at);
+    // Small accent pip at outer rim for diatonic non-active sectors
+    if (!isActive && isDiatonic) {
+      const [px, py] = polar(281, sa);
+      og.appendChild(se('circle', { cx: String(px), cy: String(py), r: '2.8', fill: `rgba(${baRgb},.65)`, class: 'diatonic-pip' }));
+    }
     og.addEventListener('click', e => {
       if (suppressWheelClick) { e.preventDefault(); e.stopPropagation(); return; }
       e.stopPropagation();
@@ -93,7 +103,7 @@ function renderWheel() {
     const [ix3,iy3] = polar(150,a2), [ix4,iy4] = polar(150,a1);
     const id2 = `M${ix1} ${iy1} A194 194 0 0 1 ${ix2} ${iy2} L${ix3} ${iy3} A150 150 0 0 0 ${ix4} ${iy4}Z`;
     const ig  = se('g', { cursor:'pointer' });
-    if (!isActive && !isDiatonic) ig.setAttribute('opacity', '0.4');
+    if (!isActive && !isDiatonic) ig.setAttribute('opacity', '0.22');
     const ip  = se('path', {
       d: id2,
       fill:   isActive ? (isLight ? 'rgba(232,68,26,.30)' : 'rgba(160,40,10,.46)') : (isLight ? 'rgba(255,255,255,.34)' : 'rgba(255,255,255,.04)'),
