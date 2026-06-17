@@ -28,8 +28,12 @@ function renderWheel() {
   if (!grp) return;
   grp.innerHTML = '';
 
+  // Sectors whose root is in the current scale are "diatonic" — everything else dims.
+  const scalePCs = new Set(gs().map(n => ni(n)));
+
   FIFTHS.forEach((k, i) => {
-    const isActive = k === aKey;
+    const isActive  = k === aKey;
+    const isDiatonic = scalePCs.has(ni(k));
     const sa = i * 30, a1 = sa - 15, a2 = sa + 15;
 
     // Outer sector r: 194–286
@@ -44,6 +48,7 @@ function renderWheel() {
       'stroke-width': isActive ? '1.8' : '0.8',
     });
     if (isActive) { op.setAttribute('filter', 'url(#fGlow)'); op.setAttribute('class', 'active-sector'); }
+    if (!isActive && !isDiatonic) og.setAttribute('opacity', '0.4');
     og.appendChild(op);
 
     // Primary label (major/minor view)
@@ -75,6 +80,10 @@ function renderWheel() {
     og.addEventListener('click', e => {
       if (suppressWheelClick) { e.preventDefault(); e.stopPropagation(); return; }
       e.stopPropagation();
+      if (typeof AudioEngine === 'object') {
+        const root = ni(k);
+        AudioEngine.playChord([root, root + 4, root + 7]);
+      }
       selectWheelKey(k);
     });
     grp.appendChild(og);
@@ -84,6 +93,7 @@ function renderWheel() {
     const [ix3,iy3] = polar(150,a2), [ix4,iy4] = polar(150,a1);
     const id2 = `M${ix1} ${iy1} A194 194 0 0 1 ${ix2} ${iy2} L${ix3} ${iy3} A150 150 0 0 0 ${ix4} ${iy4}Z`;
     const ig  = se('g', { cursor:'pointer' });
+    if (!isActive && !isDiatonic) ig.setAttribute('opacity', '0.4');
     const ip  = se('path', {
       d: id2,
       fill:   isActive ? (isLight ? 'rgba(232,68,26,.30)' : 'rgba(160,40,10,.46)') : (isLight ? 'rgba(255,255,255,.34)' : 'rgba(255,255,255,.04)'),
@@ -105,6 +115,13 @@ function renderWheel() {
     ig.addEventListener('click', e => {
       if (suppressWheelClick) { e.preventDefault(); e.stopPropagation(); return; }
       e.stopPropagation();
+      if (typeof AudioEngine === 'object') {
+        const relMin = relativeMinor(k);
+        if (relMin) {
+          const root = ni(stripMinorSuffix(relMin));
+          AudioEngine.playChord([root, root + 3, root + 7]);
+        }
+      }
       selectWheelKey(k);
     });
     grp.appendChild(ig);
