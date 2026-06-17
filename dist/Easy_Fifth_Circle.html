@@ -2756,13 +2756,14 @@ const AudioEngine = {
     const samples = new Float32Array(N);
     const ring = new Float32Array(period);
 
-    // Seed delay line with one period of noise, then pre-smooth to soften attack.
+    // Seed delay line with one period of noise.
+    // 5 pre-smoothing passes → rounded nylon/classical attack (steel string = 2 passes).
     for (let i = 0; i < period; i++) ring[i] = Math.random() * 2 - 1;
-    for (let p = 0; p < 2; p++)
+    for (let p = 0; p < 5; p++)
       for (let i = 1; i < period; i++) ring[i] = (ring[i] + ring[i - 1]) * 0.5;
 
-    // K-S: output = ring[ptr]; ring[ptr] = avg(ring[ptr], ring[next]) * decay
-    const decay = 0.9998;
+    // K-S loop
+    const decay = 0.9997;
     let ptr = 0;
     for (let i = 0; i < N; i++) {
       const next = (ptr + 1) % period;
@@ -2775,15 +2776,20 @@ const AudioEngine = {
     let peak = 0;
     for (let i = 0; i < N; i++) { const a = Math.abs(samples[i]); if (a > peak) peak = a; }
     if (peak > 0.001) {
-      const g = (gainScale * 0.52) / peak;
+      const g = (gainScale * 0.50) / peak;
       for (let i = 0; i < N; i++) samples[i] *= g;
     }
 
     const audioBuf = ctx.createBuffer(1, N, sr);
     audioBuf.copyToChannel(samples, 0);
     const src = ctx.createBufferSource(); src.buffer = audioBuf;
+    // Warm LP — removes steel-string brightness, gives classical/nylon body warmth.
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = Math.min(freq * 2.2, 3000);
+    lp.Q.value = 0.5;
     const amp = ctx.createGain();
-    src.connect(amp); amp.connect(this.master);
+    src.connect(lp); lp.connect(amp); amp.connect(this.master);
     src.start(t0);
     if (this._active) {
       const entry = { oscs: [src], amp };
