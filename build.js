@@ -22,6 +22,7 @@ const CSS_FILES = [
   'src/styles/suggestions.css',
   'src/styles/popovers.css',
   'src/styles/instruments.css',
+  'src/styles/onboarding.css',
   'src/styles/production.css',
   'src/styles/mobile.css',
 ];
@@ -69,6 +70,7 @@ const JS_FILES = [
   'src/ui/guitar-shapes.js',
   'src/ui/instruments-renderer.js',
   'src/ui/metronome.js',
+  'src/ui/onboarding.js',
   'src/ui/tabs.js',
   // Interactions
   'src/interactions/wheel-interaction.js',

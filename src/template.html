@@ -35,6 +35,7 @@
           <option value="es">ES</option>
         </select>
       </div>
+      <button class="help-btn" id="helpBtn" onclick="Onboarding.open(true)" title="How it works" aria-label="How it works">?</button>
       <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark">☀</button>
       <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('theory',this)" data-i18n="tabs.theory">Theory</button>
@@ -367,6 +368,24 @@
     <div id="libList" class="lib-list"></div>
     <div class="lib-section-title" data-i18n="library.presets">Presets</div>
     <div id="libPresets" class="lib-list"></div>
+  </div>
+</div>
+<!-- ONBOARDING / WELCOME TOUR -->
+<div id="onboarding" class="ob" hidden role="dialog" aria-modal="true" aria-label="Welcome tour"
+     onclick="if(event.target===this)Onboarding.skip()">
+  <div class="ob-card">
+    <button class="ob-skip" id="obSkip" onclick="Onboarding.skip()">Skip</button>
+    <div class="ob-art" id="obArt"></div>
+    <div class="ob-body">
+      <div class="ob-step" id="obStep"></div>
+      <h2 class="ob-title" id="obTitle"></h2>
+      <p class="ob-text" id="obText"></p>
+    </div>
+    <div class="ob-dots" id="obDots"></div>
+    <div class="ob-foot">
+      <button class="ob-btn ob-ghost" id="obBack" onclick="Onboarding.prev()">Back</button>
+      <button class="ob-btn ob-primary" id="obNext" onclick="Onboarding.next()">Next</button>
+    </div>
   </div>
 </div>
 <!-- %%JS%% -->

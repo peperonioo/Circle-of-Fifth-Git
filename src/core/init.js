@@ -220,4 +220,9 @@ function toggleTheme() {
   normalizeKeyState();
   RenderEngine.full();
   applyI18n();
+
+  // First-run welcome tour (once; re-openable from the header "?" button).
+  if (typeof Onboarding === 'object' && Onboarding.shouldShow()) {
+    setTimeout(() => Onboarding.open(), 520);
+  }
 })();
