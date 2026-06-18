@@ -11,6 +11,7 @@ function switchTab(tab, btn) {
   if (btn) btn.classList.add('active');
   document.getElementById('panel-theory').style.display     = tab === 'theory'     ? 'block' : 'none';
   document.getElementById('panel-production').style.display = tab === 'production' ? 'block' : 'none';
+  document.body.dataset.tab = tab;            // drives the instrument dock visibility
   if (tab === 'production') { renderProduction(); applyI18n(); }
 }
 

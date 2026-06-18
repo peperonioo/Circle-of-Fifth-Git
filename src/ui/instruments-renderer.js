@@ -23,6 +23,19 @@ function _chordPcSet() {
   if (!pcs || !pcs.length) return null;
   return new Set(pcs.map(p => ((p % 12) + 12) % 12));
 }
+// Floating dock → jump to an instrument: expand its drawer, collapse the other
+// (tab-like), scroll it into view, and mark the dock button active.
+function gotoInstrument(which) {
+  const drawers = document.querySelectorAll('#panel-theory .drawers .drawer');
+  const piano = drawers[0], guitar = drawers[1];
+  const target = which === 'guitar' ? guitar : piano;
+  const other  = which === 'guitar' ? piano  : guitar;
+  if (other)  other.open  = false;
+  if (target) target.open = true;
+  document.querySelectorAll('.instr-dock-btn').forEach(b => b.classList.toggle('on', b.dataset.instr === which));
+  requestAnimationFrame(() => target?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+}
+
 function _hear(pitch)       { if (typeof AudioEngine === 'object') AudioEngine.playNote(pitch, 0.9); }
 function _hearGuitar(pitch) { if (typeof AudioEngine === 'object') AudioEngine.playGuitarNote(pitch); }
 

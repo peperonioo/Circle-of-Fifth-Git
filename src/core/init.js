@@ -218,6 +218,7 @@ function toggleTheme() {
   if (typeof initPlayOpts === 'function') initPlayOpts();
 
   normalizeKeyState();
+  document.body.dataset.tab = 'theory';      // instrument dock shows on the theory tab
   RenderEngine.full();
   applyI18n();
 

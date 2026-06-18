@@ -37,6 +37,8 @@ const I18N_EN = {
   'metro.tapSet':      'tempo set · keep tapping',
   'drawers.piano':     'Piano',
   'drawers.guitar':    'Guitar / Fretboard',
+  'dock.piano':        'Piano',
+  'dock.guitar':       'Guitar',
   'production.instruments': 'Core instruments',
   'production.more':   'Additional elements',
   'production.progressions': 'Typical Progressions',
