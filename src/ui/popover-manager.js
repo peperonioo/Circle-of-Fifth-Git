@@ -93,7 +93,10 @@ OverlayManager.register('instr-zoom', {
 OverlayManager.register('guitar-shapes', {
   isOpen:   () => !!document.getElementById('guitarShapeStrip')?.classList.contains('gss-on'),
   close:    () => { if (typeof GuitarShapes === 'object') GuitarShapes.close(); },
-  contains: (t) => !!(t.closest('#guitarShapeStrip') || t.closest('.gss-btn')),
+  // The strip lives in the guitar drawer beside the fretboard — playing a fret
+  // note (inside #guitar / .fretboard-wrap) must NOT dismiss it.
+  contains: (t) => !!(t.closest('#guitarShapeStrip') || t.closest('.gss-btn') ||
+                      t.closest('#guitar') || t.closest('.fretboard-wrap') || t.closest('#instrZoomBody')),
 });
 OverlayManager.register('dir-guide', {
   isOpen: () => !!(typeof WheelDirectionGuide === 'object' && WheelDirectionGuide.visible),
