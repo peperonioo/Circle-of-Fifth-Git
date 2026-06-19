@@ -2198,7 +2198,7 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
 // ── CONSTANTS ─────────────────────────────────────────
 // Pure data. No DOM access. No state mutation.
 
-const APP_VERSION = 'V5.23';
+const APP_VERSION = 'V5.24';
 const STORAGE_KEY = 'easy-fifth-circle:v1';
 
 const NOTES  = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
@@ -6198,35 +6198,49 @@ const GuitarShapes = (() => {
     return s;
   }
 
-  // ── Mini horizontal fretboard (matches the big board's orientation) ──
-  // Strings as rows (high-e on top, low-E at bottom), frets left→right. Cleaner
-  // and consistent with the real fretboard, so the small + big read the same.
+  // ── Mini fretboard — a faithful small slice of the real board ──
+  // A wood panel with visible strings (rows, high-e on top), frets (columns),
+  // the nut, position inlays (3/5/7/9/12) and note-named dots. Reads instantly
+  // as a fretboard rather than floating circles.
   const _noteName = pc => (typeof na === 'function') ? ((typeof dn === 'function') ? dn(na(pc)) : na(pc)) : '';
   function drawMiniFret(frets, rootPC) {
-    const W = 168, H = 96, x0 = 24, x1 = 160, y0 = 13, y1 = 85, NS = 6, NF = 5;
+    const W = 172, H = 92, x0 = 26, x1 = 162, y0 = 13, y1 = 79, NS = 6, NF = 5;
     const active = frets.filter(f => f > 0);
     const minF = active.length ? Math.min(...active) : 0;
     const base = minF <= 1 ? 0 : minF - 1;          // leftmost shown fret
     const nut = base === 0;
-    const sy = i => y0 + (y1 - y0) * i / (NS - 1);   // row (i=0 top = high e)
+    const sy = i => y0 + (y1 - y0) * i / (NS - 1);   // string row (i=0 top = high e)
     const fx = f => x0 + (x1 - x0) * f / NF;
-    const fg = 'var(--fg)';
+    const mid = (y0 + y1) / 2;
     let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-    if (!nut) s += `<text x="3" y="${sy(5) + 4}" font-size="9.5" fill="var(--muted)" font-family="DM Mono,monospace">${base + 1}</text>`;
-    for (let i = 0; i < NS; i++)                      // string rows (bass thicker)
-      s += `<line x1="${x0}" y1="${sy(i)}" x2="${x1}" y2="${sy(i)}" stroke="${fg}" stroke-opacity="0.34" stroke-width="${0.7 + i * 0.26}"/>`;
-    for (let f = 0; f <= NF; f++) {                   // fret columns (nut thick)
-      const isNut = nut && f === 0;
-      s += `<line x1="${fx(f)}" y1="${sy(0)}" x2="${fx(f)}" y2="${sy(5)}" stroke="${fg}" stroke-opacity="${isNut ? 0.9 : 0.16}" stroke-width="${isNut ? 3.4 : 1}" stroke-linecap="round"/>`;
+    // Wood panel
+    s += `<defs><linearGradient id="mfW" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c2010"/><stop offset="1" stop-color="#150e05"/></linearGradient></defs>`;
+    s += `<rect x="${x0 - 3}" y="3" width="${W - (x0 - 3) - 3}" height="${H - 6}" rx="7" fill="url(#mfW)" stroke="rgba(255,255,255,.09)"/>`;
+    // Position inlays (between/around strings) at standard frets within the window
+    for (let f = 1; f <= NF; f++) {
+      const abs = base + f, cx = fx(f - 0.5);
+      if (abs === 12) { s += `<circle cx="${cx}" cy="${sy(1.5)}" r="2.4" fill="rgba(255,255,255,.16)"/><circle cx="${cx}" cy="${sy(3.5)}" r="2.4" fill="rgba(255,255,255,.16)"/>`; }
+      else if ([3, 5, 7, 9, 15, 17].includes(abs)) s += `<circle cx="${cx}" cy="${mid}" r="2.6" fill="rgba(255,255,255,.14)"/>`;
     }
-    for (let i = 0; i < NS; i++) {                    // markers + dots (with note names)
+    // Strings (rows) — bass thicker
+    for (let i = 0; i < NS; i++)
+      s += `<line x1="${x0}" y1="${sy(i)}" x2="${x1}" y2="${sy(i)}" stroke="rgba(255,255,255,.2)" stroke-width="${0.7 + i * 0.22}"/>`;
+    // Frets (columns) — nut thick + light
+    for (let f = 0; f <= NF; f++) {
+      const isNut = nut && f === 0;
+      s += `<line x1="${fx(f)}" y1="${sy(0)}" x2="${fx(f)}" y2="${sy(5)}" stroke="${isNut ? 'rgba(245,240,230,.85)' : 'rgba(255,255,255,.14)'}" stroke-width="${isNut ? 3.5 : 1}" stroke-linecap="round"/>`;
+    }
+    // Fret-position number (left of the panel) when not at the nut
+    if (!nut) s += `<text x="11" y="${mid + 3.5}" text-anchor="middle" font-size="9" fill="var(--muted)" font-family="DM Mono,monospace">${base + 1}</text>`;
+    // Open / muted markers (left of the nut) + fretted dots with note names
+    for (let i = 0; i < NS; i++) {
       const f = frets[5 - i], y = sy(i);
-      if (f === -1) { s += `<text x="${x0 - 12}" y="${y + 4}" text-anchor="middle" font-size="11" fill="var(--muted)">×</text>`; continue; }
-      if (f === 0)  { s += `<circle cx="${x0 - 12}" cy="${y}" r="4.5" fill="none" stroke="var(--accent)" stroke-width="1.6"/><text x="${x0 - 12}" y="${y + 2.6}" text-anchor="middle" font-size="6.5" fill="var(--accent2)" font-family="DM Mono,monospace">${_noteName(TUNE[5 - i] % 12)}</text>`; continue; }
+      if (f === -1) { s += `<text x="${x0 - 11}" y="${y + 3.2}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.4)">×</text>`; continue; }
+      if (f === 0)  { s += `<circle cx="${x0 - 11}" cy="${y}" r="3.6" fill="none" stroke="var(--accent2)" stroke-width="1.5"/>`; continue; }
       const df = f - base; if (df < 1 || df > NF) continue;
       const cx = fx(df - 0.5), pc = (TUNE[5 - i] + f) % 12, isRoot = pc === rootPC;
-      s += `<circle cx="${cx}" cy="${y}" r="9" fill="var(--accent)"${isRoot ? ' stroke="#fff" stroke-width="1.8"' : ''}/>`;
-      s += `<text x="${cx}" y="${y + 3}" text-anchor="middle" font-size="8.5" font-weight="700" fill="#fff" font-family="DM Mono,monospace">${_noteName(pc)}</text>`;
+      s += `<circle cx="${cx}" cy="${y}" r="6.6" fill="var(--accent)"${isRoot ? ' stroke="#fff" stroke-width="1.8"' : ''}/>`;
+      s += `<text x="${cx}" y="${y + 2.6}" text-anchor="middle" font-size="7" font-weight="700" fill="#fff" font-family="DM Mono,monospace">${_noteName(pc)}</text>`;
     }
     s += '</svg>';
     return s;
