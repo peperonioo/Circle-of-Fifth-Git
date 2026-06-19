@@ -1711,8 +1711,9 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
 
 /* ── Icons — one line family, currentColor ─────────────────*/
 .ico { display: block; flex: none; }
-[data-ico] { display: inline-flex; align-items: center; gap: 7px; }
-.theme-btn, .help-btn { gap: 0; }
+[data-ico] { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+/* Icon-only round controls — perfectly centred glyph, no gap */
+.theme-btn, .help-btn, .metro-play, .mf-icon { gap: 0; }
 
 /* ── Segmented control ─────────────────────────────────────
    Tabs · Major/Minor · Chords|Triads · metronome sounds = one part. */
@@ -2326,7 +2327,7 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
 // ── CONSTANTS ─────────────────────────────────────────
 // Pure data. No DOM access. No state mutation.
 
-const APP_VERSION = 'V5.26';
+const APP_VERSION = 'V5.27';
 const STORAGE_KEY = 'easy-fifth-circle:v1';
 
 const NOTES  = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];

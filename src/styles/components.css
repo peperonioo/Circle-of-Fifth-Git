@@ -4,8 +4,9 @@
 
 /* ── Icons — one line family, currentColor ─────────────────*/
 .ico { display: block; flex: none; }
-[data-ico] { display: inline-flex; align-items: center; gap: 7px; }
-.theme-btn, .help-btn { gap: 0; }
+[data-ico] { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+/* Icon-only round controls — perfectly centred glyph, no gap */
+.theme-btn, .help-btn, .metro-play, .mf-icon { gap: 0; }
 
 /* ── Segmented control ─────────────────────────────────────
    Tabs · Major/Minor · Chords|Triads · metronome sounds = one part. */
