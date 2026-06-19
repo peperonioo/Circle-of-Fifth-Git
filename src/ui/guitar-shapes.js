@@ -131,171 +131,140 @@ const GuitarShapes = (() => {
   }
 
   // ── State ─────────────────────────────────────────
-  let _root = null, _qual = 'maj', _view = 'chords', _idx = 0, _shapes = [], _progSel = [];
+  // The strip is a CONTROL bar now (no box diagrams): a row of de-duplicated
+  // chord chips + a position selector. The selected chord+voicing is drawn on
+  // the real fretboard above (via highlightGuitarShape) — that's the display.
+  let _view = 'chords', _chords = [], _selChord = 0, _selVoicing = 0;
   const isOpen = () => !!document.getElementById('guitarShapeStrip')?.classList.contains('gss-on');
+  const clampi = (v, max) => Math.max(0, Math.min(v, max));
 
-  function _build() {
-    _shapes = _view === 'triads' ? triadVoicings(_root, _qual) : chordVoicings(_root, _qual);
-    _idx = 0;
-  }
-
-  // The current progression mapped to top-3-string triads (root/quality per bar).
-  function progressionTriads() {
+  // De-duplicated chord list. From the progression if there is one (each unique
+  // chord once, in order of first appearance); otherwise the single current chord.
+  function _collectChords() {
     const h = Array.isArray(st.history) ? st.history : [];
-    return h.map(it => {
-      const rootName = (typeof chordRootOf === 'function') ? chordRootOf(it) : String(it.chord || 'C').replace(/m$|°$/, '');
-      const qual = it.quality === 'Min' ? 'min' : it.quality === 'Dim' ? 'dim' : 'maj';
-      const r = ENH[rootName] || rootName;
-      return { name: it.chord, rootPC: NI[r] ?? 0, voicings: triadVoicings(rootName, qual) };
-    });
+    const list = [], seen = new Set();
+    const push = (rootName, qual, name) => {
+      const r = ENH[rootName] || rootName, key = r + ':' + qual;
+      if (seen.has(key)) return; seen.add(key);
+      list.push({ name, root: rootName, qual, rootPC: NI[r] ?? 0 });
+    };
+    if (h.length) {
+      h.forEach(it => {
+        const rootName = (typeof chordRootOf === 'function') ? chordRootOf(it) : String(it.chord || 'C').replace(/m$|°$/, '');
+        const qual = it.quality === 'Min' ? 'min' : it.quality === 'Dim' ? 'dim' : 'maj';
+        push(rootName, qual, it.chord);
+      });
+    } else {
+      let root, qual;
+      if (typeof ChordVariants === 'object' && ChordVariants.ctx && ChordVariants.ctx.root) {
+        root = ChordVariants.ctx.root; qual = /min/i.test(ChordVariants.ctx.quality) ? 'min' : /dim/i.test(ChordVariants.ctx.quality) ? 'dim' : 'maj';
+      } else {
+        root = st.key; qual = (typeof modeIsMinor === 'function' && modeIsMinor(st.mode)) ? 'min' : 'maj';
+      }
+      push(root, qual, root + (qual === 'min' ? 'm' : qual === 'dim' ? '°' : ''));
+    }
+    return list;
   }
 
-  function _headHTML(title) {
-    const seg = (v, label) => `<button class="${_view === v ? 'on' : ''}" role="tab" onclick="GuitarShapes.view('${v}')">${label}</button>`;
-    return `<div class="gss-head">
-        <span class="gss-title">${title}</span>
-        <div class="gss-seg" role="tablist">${seg('chords', T('chords'))}${seg('triads', T('triads'))}${seg('prog', T('prog'))}</div>
-        <button class="gss-x" onclick="GuitarShapes.close()" aria-label="×">×</button>
-      </div>`;
-  }
-
-  function _progCardHTML(c, pos) {
-    const vs = c.voicings;
-    const sel = Math.min(_progSel[pos] || 0, Math.max(0, vs.length - 1));
-    const dots = vs.length > 1
-      ? `<div class="gpc-dots">${vs.map((_, i) => `<span class="gpc-dot${i === sel ? ' on' : ''}" onclick="GuitarShapes.progSet(${pos},${i})"></span>`).join('')}</div>`
-      : `<div class="gpc-dots"></div>`;
-    const diag = vs.length ? drawSVG(vs[sel].frets, c.rootPC) : '<div class="gss-empty">—</div>';
-    return `<div class="gss-prog-card" data-pos="${pos}">
-        ${dots}
-        <div class="gpc-diag" onpointerdown="GuitarShapes.progSwipe(event,${pos})">${diag}</div>
-        <div class="gpc-name">${c.name}</div>
-        <div class="gpc-pos">${vs.length ? vs[sel].label : ''}</div>
-      </div>`;
-  }
+  const _voicingsFor = c => c ? (_view === 'triads' ? triadVoicings(c.root, c.qual) : chordVoicings(c.root, c.qual)) : [];
 
   function _render() {
     const el = document.getElementById('guitarShapeStrip'); if (!el) return;
+    _chords = _collectChords();
+    if (!_chords.length) { el.classList.remove('gss-on'); return; }
+    _selChord = clampi(_selChord, _chords.length - 1);
+    const chord = _chords[_selChord];
+    const vs = _voicingsFor(chord);
+    _selVoicing = clampi(_selVoicing, Math.max(0, vs.length - 1));
+    const v = vs[_selVoicing];
 
-    if (_view === 'prog') {
-      const chords = progressionTriads();
-      if (_progSel.length !== chords.length) _progSel = chords.map((_, i) => _progSel[i] || 0);
-      const body = chords.length
-        ? chords.map((c, pos) => _progCardHTML(c, pos)).join('')
-        : `<div class="gss-empty gss-empty-prog">${T('emptyProg')}</div>`;
-      el.innerHTML = _headHTML(T('prog')) + `<div class="gss-scroll gss-prog-scroll">${body}</div>`;
-      el.classList.add('gss-on');
-      return;
-    }
+    const seg = (vw, label) => `<button class="${_view === vw ? 'on' : ''}" role="tab" onclick="GuitarShapes.view('${vw}')">${label}</button>`;
+    const chips = _chords.map((c, i) =>
+      `<button class="gss-chip${i === _selChord ? ' on' : ''}" onclick="GuitarShapes.selChord(${i})">${c.name}</button>`).join('');
+    const dots = vs.map((_, i) => `<span class="gss-pos-dot${i === _selVoicing ? ' on' : ''}" onclick="GuitarShapes.setVoicing(${i})"></span>`).join('');
 
-    if (!_root) { el.classList.remove('gss-on'); return; }
-    const name = _root + (_qual === 'min' ? 'm' : '');
-    const rootPC = NI[ENH[_root] || _root];
-    el.innerHTML = _headHTML(name) + `
-      <div class="gss-scroll">
-        ${_shapes.length ? _shapes.map((sh, i) => `
-          <div class="gss-card${i === _idx ? ' gss-active' : ''}" role="button"
-               onclick="GuitarShapes.pick(${i})" aria-label="${name} ${sh.label}">
-            ${drawSVG(sh.frets, rootPC)}
-            <div class="gss-cap">${sh.label}</div>
-          </div>`).join('')
-        : '<div class="gss-empty">—</div>'}
+    el.innerHTML = `
+      <div class="gss-head">
+        <span class="gss-title">${chord.name}${v ? ` · ${v.label}` : ''}</span>
+        <div class="gss-seg" role="tablist">${seg('chords', T('chords'))}${seg('triads', T('triads'))}</div>
+        <button class="gss-x" onclick="GuitarShapes.close()" aria-label="×">×</button>
+      </div>
+      <div class="gss-chips">${chips}</div>
+      <div class="gss-pos" onpointerdown="GuitarShapes.posSwipe(event)">
+        <button class="gss-pos-arrow" onclick="GuitarShapes.step(-1)" aria-label="prev">‹</button>
+        <div class="gss-pos-dots">${dots || '<span class="gss-pos-none">—</span>'}</div>
+        <button class="gss-pos-arrow" onclick="GuitarShapes.step(1)" aria-label="next">›</button>
       </div>`;
     el.classList.add('gss-on');
+    _highlightSel();
   }
 
-  function _highlight() {
-    if (typeof highlightGuitarShape !== 'function') return;
-    highlightGuitarShape(_shapes[_idx] ? _shapes[_idx].frets : null);
+  function _highlightSel() {
+    const vs = _voicingsFor(_chords[_selChord]);
+    const v = vs[_selVoicing];
+    if (typeof highlightGuitarShape === 'function') highlightGuitarShape(v ? v.frets : null);
   }
 
-  // Update one progression card in place (keeps the horizontal scroll position).
-  function _updateProgCard(pos) {
-    const card = document.querySelector(`.gss-prog-card[data-pos="${pos}"]`); if (!card) return;
-    const c = progressionTriads()[pos]; if (!c) return;
-    const vs = c.voicings, sel = Math.min(_progSel[pos] || 0, Math.max(0, vs.length - 1));
-    const diag = card.querySelector('.gpc-diag'); if (diag) diag.innerHTML = vs.length ? drawSVG(vs[sel].frets, c.rootPC) : '—';
-    card.querySelectorAll('.gpc-dot').forEach((d, i) => d.classList.toggle('on', i === sel));
-    const posEl = card.querySelector('.gpc-pos'); if (posEl) posEl.textContent = vs.length ? vs[sel].label : '';
-  }
-
-  function _highlightProg(pos) {
-    const c = progressionTriads()[pos]; if (!c) return;
-    const vs = c.voicings, sel = Math.min(_progSel[pos] || 0, Math.max(0, vs.length - 1));
-    if (vs.length && typeof highlightGuitarShape === 'function') highlightGuitarShape(vs[sel].frets);
-    document.querySelectorAll('.gss-prog-card').forEach(card => card.classList.toggle('gpc-active', +card.dataset.pos === pos));
+  // Update just the position UI + fretboard (no chip rebuild → no flicker on slide).
+  function _updatePos() {
+    const vs = _voicingsFor(_chords[_selChord]);
+    _selVoicing = clampi(_selVoicing, Math.max(0, vs.length - 1));
+    document.querySelectorAll('.gss-pos-dot').forEach((d, i) => d.classList.toggle('on', i === _selVoicing));
+    const title = document.querySelector('#guitarShapeStrip .gss-title');
+    if (title) title.textContent = _chords[_selChord].name + (vs[_selVoicing] ? ` · ${vs[_selVoicing].label}` : '');
+    _highlightSel();
   }
 
   return {
     toggle() {
       if (isOpen()) { this.close(); return; }
-      let root = null, qual = 'maj';
-      if (typeof ChordVariants === 'object' && ChordVariants.ctx && ChordVariants.ctx.root) {
-        root = ChordVariants.ctx.root;
-        qual = ChordVariants.ctx.quality === 'min' ? 'min' : 'maj';
-      } else {
-        root = st.key;
-        qual = (typeof modeIsMinor === 'function' && modeIsMinor(st.mode)) ? 'min' : 'maj';
-      }
-      _root = root; _qual = qual; _view = 'chords';
-      _build(); _render(); _highlight();
+      _view = 'chords'; _selChord = 0; _selVoicing = 0;
+      _render();
       if (typeof OverlayManager === 'object') OverlayManager.opened('guitar-shapes');
     },
 
-    // Switch view: chord voicings / triads (single chord) / whole progression.
-    view(v) {
-      if (v === _view) return;
-      _view = v;
-      if (v === 'prog') { _render(); }
-      else { _build(); _render(); _highlight(); }
+    // Switch voicing type (full chords vs triads). Keeps the selected chord.
+    view(v) { if (v !== _view) { _view = v; _selVoicing = 0; _render(); } },
+
+    // Select a chord chip → show it on the fretboard, reset to its first position.
+    selChord(i) { _selChord = i; _selVoicing = 0; _render(); },
+
+    // Position selector (dots / arrows / swipe) — slide through the SAME chord's
+    // voicings (positions/inversions), updating the fretboard live.
+    setVoicing(i) { _selVoicing = i; _updatePos(); },
+    step(dir) {
+      const vs = _voicingsFor(_chords[_selChord]);
+      if (vs.length > 1) { _selVoicing = (_selVoicing + dir + vs.length) % vs.length; _updatePos(); }
     },
-
-    // Auto-update when a builder bar's chord changes (only if the strip is open).
-    hint(root, qual) {
-      if (!isOpen()) return;
-      if (root) { _root = root; _qual = qual === 'min' ? 'min' : 'maj'; }
-      if (_view === 'prog') { _render(); return; }   // progression view shows the whole thing
-      _build(); _render(); _highlight();
-    },
-
-    // Re-render the progression view when the progression itself changes.
-    onProgressionChange() { if (_view === 'prog' && isOpen()) _render(); },
-    // Re-render on language change so labels follow the UI language.
-    refresh() { if (isOpen()) _render(); },
-
-    pick(idx) {
-      _idx = idx;
-      document.querySelectorAll('.gss-card').forEach((c, i) => c.classList.toggle('gss-active', i === idx));
-      _highlight();
-    },
-
-    // Progression: pick a specific voicing for a chord (via the dots).
-    progSet(pos, i) { _progSel[pos] = i; _updateProgCard(pos); _highlightProg(pos); },
-
-    // Progression: swipe a chord card sideways to cycle voicings (low→high); a
-    // tap (no drag) highlights that chord's current shape on the big fretboard.
-    progSwipe(e, pos) {
+    posSwipe(e) {
       const startX = e.clientX;
-      const move = ev => { /* tracked on up */ };
+      const move = () => {};
       const up = ev => {
         window.removeEventListener('pointermove', move);
         window.removeEventListener('pointerup', up);
         const dx = ev.clientX - startX;
-        const vs = progressionTriads()[pos]?.voicings || [];
-        if (Math.abs(dx) > 24 && vs.length > 1) {
-          let sel = (_progSel[pos] || 0) + (dx < 0 ? 1 : -1);
-          sel = Math.max(0, Math.min(vs.length - 1, sel));
-          _progSel[pos] = sel; _updateProgCard(pos); _highlightProg(pos);
-        } else {
-          _highlightProg(pos);
-        }
+        if (Math.abs(dx) > 24) this.step(dx < 0 ? 1 : -1);
       };
       window.addEventListener('pointermove', move);
       window.addEventListener('pointerup', up);
     },
 
+    // A builder bar was tapped → select that chord's chip if present.
+    hint(root, qual) {
+      if (!isOpen() || !root) return;
+      const r = ENH[root] || root, q = /min/i.test(qual) ? 'min' : /dim/i.test(qual) ? 'dim' : 'maj';
+      _chords = _collectChords();
+      const idx = _chords.findIndex(c => (ENH[c.root] || c.root) === r && c.qual === q);
+      if (idx >= 0) { _selChord = idx; _selVoicing = 0; }
+      _render();
+    },
+
+    // Progression changed → rebuild chips (keeps selection in range).
+    onProgressionChange() { if (isOpen()) _render(); },
+    // Language changed → relabel.
+    refresh() { if (isOpen()) _render(); },
+
     close() {
-      _root = null; _shapes = [];
       document.getElementById('guitarShapeStrip')?.classList.remove('gss-on');
       if (typeof highlightGuitarShape === 'function') highlightGuitarShape(null);
     },
