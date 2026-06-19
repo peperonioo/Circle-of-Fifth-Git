@@ -15,6 +15,20 @@ let _activeShape = null;
 function highlightGuitarShape(shape) {
   _activeShape = shape;
   renderGuitar();
+  if (shape) requestAnimationFrame(centreFretboardOnShape);   // follow the notes — no manual scroll
+}
+
+// Scroll the fretboard so the lit voicing sits in the middle of the view. Saves
+// the user chasing a shape that's far up the neck when they slide voicings.
+function centreFretboardOnShape() {
+  const wrap = document.querySelector('.fretboard-wrap'); if (!wrap) return;
+  const dots = wrap.querySelectorAll('.shape-dot'); if (!dots.length) return;
+  const wr = wrap.getBoundingClientRect();
+  let sum = 0;
+  dots.forEach(d => { const r = d.getBoundingClientRect(); sum += r.left + r.width / 2 - wr.left + wrap.scrollLeft; });
+  const centre = sum / dots.length;
+  const target = Math.max(0, Math.min(centre - wrap.clientWidth / 2, wrap.scrollWidth - wrap.clientWidth));
+  wrap.scrollTo({ left: target, behavior: 'smooth' });
 }
 function _chordPcSet() {
   if (_activeChordPcs) return new Set(_activeChordPcs);

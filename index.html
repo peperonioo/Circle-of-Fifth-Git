@@ -1351,6 +1351,10 @@ body.light .lib-name { color:#1a1a1a }
 .fret-note.chord{ background:linear-gradient(180deg,#ffb38a,var(--accent)); color:#fff; box-shadow:0 0 0 2px rgba(232,68,26,.4),0 0 10px rgba(232,68,26,.45) }
 .fret-note { cursor:pointer; transition:transform .08s ease }
 .fret-note.on:hover, .fret-note.root:hover, .fret-note.chord:hover { transform:scale(1.14) }
+/* Voicing change feels alive — dots pop in when a shape lights up */
+.fret-note.shape-dot { animation:fretDotPop .28s var(--ease) both }
+@keyframes fretDotPop { 0%{transform:scale(.45);opacity:0} 62%{transform:scale(1.14)} 100%{transform:scale(1);opacity:1} }
+@media (prefers-reduced-motion:reduce){ .fret-note.shape-dot { animation:none } }
 .fret-cell      { height:34px; display:flex; align-items:center; justify-content:center; position:relative; z-index:1 }
 .fret-cell::after { content:''; position:absolute; right:0; top:4px; bottom:4px; width:1px; background:rgba(255,255,255,.09) }
 
@@ -2327,7 +2331,7 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
 // ── CONSTANTS ─────────────────────────────────────────
 // Pure data. No DOM access. No state mutation.
 
-const APP_VERSION = 'V5.27';
+const APP_VERSION = 'V5.28';
 const STORAGE_KEY = 'easy-fifth-circle:v1';
 
 const NOTES  = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
@@ -6604,6 +6608,20 @@ let _activeShape = null;
 function highlightGuitarShape(shape) {
   _activeShape = shape;
   renderGuitar();
+  if (shape) requestAnimationFrame(centreFretboardOnShape);   // follow the notes — no manual scroll
+}
+
+// Scroll the fretboard so the lit voicing sits in the middle of the view. Saves
+// the user chasing a shape that's far up the neck when they slide voicings.
+function centreFretboardOnShape() {
+  const wrap = document.querySelector('.fretboard-wrap'); if (!wrap) return;
+  const dots = wrap.querySelectorAll('.shape-dot'); if (!dots.length) return;
+  const wr = wrap.getBoundingClientRect();
+  let sum = 0;
+  dots.forEach(d => { const r = d.getBoundingClientRect(); sum += r.left + r.width / 2 - wr.left + wrap.scrollLeft; });
+  const centre = sum / dots.length;
+  const target = Math.max(0, Math.min(centre - wrap.clientWidth / 2, wrap.scrollWidth - wrap.clientWidth));
+  wrap.scrollTo({ left: target, behavior: 'smooth' });
 }
 function _chordPcSet() {
   if (_activeChordPcs) return new Set(_activeChordPcs);
