@@ -99,6 +99,14 @@ body[data-tab="production"] .instr-dock { display: none; }
 .instr-dock-btn .idk-ico { display: grid; place-items: center; line-height: 0; }
 .instr-dock-btn.on { background: var(--accent); color: #fff; }
 .instr-dock-btn:not(.on):hover { color: var(--ink); }
+/* When a chord is selected, dot the *other* instrument: the same chord is shown
+   there too — tap to see how it's played on it. */
+.instr-dock-btn { position: relative; }
+.instr-dock.has-chord .instr-dock-btn:not(.on)::after {
+  content: ''; position: absolute; top: 5px; right: 8px;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 0 2px var(--ui-surface-strong);
+}
 /* Phones: icon-only so the dock stays compact between the corner FABs */
 @media (max-width: 560px) {
   .instr-dock-btn .idk-lbl { display: none; }

@@ -233,11 +233,10 @@ const BuilderEngine = {
   meta() {
     const el = document.getElementById('builderMeta'); if (!el) return;
     const h  = Array.isArray(st.history) ? st.history : [];
-    if (!h.length) { el.innerHTML = ''; return; }
-    const unique = new Set(h.map(x => x.degreeIndex));
-    const count = st.lang === 'es' ? `${h.length} acorde${h.length > 1 ? 's' : ''}` : `${h.length} chord${h.length > 1 ? 's' : ''}`;
-    el.innerHTML = `<span>${count}</span>
-      <b>${progressionNarrative()}</b>`;
+    // The chord list + count is redundant with the pills above. Only surface the
+    // special "Loop / Pedal" reading — that's an insight, not a restatement.
+    const narrative = h.length ? progressionNarrative() : '';
+    el.innerHTML = /^Loop/.test(narrative) ? `<b>${narrative}</b>` : '';
   },
 
   // Swap a bar with its neighbour (used by tests + programmatic reorder).

@@ -19,6 +19,7 @@ const ICONS = {
   chevron:   { p: '<path d="M6 9l6 6 6-6"/>' },
   chevronR:  { p: '<path d="M9 6l6 6-6 6"/>' },
   close:     { p: '<path d="M6 6l12 12M18 6L6 18"/>' },
+  trash:     { p: '<path d="M5 7h14"/><path d="M9 7V5.6A1.6 1.6 0 0 1 10.6 4h2.8A1.6 1.6 0 0 1 15 5.6V7"/><path d="M7 7l.8 12.1A1.6 1.6 0 0 0 9.4 20.6h5.2a1.6 1.6 0 0 0 1.6-1.5L17 7"/>' },
   arrowL:    { p: '<path d="M19 12H5M11 6l-6 6 6 6"/>' },
   arrowR:    { p: '<path d="M5 12h14M13 6l6 6-6 6"/>' },
   plus:      { p: '<path d="M12 5v14M5 12h14"/>' },

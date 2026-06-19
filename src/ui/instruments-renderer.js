@@ -62,6 +62,13 @@ function gotoInstrument(which) {
 }
 function closeInstrSheet() { document.body.classList.remove('instr-sheet'); }
 
+// Dot the dock's *other* instrument when a chord is highlighted, so it's obvious
+// the selected chord is also shown there (piano ↔ guitar). The highlight lives on
+// both boards at once — the sheet just shows one at a time, full-size.
+function _updateDockChordHint() {
+  document.getElementById('instrDock')?.classList.toggle('has-chord', _chordPcSet() != null);
+}
+
 function _hear(pitch)       { if (typeof AudioEngine === 'object') AudioEngine.playNote(pitch, 0.9); }
 function _hearGuitar(pitch) { if (typeof AudioEngine === 'object') AudioEngine.playGuitarNote(pitch); }
 
@@ -96,6 +103,7 @@ function renderPiano() {
     el.onclick = () => _hear(pitch);
     root.appendChild(el);
   });
+  _updateDockChordHint();
 }
 
 // ── Fullscreen / enlarge a board ──────────────────────
@@ -219,4 +227,5 @@ function renderGuitar() {
     }
     root.appendChild(row);
   });
+  _updateDockChordHint();
 }

@@ -1,10 +1,11 @@
 /* ── DEGREES ROW ─────────────────────────────────────*/
 .degrees-row {
   display:flex; gap:0; border-radius:14px; overflow:hidden;
-  border:1px solid var(--card-bd); background:var(--degree-bg);
-  backdrop-filter:blur(20px);
+  border:1px solid var(--card-bd); background:rgba(8,8,11,.86);
+  backdrop-filter:blur(7px);
   box-shadow:0 4px 16px rgba(0,0,0,.2);
 }
+body.light .degrees-row { background:rgba(247,243,236,.9) }
 .degree {
   flex:1; padding:12px 6px; text-align:center; cursor:pointer;
   border-right:1px solid var(--line); transition:background .15s;
@@ -23,12 +24,12 @@
 .degree.active-deg .roman,
 .degree.active-deg .dn,
 .degree.active-deg .dq { color:var(--accent2) }
-/* Roman numeral carries the most weight (cased by quality in markup) */
+/* Roman numeral is the quiet label — the chord name (.dn) is the headline. */
 .degree .roman {
-  font-family:'DM Mono',monospace; font-size:14px; font-weight:600;
-  letter-spacing:.03em; color:var(--ink); opacity:.9;
+  font-family:'DM Mono',monospace; font-size:12px; font-weight:400;
+  letter-spacing:.04em; color:var(--ink); opacity:.5;
 }
-.degree.q-min .roman, .degree.q-dim .roman { opacity:.62 }   /* minor/dim a touch softer */
+.degree.q-min .roman, .degree.q-dim .roman { opacity:.4 }   /* minor/dim a touch softer */
 .degree .dn    { font-family:'DM Serif Display',serif; font-size:19px; margin-top:4px; line-height:1; color:var(--ink) }
 .degree .dq    { font-size:8.5px; color:var(--muted); margin-top:3px; text-transform:uppercase; letter-spacing:.05em }
 /* A little more presence overall */

@@ -504,10 +504,11 @@ body.light #wheelDirectionGuide .dir-arrow { fill:rgba(20,20,20,.22) }
 /* ── DEGREES ROW ─────────────────────────────────────*/
 .degrees-row {
   display:flex; gap:0; border-radius:14px; overflow:hidden;
-  border:1px solid var(--card-bd); background:var(--degree-bg);
-  backdrop-filter:blur(20px);
+  border:1px solid var(--card-bd); background:rgba(8,8,11,.86);
+  backdrop-filter:blur(7px);
   box-shadow:0 4px 16px rgba(0,0,0,.2);
 }
+body.light .degrees-row { background:rgba(247,243,236,.9) }
 .degree {
   flex:1; padding:12px 6px; text-align:center; cursor:pointer;
   border-right:1px solid var(--line); transition:background .15s;
@@ -526,12 +527,12 @@ body.light #wheelDirectionGuide .dir-arrow { fill:rgba(20,20,20,.22) }
 .degree.active-deg .roman,
 .degree.active-deg .dn,
 .degree.active-deg .dq { color:var(--accent2) }
-/* Roman numeral carries the most weight (cased by quality in markup) */
+/* Roman numeral is the quiet label — the chord name (.dn) is the headline. */
 .degree .roman {
-  font-family:'DM Mono',monospace; font-size:14px; font-weight:600;
-  letter-spacing:.03em; color:var(--ink); opacity:.9;
+  font-family:'DM Mono',monospace; font-size:12px; font-weight:400;
+  letter-spacing:.04em; color:var(--ink); opacity:.5;
 }
-.degree.q-min .roman, .degree.q-dim .roman { opacity:.62 }   /* minor/dim a touch softer */
+.degree.q-min .roman, .degree.q-dim .roman { opacity:.4 }   /* minor/dim a touch softer */
 .degree .dn    { font-family:'DM Serif Display',serif; font-size:19px; margin-top:4px; line-height:1; color:var(--ink) }
 .degree .dq    { font-size:8.5px; color:var(--muted); margin-top:3px; text-transform:uppercase; letter-spacing:.05em }
 /* A little more presence overall */
@@ -582,11 +583,12 @@ body.light #wheelDirectionGuide .dir-arrow { fill:rgba(20,20,20,.22) }
   margin-top:0; padding:14px 15px 22px;
   border-radius:var(--r-lg) !important;
   border:1px solid var(--card-bd) !important;
-  background:var(--card); backdrop-filter:blur(20px);
+  background:rgba(10,10,14,.88); backdrop-filter:blur(8px);
   box-shadow:0 4px 16px rgba(0,0,0,.15);
   position:relative; overflow:visible !important;
   will-change:transform,opacity;
 }
+body.light .progression-builder { background:rgba(250,247,241,.92) }
 .builder-head    { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px }
 .builder-title   { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:500 }
 .builder-sub     { font-size:12px !important; max-width:500px !important; color:var(--muted); margin-top:3px; line-height:1.35 }
@@ -1378,6 +1380,14 @@ body[data-tab="production"] .instr-dock { display: none; }
 .instr-dock-btn .idk-ico { display: grid; place-items: center; line-height: 0; }
 .instr-dock-btn.on { background: var(--accent); color: #fff; }
 .instr-dock-btn:not(.on):hover { color: var(--ink); }
+/* When a chord is selected, dot the *other* instrument: the same chord is shown
+   there too — tap to see how it's played on it. */
+.instr-dock-btn { position: relative; }
+.instr-dock.has-chord .instr-dock-btn:not(.on)::after {
+  content: ''; position: absolute; top: 5px; right: 8px;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 0 2px var(--ui-surface-strong);
+}
 /* Phones: icon-only so the dock stays compact between the corner FABs */
 @media (max-width: 560px) {
   .instr-dock-btn .idk-lbl { display: none; }
@@ -1916,7 +1926,16 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
   .progression-builder  { border-radius:18px !important }
   .card,.drawer   { border-radius:18px !important }
   .builder-head   { flex-direction:column }
-  .builder-actions{ justify-content:flex-start }
+  /* One tidy row of controls: Play keeps its label, everything else collapses to
+     a clean icon button so the whole bar fits a phone width without shrinking. */
+  .builder-actions{ flex-wrap:nowrap; gap:6px; justify-content:flex-start;
+                    width:100%; overflow-x:auto; scrollbar-width:none }
+  .builder-actions::-webkit-scrollbar { display:none }
+  .builder-actions .builder-btn:not(#playProgBtn) span[data-i18n] { display:none }
+  .builder-actions .builder-btn:not(#playProgBtn) {
+    width:38px; height:38px; min-width:38px; padding:0; flex:0 0 auto;
+  }
+  .builder-actions #playProgBtn { flex:0 0 auto; height:38px }
   .builder-meta   { flex-direction:column; align-items:flex-start }
   .builder-next-top { align-items:flex-start; flex-direction:column; gap:6px }
   .builder-next-context { white-space:normal }
@@ -1946,6 +1965,24 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
     transition:opacity .26s var(--ease);
   }
   body.instr-sheet .instr-sheet-backdrop { opacity:1; pointer-events:auto }
+
+  /* Show ONLY the instrument you tapped — no second drawer hanging below — and let
+     it use the freed vertical space (bigger keys / frets, no zoom needed). The dock
+     is the switcher, so the drawer summary no longer toggles. */
+  body.instr-sheet .drawer:not([open])      { display:none }
+  body.instr-sheet .drawer                  { border:0; background:transparent; margin:0; padding:0 }
+  body.instr-sheet .drawer > summary        { pointer-events:none }
+  body.instr-sheet .drawer > summary button { pointer-events:auto }
+  body.instr-sheet .drawer .chev            { display:none }
+  /* Piano: taller, thumb-friendly keys */
+  body.instr-sheet #piano               { height:min(32svh, 250px) }
+  body.instr-sheet #piano .white .kl    { font-size:13px }
+  body.instr-sheet #piano .black .kl    { font-size:11px }
+  /* Fretboard: roomier rows + bigger lit note dots */
+  body.instr-sheet .fret-cell           { height:42px }
+  body.instr-sheet .fret-note.on,
+  body.instr-sheet .fret-note.root,
+  body.instr-sheet .fret-note.chord     { width:30px; height:30px; font-size:10px }
 
   .info-row       { grid-template-columns:1fr }
   .prod-grid,.elements-section { grid-template-columns:1fr }
@@ -2020,6 +2057,11 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
 <canvas id="plasma"></canvas>
 
 <div class="app">
+  <!-- Backdrop for the mobile instrument bottom-sheet. Lives INSIDE .app on purpose:
+       .app sets z-index:1, so a body-level backdrop (z:54) would paint over the whole
+       app — the sheet included — and its blur would fog everything. Kept inside .app,
+       the sheet (z:58) wins over the backdrop (z:54) while the page behind dims. -->
+  <div id="instrSheetBackdrop" class="instr-sheet-backdrop" onclick="closeInstrSheet()" aria-hidden="true"></div>
   <!-- TOP BAR -->
   <header class="topbar">
     <div class="brand">
@@ -2217,7 +2259,7 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
             <button class="builder-btn" data-lib-trigger data-ico="library" onclick="Library.toggle()" title="Saved progressions & presets"><span data-i18n="builder.library">Library</span></button>
             <button class="builder-btn" data-ico="share" onclick="shareProgression()" title="Copy a shareable link"><span data-i18n="builder.share">Share</span></button>
             <button class="builder-btn" data-ico="download" onclick="exportMIDI()" title="Download as a MIDI file"><span data-i18n="builder.midi">MIDI</span></button>
-            <button class="builder-btn danger" onclick="HistoryEngine.clear()" data-i18n="builder.clear">Clear</button>
+            <button class="builder-btn danger" data-ico="trash" onclick="HistoryEngine.clear()" title="Clear progression"><span data-i18n="builder.clear">Clear</span></button>
           </div>
         </div>
         <div id="flowRow" class="builder-row"></div>
@@ -2370,8 +2412,6 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
     <div id="libPresets" class="lib-list"></div>
   </div>
 </div>
-<!-- Backdrop behind the mobile instrument bottom-sheet -->
-<div id="instrSheetBackdrop" class="instr-sheet-backdrop" onclick="closeInstrSheet()" aria-hidden="true"></div>
 <!-- FLOATING INSTRUMENT DOCK (Dynamic-Island style jump to piano / guitar) -->
 <div id="instrDock" class="instr-dock" role="group" aria-label="Jump to instrument">
   <button class="instr-dock-btn on" data-instr="piano" onclick="gotoInstrument('piano')" aria-label="Piano">
@@ -2379,7 +2419,7 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
     <span class="idk-lbl" data-i18n="dock.piano">Piano</span>
   </button>
   <button class="instr-dock-btn" data-instr="guitar" onclick="gotoInstrument('guitar')" aria-label="Guitar">
-    <span class="idk-ico" aria-hidden="true"><svg viewBox="0 0 20 20" width="15" height="15"><rect x="3.5" y="3.5" width="13" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="3.5" y1="8" x2="16.5" y2="8" stroke="currentColor" stroke-width="0.9"/><line x1="3.5" y1="12" x2="16.5" y2="12" stroke="currentColor" stroke-width="0.9"/><line x1="8" y1="3.5" x2="8" y2="16.5" stroke="currentColor" stroke-width="0.9"/><line x1="12" y1="3.5" x2="12" y2="16.5" stroke="currentColor" stroke-width="0.9"/><circle cx="10" cy="10" r="1.3" fill="currentColor"/></svg></span>
+    <span class="idk-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="15.5" r="5"/><circle cx="8.5" cy="15.5" r="1.5" fill="currentColor" stroke="none"/><path d="M12 12l5.6-5.6"/><path d="M16.4 3.8l3.8 3.8-1.7 1.7-3.8-3.8z"/></svg></span>
     <span class="idk-lbl" data-i18n="dock.guitar">Guitar</span>
   </button>
 </div>
@@ -2408,7 +2448,7 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
 // ── CONSTANTS ─────────────────────────────────────────
 // Pure data. No DOM access. No state mutation.
 
-const APP_VERSION = 'V5.30';
+const APP_VERSION = 'V5.31';
 const STORAGE_KEY = 'easy-fifth-circle:v1';
 
 const NOTES  = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
@@ -2687,6 +2727,7 @@ const ICONS = {
   chevron:   { p: '<path d="M6 9l6 6 6-6"/>' },
   chevronR:  { p: '<path d="M9 6l6 6-6 6"/>' },
   close:     { p: '<path d="M6 6l12 12M18 6L6 18"/>' },
+  trash:     { p: '<path d="M5 7h14"/><path d="M9 7V5.6A1.6 1.6 0 0 1 10.6 4h2.8A1.6 1.6 0 0 1 15 5.6V7"/><path d="M7 7l.8 12.1A1.6 1.6 0 0 0 9.4 20.6h5.2a1.6 1.6 0 0 0 1.6-1.5L17 7"/>' },
   arrowL:    { p: '<path d="M19 12H5M11 6l-6 6 6 6"/>' },
   arrowR:    { p: '<path d="M5 12h14M13 6l6 6-6 6"/>' },
   plus:      { p: '<path d="M12 5v14M5 12h14"/>' },
@@ -5476,11 +5517,10 @@ const BuilderEngine = {
   meta() {
     const el = document.getElementById('builderMeta'); if (!el) return;
     const h  = Array.isArray(st.history) ? st.history : [];
-    if (!h.length) { el.innerHTML = ''; return; }
-    const unique = new Set(h.map(x => x.degreeIndex));
-    const count = st.lang === 'es' ? `${h.length} acorde${h.length > 1 ? 's' : ''}` : `${h.length} chord${h.length > 1 ? 's' : ''}`;
-    el.innerHTML = `<span>${count}</span>
-      <b>${progressionNarrative()}</b>`;
+    // The chord list + count is redundant with the pills above. Only surface the
+    // special "Loop / Pedal" reading — that's an insight, not a restatement.
+    const narrative = h.length ? progressionNarrative() : '';
+    el.innerHTML = /^Loop/.test(narrative) ? `<b>${narrative}</b>` : '';
   },
 
   // Swap a bar with its neighbour (used by tests + programmatic reorder).
@@ -6732,6 +6772,13 @@ function gotoInstrument(which) {
 }
 function closeInstrSheet() { document.body.classList.remove('instr-sheet'); }
 
+// Dot the dock's *other* instrument when a chord is highlighted, so it's obvious
+// the selected chord is also shown there (piano ↔ guitar). The highlight lives on
+// both boards at once — the sheet just shows one at a time, full-size.
+function _updateDockChordHint() {
+  document.getElementById('instrDock')?.classList.toggle('has-chord', _chordPcSet() != null);
+}
+
 function _hear(pitch)       { if (typeof AudioEngine === 'object') AudioEngine.playNote(pitch, 0.9); }
 function _hearGuitar(pitch) { if (typeof AudioEngine === 'object') AudioEngine.playGuitarNote(pitch); }
 
@@ -6766,6 +6813,7 @@ function renderPiano() {
     el.onclick = () => _hear(pitch);
     root.appendChild(el);
   });
+  _updateDockChordHint();
 }
 
 // ── Fullscreen / enlarge a board ──────────────────────
@@ -6889,6 +6937,7 @@ function renderGuitar() {
     }
     root.appendChild(row);
   });
+  _updateDockChordHint();
 }
 
 

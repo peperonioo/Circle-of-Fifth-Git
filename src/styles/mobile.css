@@ -46,7 +46,16 @@
   .progression-builder  { border-radius:18px !important }
   .card,.drawer   { border-radius:18px !important }
   .builder-head   { flex-direction:column }
-  .builder-actions{ justify-content:flex-start }
+  /* One tidy row of controls: Play keeps its label, everything else collapses to
+     a clean icon button so the whole bar fits a phone width without shrinking. */
+  .builder-actions{ flex-wrap:nowrap; gap:6px; justify-content:flex-start;
+                    width:100%; overflow-x:auto; scrollbar-width:none }
+  .builder-actions::-webkit-scrollbar { display:none }
+  .builder-actions .builder-btn:not(#playProgBtn) span[data-i18n] { display:none }
+  .builder-actions .builder-btn:not(#playProgBtn) {
+    width:38px; height:38px; min-width:38px; padding:0; flex:0 0 auto;
+  }
+  .builder-actions #playProgBtn { flex:0 0 auto; height:38px }
   .builder-meta   { flex-direction:column; align-items:flex-start }
   .builder-next-top { align-items:flex-start; flex-direction:column; gap:6px }
   .builder-next-context { white-space:normal }
@@ -76,6 +85,24 @@
     transition:opacity .26s var(--ease);
   }
   body.instr-sheet .instr-sheet-backdrop { opacity:1; pointer-events:auto }
+
+  /* Show ONLY the instrument you tapped — no second drawer hanging below — and let
+     it use the freed vertical space (bigger keys / frets, no zoom needed). The dock
+     is the switcher, so the drawer summary no longer toggles. */
+  body.instr-sheet .drawer:not([open])      { display:none }
+  body.instr-sheet .drawer                  { border:0; background:transparent; margin:0; padding:0 }
+  body.instr-sheet .drawer > summary        { pointer-events:none }
+  body.instr-sheet .drawer > summary button { pointer-events:auto }
+  body.instr-sheet .drawer .chev            { display:none }
+  /* Piano: taller, thumb-friendly keys */
+  body.instr-sheet #piano               { height:min(32svh, 250px) }
+  body.instr-sheet #piano .white .kl    { font-size:13px }
+  body.instr-sheet #piano .black .kl    { font-size:11px }
+  /* Fretboard: roomier rows + bigger lit note dots */
+  body.instr-sheet .fret-cell           { height:42px }
+  body.instr-sheet .fret-note.on,
+  body.instr-sheet .fret-note.root,
+  body.instr-sheet .fret-note.chord     { width:30px; height:30px; font-size:10px }
 
   .info-row       { grid-template-columns:1fr }
   .prod-grid,.elements-section { grid-template-columns:1fr }

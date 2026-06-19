@@ -3,11 +3,12 @@
   margin-top:0; padding:14px 15px 22px;
   border-radius:var(--r-lg) !important;
   border:1px solid var(--card-bd) !important;
-  background:var(--card); backdrop-filter:blur(20px);
+  background:rgba(10,10,14,.88); backdrop-filter:blur(8px);
   box-shadow:0 4px 16px rgba(0,0,0,.15);
   position:relative; overflow:visible !important;
   will-change:transform,opacity;
 }
+body.light .progression-builder { background:rgba(250,247,241,.92) }
 .builder-head    { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px }
 .builder-title   { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:500 }
 .builder-sub     { font-size:12px !important; max-width:500px !important; color:var(--muted); margin-top:3px; line-height:1.35 }
