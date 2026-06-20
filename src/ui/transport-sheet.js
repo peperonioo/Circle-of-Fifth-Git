@@ -48,8 +48,8 @@ const TransportSheet = (() => {
     if (!el()) return;
     const k = (typeof gr === 'function' && gr()[0]) ? gr()[0] : (st.key || 'C');
     const minor = (typeof modeIsMinor === 'function') ? modeIsMinor(st.mode) : (st.wheelView === 'minor');
-    const set = (id, v) => { const n = document.getElementById(id); if (n) n.textContent = v; };
-    set('tsKey', k); set('tsMode', minor ? 'minor' : 'major'); set('tsBpm', st.bpm || 120);
+    const set = (cls, v) => el().querySelectorAll(cls).forEach(n => n.textContent = v);
+    set('.ts-k', k); set('.ts-m', minor ? 'minor' : 'major'); set('.ts-b', st.bpm || 120);
   }
 
   function init() {

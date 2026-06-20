@@ -19,43 +19,60 @@
 .iz-strip { flex:1 1 auto; min-width:0; padding:0 10px 0 14px; margin:0 }
 
 @media (max-width:860px) {
-  .transport-sheet {
-    display:block;
-    position:fixed; left:50%; transform:translateX(-50%);
-    bottom:calc(14px + var(--mobile-safe-bottom,0px));
-    z-index:59; width:218px; max-width:calc(100vw - 20px);
-    border-radius:24px; overflow:hidden;
-    background:rgba(40,32,55,.5); backdrop-filter:blur(26px) saturate(1.5);
+  /* The island is just a fixed layer; the capsule and panel cross-fade inside it
+     (only opacity + transform animate — GPU-composited, no width reflow). */
+  .transport-sheet { display:block; position:fixed; inset:0; z-index:59; pointer-events:none }
+
+  /* Shared glass look */
+  .ts-cap, .ts-panel {
+    background:rgba(40,32,55,.5); backdrop-filter:blur(24px) saturate(1.5);
     border:1px solid rgba(255,255,255,.22);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.20), 0 14px 44px rgba(0,0,0,.5);
-    transition:width .42s cubic-bezier(.4,0,.2,1), border-radius .3s var(--ease);
-    will-change:width; contain:layout paint;
   }
-  body.light .transport-sheet { background:rgba(252,250,247,.55); border-color:rgba(0,0,0,.1) }
-  .transport-sheet[data-state="open"] { width:calc(100vw - 20px); border-radius:28px }
+  body.light .ts-cap, body.light .ts-panel { background:rgba(252,250,247,.6); border-color:rgba(0,0,0,.1) }
 
-  .ts-head { display:flex; align-items:center; gap:11px; padding:9px 11px; cursor:pointer; user-select:none }
+  /* Collapsed capsule */
+  .ts-cap {
+    position:absolute; left:50%; bottom:calc(14px + var(--mobile-safe-bottom,0px));
+    transform:translateX(-50%); transform-origin:bottom center; pointer-events:auto;
+    display:flex; align-items:center; gap:10px; padding:7px 15px 7px 7px; cursor:pointer;
+    border-radius:999px;
+    transition:opacity .2s var(--ease), transform .3s cubic-bezier(.34,1.5,.5,1);
+  }
+  .ts-cap .ts-keywrap { display:flex; align-items:baseline; gap:5px }
+  .ts-cap .ts-k { font-family:'DM Serif Display',serif; font-size:16px; color:var(--ink); line-height:1 }
+  .ts-cap .ts-m { font-size:11px; color:var(--muted) }
+  .ts-cap .ts-b { font-family:'DM Mono',monospace; font-size:13px; color:var(--ink) }
+  .transport-sheet[data-state="open"] .ts-cap { opacity:0; transform:translateX(-50%) scale(.8); pointer-events:none }
+
+  /* Expanded panel */
+  .ts-panel {
+    position:absolute; left:10px; right:10px; bottom:10px; pointer-events:auto;
+    display:flex; flex-direction:column; max-height:82svh; overflow:hidden;
+    border-radius:26px; transform-origin:bottom center;
+    opacity:0; transform:translateY(18px) scale(.96); pointer-events:none;
+    transition:opacity .24s var(--ease), transform .34s cubic-bezier(.34,1.28,.5,1);
+  }
+  .transport-sheet[data-state="open"] .ts-panel { opacity:1; transform:none; pointer-events:auto }
+
+  .ts-head { display:flex; align-items:center; gap:11px; padding:11px 13px; cursor:pointer; user-select:none; flex:none }
   .ts-play {
     width:38px; height:38px; border-radius:13px; border:0; background:var(--accent); color:#fff;
     display:grid; place-items:center; cursor:pointer; flex:none; transition:background .2s, transform .14s var(--ease);
   }
+  .ts-cap .ts-play { width:34px; height:34px; border-radius:12px }
   .ts-play:active { transform:scale(.92) }
   .ts-play.is-stop { background:#2a2a31 }
   body.light .ts-play.is-stop { background:#3a3a42 }
-  .ts-key { display:flex; align-items:baseline; gap:5px; white-space:nowrap }
-  .ts-key b { font-family:'DM Serif Display',serif; font-size:17px; color:var(--ink); line-height:1 }
-  .ts-key small { font-size:11px; color:var(--muted) }
+  .ts-head .ts-keywrap { display:flex; align-items:baseline; gap:5px; white-space:nowrap }
+  .ts-head .ts-k { font-family:'DM Serif Display',serif; font-size:17px; color:var(--ink); line-height:1 }
+  .ts-head .ts-m { font-size:11px; color:var(--muted) }
   .ts-bpm { margin-left:auto; display:flex; align-items:baseline; gap:3px; background:transparent; border:0; cursor:pointer; white-space:nowrap }
-  .ts-bpm b { font-family:'DM Mono',monospace; font-size:13px; color:var(--ink) }
+  .ts-bpm .ts-b { font-family:'DM Mono',monospace; font-size:14px; color:var(--ink) }
   .ts-bpm small { font-size:8.5px; color:var(--muted); letter-spacing:.05em }
-  .ts-chev { color:var(--muted); display:none; transition:transform .3s var(--ease) }
-  .transport-sheet[data-state="open"] .ts-chev { display:inline-flex }
+  .ts-chev { color:var(--muted); display:inline-flex; transition:transform .3s var(--ease) }
 
-  .ts-body { max-height:0; opacity:0; overflow:hidden; transition:max-height .44s cubic-bezier(.32,.72,0,1), opacity .3s var(--ease) }
-  .transport-sheet[data-state="open"] .ts-body {
-    max-height:74svh; opacity:1; overflow-y:auto;
-    padding:2px 12px calc(12px + var(--mobile-safe-bottom,0px));
-  }
+  .ts-body { overflow-y:auto; padding:2px 12px calc(12px + var(--mobile-safe-bottom,0px)) }
   .ts-section-label { font-family:'DM Mono',monospace; font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin:12px 4px 8px }
 
   /* Instruments: neutralise the old fixed bottom-sheet styling inside the island */
