@@ -965,6 +965,24 @@ body.light .gravity-pill.metric.high { color:#fff }
 .mod-pivot { grid-area:pivot; align-self:end; font-family:'DM Mono',monospace; font-size:9.5px; color:var(--muted); white-space:nowrap }
 .mod-pivot b { color:var(--ink) }
 .mod-why   { grid-area:why; font-size:11px; color:var(--muted); line-height:1.35; margin-top:3px }
+/* Colour-chord rows: same panel, plus a "+" to drop the chord into the build */
+.cc-item {
+  display:grid; grid-template-columns:1fr auto; grid-template-areas:'role add' 'name add' 'why add';
+  gap:1px 10px; align-items:center; text-align:left; cursor:pointer;
+  padding:9px 12px; border-radius:13px; border:1px solid var(--glass-border); background:var(--glass-1);
+  transition:border-color .15s, background .15s;
+}
+.cc-item:hover { border-color:rgba(232,68,26,.42); background:var(--glass-2) }
+.cc-item.on    { border-color:var(--accent); background:rgba(232,68,26,.12) }
+.cc-item .mod-role { grid-area:role }
+.cc-name   { grid-area:name; font-family:'DM Serif Display',Georgia,serif; font-size:18px; color:var(--ink); line-height:1.1 }
+.cc-item .mod-why  { grid-area:why; margin-top:3px }
+.cc-add {
+  grid-area:add; align-self:center; width:38px; height:38px; border-radius:11px; cursor:pointer;
+  border:1px solid rgba(232,68,26,.4); background:rgba(232,68,26,.14); color:var(--accent2);
+  font-size:20px; line-height:1; display:grid; place-items:center;
+}
+.cc-add:hover { background:rgba(232,68,26,.26) }
 @media (prefers-reduced-motion: reduce){ .modulate-panel { transition:opacity .15s } }
 
 
@@ -2210,8 +2228,27 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
   #tsInstruments .drawer { background:transparent !important; border:0 !important; box-shadow:none !important }
   #tsInstruments .drawer > summary { padding:2px 2px 8px }
   #tsInstruments .drawer-body { padding:0 }
-  #tsInstruments .instr-pager { flex:none; height:212px }
-  #tsInstruments .instr-pager > .drawer { height:212px; overflow:hidden }
+  #tsInstruments .instr-pager { flex:none; height:248px }
+  #tsInstruments .instr-pager > .drawer { height:248px; overflow:hidden }
+  #tsInstruments #piano { height:168px }
+  #tsInstruments #piano .white .kl { font-size:12px }
+  #tsInstruments .fret-cell { height:40px }
+  #tsInstruments .fret-note.on, #tsInstruments .fret-note.root, #tsInstruments .fret-note.chord { width:28px; height:28px; font-size:10px }
+
+  /* Tappable strip of your progression — audition each chord on the board */
+  .ts-prog-strip {
+    display:flex; gap:6px; overflow-x:auto; padding:0 2px 8px; scrollbar-width:none;
+  }
+  .ts-prog-strip::-webkit-scrollbar { display:none }
+  .tps-chip {
+    flex:0 0 auto; padding:6px 12px; border-radius:11px; cursor:pointer;
+    border:1px solid var(--glass-border); background:var(--glass-1); color:var(--ink);
+    font-family:'DM Serif Display',Georgia,serif; font-size:15px; line-height:1;
+    transition:border-color .14s, background .14s, color .14s;
+  }
+  .tps-chip:active { transform:scale(.95) }
+  .tps-chip.on { background:var(--accent); border-color:transparent; color:#fff }
+  .tps-empty { font-size:11px; color:var(--muted); padding:4px 2px }
 
   /* Harmony tools row */
   .ts-tools { display:flex; gap:7px; padding-top:2px }
@@ -2629,6 +2666,7 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
 
 <!-- MODULATION COACH — where to change key next (filled by ModulationCoach) -->
 <div id="modulatePanel" class="modulate-panel" role="dialog" aria-label="Modulate" hidden></div>
+<div id="colorPanel" class="modulate-panel" role="dialog" aria-label="Colour chords" hidden></div>
 
 <!-- TRANSPORT ISLAND (liquid-glass · mobile) -->
 <div id="transportSheet" class="transport-sheet" data-state="peek" aria-label="Transport">
@@ -2640,12 +2678,13 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
   </div>
   <div class="ts-body">
     <div class="ts-section-label" data-i18n="dock.piano">Instruments</div>
+    <div id="tsProgStrip" class="ts-prog-strip" aria-label="Tap a chord to show it on the instrument"></div>
     <div id="tsInstruments"></div>
     <div class="ts-section-label">Harmony</div>
     <div class="ts-tools">
-      <button class="ts-tool primary" onclick="ModulationCoach.toggle()"><span class="mod-ico" aria-hidden="true">✦</span><span data-i18n="modulate.btn">Modulate</span></button>
-      <button class="ts-tool ghost" id="tsVoicing" onclick="togglePlayOpt('voicingOpen',this)" data-ico="voicing" data-ico-size="16" aria-label="Open voicing"></button>
-      <button class="ts-tool sq" id="tsCountin" onclick="togglePlayOpt('countIn',this)" data-ico="countin" data-ico-size="16" aria-label="Count-in"></button>
+      <button class="ts-tool primary" onclick="ColorChords.toggle()"><span class="mod-ico" aria-hidden="true">✦</span><span data-i18n="color.btn">Colour chords</span></button>
+      <button class="ts-tool ghost" onclick="ModulationCoach.toggle()" data-i18n="key.btn">Key</button>
+      <button class="ts-tool sq" id="tsVoicing" onclick="togglePlayOpt('voicingOpen',this)" data-ico="voicing" data-ico-size="16" aria-label="Open voicing"></button>
     </div>
   </div>
 </div>
@@ -2674,7 +2713,7 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
 // ── CONSTANTS ─────────────────────────────────────────
 // Pure data. No DOM access. No state mutation.
 
-const APP_VERSION = 'V5.35';
+const APP_VERSION = 'V5.36';
 const STORAGE_KEY = 'easy-fifth-circle:v1';
 
 const NOTES  = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
@@ -2761,6 +2800,8 @@ const I18N_EN = {
   'toggle.major':      'Major',
   'toggle.minor':      'Minor',
   'modulate.btn':      'Modulate',
+  'color.btn':         'Colour chords',
+  'key.btn':           'Key',
   'common.minor':      'minor',
   'common.major':      'major',
   'builder.title':     'Progression builder',
@@ -2837,6 +2878,8 @@ const I18N_ES = {
   'toggle.major':      'Mayor',
   'toggle.minor':      'Menor',
   'modulate.btn':      'Modular',
+  'color.btn':         'Acordes de color',
+  'key.btn':           'Tonalidad',
   'common.minor':      'menor',
   'common.major':      'mayor',
   'builder.title':     'Constructor de progresión',
@@ -5213,7 +5256,12 @@ OverlayManager.register('transport-sheet', {
 OverlayManager.register('modulate', {
   isOpen:   () => !!(typeof ModulationCoach === 'object' && ModulationCoach.isOpen()),
   close:    () => { if (typeof ModulationCoach === 'object' && ModulationCoach.isOpen()) ModulationCoach.close(); },
-  contains: (t) => !!(t.closest('#modulatePanel') || t.closest('.modulate-btn')),
+  contains: (t) => !!(t.closest('#modulatePanel') || t.closest('.modulate-btn') || t.closest('[onclick*="ModulationCoach"]')),
+});
+OverlayManager.register('color-chords', {
+  isOpen:   () => !!(typeof ColorChords === 'object' && ColorChords.isOpen()),
+  close:    () => { if (typeof ColorChords === 'object' && ColorChords.isOpen()) ColorChords.close(); },
+  contains: (t) => !!(t.closest('#colorPanel') || t.closest('[onclick*="ColorChords"]')),
 });
 OverlayManager.register('theory-help', {
   isOpen: () => !!document.querySelector('.micro-popover.open'),
@@ -5651,6 +5699,23 @@ const HistoryEngine = {
     if (opts.sourceEl) animateChordToBuilder(opts.sourceEl, idx);
   },
 
+  // Append a non-diatonic / borrowed "colour" chord (no degree index — its root
+  // and quality/variant fully describe it via chordPitchesForItem).
+  addCustom(spec) {
+    const item = {
+      chord: spec.chord, degree: spec.degree || '', quality: spec.quality,
+      degreeIndex: -1, note: spec.note, key: st.key, mode: st.mode, beats: 2,
+      variant: spec.variant || null,
+      uid: Date.now() + '-' + Math.random().toString(36).slice(2), __justAdded: true,
+    };
+    if (!Array.isArray(st.history)) st.history = [];
+    st.history.push(item);
+    if (st.history.length > this.max) st.history = st.history.slice(-this.max);
+    this.render();
+    renderProgressionStory();
+    saveState();
+  },
+
   remove(index) {
     if (!Array.isArray(st.history) || !st.history[index]) return;
     const uid = st.history[index].uid;
@@ -5688,6 +5753,7 @@ const HistoryEngine = {
     // Once you're building, the giant wheel steps back (it shrinks on mobile so the
     // builder gets the screen). Empty progression → the wheel is the protagonist.
     document.body.classList.toggle('building', h.length > 0);
+    if (typeof renderInstrProgStrip === 'function') renderInstrProgStrip();
 
     // Clear __justAdded flag + migrate older items that have no duration yet.
     h.forEach(it => { delete it.__justAdded; if (it.beats == null) it.beats = 2; });
@@ -6896,6 +6962,20 @@ const GuitarShapes = (() => {
     const posEl = card.querySelector('.gsc-pos'); if (posEl) posEl.textContent = vs.length ? vs[sel].label : '';
   }
 
+  // Strum the chord's current voicing with the nylon-guitar voice (low → high),
+  // so tapping a shape lets you actually hear it in the guitar tone.
+  const _STR_BASE = [-20, -15, -10, -5, -1, 4];   // low-E … high-e, 0 = middle C
+  function _strum(pos) {
+    const c = _chords[pos]; if (!c) return;
+    if (typeof AudioEngine !== 'object' || !AudioEngine.playGuitarNote) return;
+    const vs = _voicingsFor(c), sel = clampi(_sel[pos] || 0, Math.max(0, vs.length - 1));
+    const frets = vs[sel] && vs[sel].frets; if (!frets) return;
+    let d = 0;
+    frets.forEach((f, s) => {
+      if (f >= 0) { const p = _STR_BASE[s] + f; setTimeout(() => AudioEngine.playGuitarNote(p), d); d += 17; }
+    });
+  }
+
   // Light a chord's current voicing big on the real fretboard + mark its card.
   function _highlightCard(pos) {
     const c = _chords[pos]; if (!c) return;
@@ -6917,12 +6997,12 @@ const GuitarShapes = (() => {
     view(v) { if (v !== _view) { _view = v; _sel = []; _render(); if (_activePos >= 0) _highlightCard(_activePos); } },
 
     // Dots → pick a specific voicing for one chord.
-    setVoicing(pos, i) { _sel[pos] = i; _updateCard(pos); _highlightCard(pos); },
+    setVoicing(pos, i) { _sel[pos] = i; _updateCard(pos); _highlightCard(pos); _strum(pos); },
     // Arrows → step to the lower/higher position (clamped).
     step(pos, dir) {
       const vs = _voicingsFor(_chords[pos]); if (vs.length <= 1) return;
       _sel[pos] = Math.max(0, Math.min(vs.length - 1, (_sel[pos] || 0) + dir));
-      _updateCard(pos); _highlightCard(pos);
+      _updateCard(pos); _highlightCard(pos); _strum(pos);
     },
 
     // Pointer on a card's fretboard: a sideways drag slides voicings (low→high);
@@ -6935,7 +7015,7 @@ const GuitarShapes = (() => {
         window.removeEventListener('pointerup', up);
         const dx = ev.clientX - startX;
         if (Math.abs(dx) > 22) this.step(pos, dx < 0 ? 1 : -1);
-        else _highlightCard(pos);
+        else { _highlightCard(pos); _strum(pos); }
       };
       window.addEventListener('pointermove', move, { passive: false });
       window.addEventListener('pointerup', up);
@@ -7051,6 +7131,30 @@ function gotoInstrument(which) {
   }
 }
 function closeInstrSheet() { document.body.classList.remove('instr-sheet'); }
+
+// ── Progression strip (inside the instrument island) ──────
+// Your built chords as tappable chips; tapping one lights it on the piano (and
+// guitar) and plays it — so you can audition each chord without leaving the
+// instrument. Gives the piano the same fluency as the guitar's shapes view.
+function renderInstrProgStrip() {
+  const el = document.getElementById('tsProgStrip'); if (!el) return;
+  const h = Array.isArray(st.history) ? st.history : [];
+  if (!h.length) {
+    el.innerHTML = `<span class="tps-empty">${typeof t === 'function' ? t('builder.empty') : 'No chords yet'}</span>`;
+    return;
+  }
+  el.innerHTML = h.map((it, i) => {
+    const lbl = (typeof chordDisplay === 'function') ? chordDisplay(it) : it.chord;
+    return `<button class="tps-chip" data-i="${i}" onclick="pickProgChord(${i})">${lbl}</button>`;
+  }).join('');
+}
+function pickProgChord(i) {
+  const h = Array.isArray(st.history) ? st.history : []; const it = h[i]; if (!it) return;
+  const pcs = (typeof chordPitchesForItem === 'function') ? chordPitchesForItem(it) : null;
+  if (typeof setActiveChord === 'function') setActiveChord(pcs);
+  if (pcs && typeof AudioEngine === 'object') AudioEngine.playChord(pcs);
+  document.querySelectorAll('#tsProgStrip .tps-chip').forEach((c, j) => c.classList.toggle('on', j === i));
+}
 
 // Dot the dock's *other* instrument when a chord is highlighted, so it's obvious
 // the selected chord is also shown there (piano ↔ guitar). The highlight lives on
@@ -7478,6 +7582,86 @@ const ModulationCoach = (() => {
   }
 
   return { toggle, show, close, jump, isOpen: () => _open };
+})();
+
+
+// == color-chords.js ==
+// ── COLOR CHORDS (V5.36 · transport-sheet branch) ─────
+// Chords from OUTSIDE the current scale — secondary dominants and borrowed
+// chords — each with what it does and where it resolves. Tap a row to hear it
+// on the boards, tap "+" to drop it into the progression. The producer's spice.
+const ColorChords = (() => {
+  const DOM7 = [0, 4, 7, 10], MAJ = [0, 4, 7], MIN = [0, 3, 7];
+  const L  = o => o[st.lang] || o.en;
+  const nm = pc => dn(na(((pc % 12) + 12) % 12));
+
+  function chords() {
+    const T   = ni((typeof gr === 'function' && gr()[0]) ? gr()[0] : (st.key || 'C'));
+    const maj = (typeof modeIsMinor === 'function') ? !modeIsMinor(st.mode) : (st.wheelView !== 'minor');
+    const up  = n => (T + n) % 12;
+    const dom7  = (pc, role, why) => ({ pc, iv: DOM7, name: nm(pc) + '7', quality: 'Maj', variant: '7',  role, why });
+    const major = (pc, role, why) => ({ pc, iv: MAJ,  name: nm(pc),       quality: 'Maj', variant: null, role, why });
+    const minor = (pc, role, why) => ({ pc, iv: MIN,  name: nm(pc) + 'm', quality: 'Min', variant: null, role, why });
+
+    return maj ? [
+      dom7 (up(2),  { en: 'V7 / V',  es: 'V7 / V'  }, { en: 'Tension that pulls hard to V.', es: 'Tensión que tira fuerte hacia el V.' }),
+      dom7 (up(4),  { en: 'V7 / vi', es: 'V7 / vi' }, { en: 'Leads to the relative minor.',  es: 'Lleva a la relativa menor.' }),
+      minor(up(5),  { en: 'iv',      es: 'iv'      }, { en: 'Borrowed minor — bittersweet, → I.', es: 'Menor prestado — agridulce, → I.' }),
+      major(up(10), { en: '♭VII',    es: '♭VII'    }, { en: 'Rock / mixolydian colour, → I.', es: 'Color rock / mixolidio, → I.' }),
+      major(up(8),  { en: '♭VI',     es: '♭VI'     }, { en: 'Cinematic lift, → I or V.',     es: 'Subida cinematográfica, → I o V.' }),
+    ] : [
+      dom7 (up(7),  { en: 'V7',          es: 'V7'           }, { en: 'The strong pull home (harmonic minor).', es: 'El tirón fuerte a casa (menor armónica).' }),
+      major(up(1),  { en: '♭II',         es: '♭II'          }, { en: 'Neapolitan — dark, dramatic, → V.',      es: 'Napolitana — oscura y dramática, → V.' }),
+      major(up(5),  { en: 'IV',          es: 'IV'           }, { en: 'Dorian brightening.',                    es: 'Brillo dórico.' }),
+      dom7 (up(2),  { en: 'V7 / V',      es: 'V7 / V'       }, { en: 'Pulls toward the dominant.',             es: 'Tira hacia el dominante.' }),
+      major(up(0),  { en: 'I (Picardy)', es: 'I (Picardía)' }, { en: 'A hopeful major ending.',               es: 'Un final mayor esperanzado.' }),
+    ];
+  }
+
+  let _open = false;
+  const el = () => document.getElementById('colorPanel');
+
+  function render() {
+    const box = el(); if (!box) return;
+    const es = st.lang === 'es';
+    box.innerHTML = `
+      <div class="mod-head">
+        <span class="mod-title">${es ? 'Acordes de color' : 'Colour chords'}</span>
+        <button class="mod-x" onclick="ColorChords.close()" aria-label="Close">✕</button>
+      </div>
+      <div class="mod-list">
+        ${chords().map((c, i) => `
+          <div class="cc-item" onclick="ColorChords.preview(${i})">
+            <span class="mod-role">${L(c.role)}</span>
+            <span class="cc-name">${c.name}</span>
+            <span class="mod-why">${L(c.why)}</span>
+            <button class="cc-add" onclick="event.stopPropagation();ColorChords.add(${i})" aria-label="Add to progression">＋</button>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  function preview(i) {
+    const c = chords()[i]; if (!c) return;
+    const pitches = c.iv.map(x => c.pc + x);
+    if (typeof setActiveChord === 'function') setActiveChord(pitches);
+    if (typeof AudioEngine === 'object') AudioEngine.playChord(pitches);
+    el()?.querySelectorAll('.cc-item').forEach((it, j) => it.classList.toggle('on', j === i));
+  }
+
+  function add(i) {
+    const c = chords()[i]; if (!c) return;
+    if (typeof HistoryEngine === 'object' && HistoryEngine.addCustom) {
+      HistoryEngine.addCustom({ note: nm(c.pc), chord: c.name, quality: c.quality, variant: c.variant });
+    }
+    if (typeof AudioEngine === 'object') AudioEngine.playChord(c.iv.map(x => c.pc + x));
+  }
+
+  function show()  { const b = el(); if (!b) return; render(); b.hidden = false; requestAnimationFrame(() => b.classList.add('open')); _open = true;
+                     if (typeof OverlayManager === 'object') OverlayManager.opened('color-chords'); }
+  function close() { const b = el(); if (!b) return; b.classList.remove('open'); _open = false; setTimeout(() => { if (!_open) b.hidden = true; }, 200); }
+  function toggle(){ _open ? close() : show(); }
+
+  return { toggle, show, close, preview, add, isOpen: () => _open };
 })();
 
 

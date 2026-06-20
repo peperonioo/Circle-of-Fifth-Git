@@ -54,8 +54,27 @@
   #tsInstruments .drawer { background:transparent !important; border:0 !important; box-shadow:none !important }
   #tsInstruments .drawer > summary { padding:2px 2px 8px }
   #tsInstruments .drawer-body { padding:0 }
-  #tsInstruments .instr-pager { flex:none; height:212px }
-  #tsInstruments .instr-pager > .drawer { height:212px; overflow:hidden }
+  #tsInstruments .instr-pager { flex:none; height:248px }
+  #tsInstruments .instr-pager > .drawer { height:248px; overflow:hidden }
+  #tsInstruments #piano { height:168px }
+  #tsInstruments #piano .white .kl { font-size:12px }
+  #tsInstruments .fret-cell { height:40px }
+  #tsInstruments .fret-note.on, #tsInstruments .fret-note.root, #tsInstruments .fret-note.chord { width:28px; height:28px; font-size:10px }
+
+  /* Tappable strip of your progression — audition each chord on the board */
+  .ts-prog-strip {
+    display:flex; gap:6px; overflow-x:auto; padding:0 2px 8px; scrollbar-width:none;
+  }
+  .ts-prog-strip::-webkit-scrollbar { display:none }
+  .tps-chip {
+    flex:0 0 auto; padding:6px 12px; border-radius:11px; cursor:pointer;
+    border:1px solid var(--glass-border); background:var(--glass-1); color:var(--ink);
+    font-family:'DM Serif Display',Georgia,serif; font-size:15px; line-height:1;
+    transition:border-color .14s, background .14s, color .14s;
+  }
+  .tps-chip:active { transform:scale(.95) }
+  .tps-chip.on { background:var(--accent); border-color:transparent; color:#fff }
+  .tps-empty { font-size:11px; color:var(--muted); padding:4px 2px }
 
   /* Harmony tools row */
   .ts-tools { display:flex; gap:7px; padding-top:2px }

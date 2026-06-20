@@ -116,7 +116,12 @@ OverlayManager.register('transport-sheet', {
 OverlayManager.register('modulate', {
   isOpen:   () => !!(typeof ModulationCoach === 'object' && ModulationCoach.isOpen()),
   close:    () => { if (typeof ModulationCoach === 'object' && ModulationCoach.isOpen()) ModulationCoach.close(); },
-  contains: (t) => !!(t.closest('#modulatePanel') || t.closest('.modulate-btn')),
+  contains: (t) => !!(t.closest('#modulatePanel') || t.closest('.modulate-btn') || t.closest('[onclick*="ModulationCoach"]')),
+});
+OverlayManager.register('color-chords', {
+  isOpen:   () => !!(typeof ColorChords === 'object' && ColorChords.isOpen()),
+  close:    () => { if (typeof ColorChords === 'object' && ColorChords.isOpen()) ColorChords.close(); },
+  contains: (t) => !!(t.closest('#colorPanel') || t.closest('[onclick*="ColorChords"]')),
 });
 OverlayManager.register('theory-help', {
   isOpen: () => !!document.querySelector('.micro-popover.open'),

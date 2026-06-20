@@ -258,6 +258,20 @@ const GuitarShapes = (() => {
     const posEl = card.querySelector('.gsc-pos'); if (posEl) posEl.textContent = vs.length ? vs[sel].label : '';
   }
 
+  // Strum the chord's current voicing with the nylon-guitar voice (low → high),
+  // so tapping a shape lets you actually hear it in the guitar tone.
+  const _STR_BASE = [-20, -15, -10, -5, -1, 4];   // low-E … high-e, 0 = middle C
+  function _strum(pos) {
+    const c = _chords[pos]; if (!c) return;
+    if (typeof AudioEngine !== 'object' || !AudioEngine.playGuitarNote) return;
+    const vs = _voicingsFor(c), sel = clampi(_sel[pos] || 0, Math.max(0, vs.length - 1));
+    const frets = vs[sel] && vs[sel].frets; if (!frets) return;
+    let d = 0;
+    frets.forEach((f, s) => {
+      if (f >= 0) { const p = _STR_BASE[s] + f; setTimeout(() => AudioEngine.playGuitarNote(p), d); d += 17; }
+    });
+  }
+
   // Light a chord's current voicing big on the real fretboard + mark its card.
   function _highlightCard(pos) {
     const c = _chords[pos]; if (!c) return;
@@ -279,12 +293,12 @@ const GuitarShapes = (() => {
     view(v) { if (v !== _view) { _view = v; _sel = []; _render(); if (_activePos >= 0) _highlightCard(_activePos); } },
 
     // Dots → pick a specific voicing for one chord.
-    setVoicing(pos, i) { _sel[pos] = i; _updateCard(pos); _highlightCard(pos); },
+    setVoicing(pos, i) { _sel[pos] = i; _updateCard(pos); _highlightCard(pos); _strum(pos); },
     // Arrows → step to the lower/higher position (clamped).
     step(pos, dir) {
       const vs = _voicingsFor(_chords[pos]); if (vs.length <= 1) return;
       _sel[pos] = Math.max(0, Math.min(vs.length - 1, (_sel[pos] || 0) + dir));
-      _updateCard(pos); _highlightCard(pos);
+      _updateCard(pos); _highlightCard(pos); _strum(pos);
     },
 
     // Pointer on a card's fretboard: a sideways drag slides voicings (low→high);
@@ -297,7 +311,7 @@ const GuitarShapes = (() => {
         window.removeEventListener('pointerup', up);
         const dx = ev.clientX - startX;
         if (Math.abs(dx) > 22) this.step(pos, dx < 0 ? 1 : -1);
-        else _highlightCard(pos);
+        else { _highlightCard(pos); _strum(pos); }
       };
       window.addEventListener('pointermove', move, { passive: false });
       window.addEventListener('pointerup', up);

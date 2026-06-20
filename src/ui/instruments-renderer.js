@@ -85,6 +85,30 @@ function gotoInstrument(which) {
 }
 function closeInstrSheet() { document.body.classList.remove('instr-sheet'); }
 
+// ── Progression strip (inside the instrument island) ──────
+// Your built chords as tappable chips; tapping one lights it on the piano (and
+// guitar) and plays it — so you can audition each chord without leaving the
+// instrument. Gives the piano the same fluency as the guitar's shapes view.
+function renderInstrProgStrip() {
+  const el = document.getElementById('tsProgStrip'); if (!el) return;
+  const h = Array.isArray(st.history) ? st.history : [];
+  if (!h.length) {
+    el.innerHTML = `<span class="tps-empty">${typeof t === 'function' ? t('builder.empty') : 'No chords yet'}</span>`;
+    return;
+  }
+  el.innerHTML = h.map((it, i) => {
+    const lbl = (typeof chordDisplay === 'function') ? chordDisplay(it) : it.chord;
+    return `<button class="tps-chip" data-i="${i}" onclick="pickProgChord(${i})">${lbl}</button>`;
+  }).join('');
+}
+function pickProgChord(i) {
+  const h = Array.isArray(st.history) ? st.history : []; const it = h[i]; if (!it) return;
+  const pcs = (typeof chordPitchesForItem === 'function') ? chordPitchesForItem(it) : null;
+  if (typeof setActiveChord === 'function') setActiveChord(pcs);
+  if (pcs && typeof AudioEngine === 'object') AudioEngine.playChord(pcs);
+  document.querySelectorAll('#tsProgStrip .tps-chip').forEach((c, j) => c.classList.toggle('on', j === i));
+}
+
 // Dot the dock's *other* instrument when a chord is highlighted, so it's obvious
 // the selected chord is also shown there (piano ↔ guitar). The highlight lives on
 // both boards at once — the sheet just shows one at a time, full-size.

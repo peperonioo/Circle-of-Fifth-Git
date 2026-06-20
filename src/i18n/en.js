@@ -11,6 +11,8 @@ const I18N_EN = {
   'toggle.major':      'Major',
   'toggle.minor':      'Minor',
   'modulate.btn':      'Modulate',
+  'color.btn':         'Colour chords',
+  'key.btn':           'Key',
   'common.minor':      'minor',
   'common.major':      'major',
   'builder.title':     'Progression builder',

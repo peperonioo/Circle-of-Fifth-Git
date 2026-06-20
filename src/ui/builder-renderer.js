@@ -119,6 +119,23 @@ const HistoryEngine = {
     if (opts.sourceEl) animateChordToBuilder(opts.sourceEl, idx);
   },
 
+  // Append a non-diatonic / borrowed "colour" chord (no degree index — its root
+  // and quality/variant fully describe it via chordPitchesForItem).
+  addCustom(spec) {
+    const item = {
+      chord: spec.chord, degree: spec.degree || '', quality: spec.quality,
+      degreeIndex: -1, note: spec.note, key: st.key, mode: st.mode, beats: 2,
+      variant: spec.variant || null,
+      uid: Date.now() + '-' + Math.random().toString(36).slice(2), __justAdded: true,
+    };
+    if (!Array.isArray(st.history)) st.history = [];
+    st.history.push(item);
+    if (st.history.length > this.max) st.history = st.history.slice(-this.max);
+    this.render();
+    renderProgressionStory();
+    saveState();
+  },
+
   remove(index) {
     if (!Array.isArray(st.history) || !st.history[index]) return;
     const uid = st.history[index].uid;
@@ -156,6 +173,7 @@ const HistoryEngine = {
     // Once you're building, the giant wheel steps back (it shrinks on mobile so the
     // builder gets the screen). Empty progression → the wheel is the protagonist.
     document.body.classList.toggle('building', h.length > 0);
+    if (typeof renderInstrProgStrip === 'function') renderInstrProgStrip();
 
     // Clear __justAdded flag + migrate older items that have no duration yet.
     h.forEach(it => { delete it.__justAdded; if (it.beats == null) it.beats = 2; });

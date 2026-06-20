@@ -75,6 +75,7 @@ const JS_FILES = [
   'src/ui/instruments-renderer.js',
   'src/ui/metronome.js',
   'src/ui/modulation-coach.js',
+  'src/ui/color-chords.js',
   'src/ui/transport-sheet.js',
   'src/ui/onboarding.js',
   'src/ui/tabs.js',
