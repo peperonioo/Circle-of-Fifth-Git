@@ -23,6 +23,7 @@ function setLanguage(lang) {
   // language switch also updates suggestions, the builder meta, the lock hint, etc.
   try {
     if (typeof renderSuggestions === 'function') renderSuggestions();
+    if (typeof renderProduction === 'function') renderProduction();   // bilingual Production prose
     if (typeof HistoryEngine === 'object' && HistoryEngine.render) HistoryEngine.render();
     if (typeof updateWheelLockUI === 'function') updateWheelLockUI();
     if (typeof Metronome === 'object' && Metronome.syncTapHint) Metronome.syncTapHint();

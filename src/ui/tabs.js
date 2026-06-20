@@ -27,12 +27,16 @@ function setGenre(id, btn) {
   applyI18n();
 }
 
+// Resolve a Production string for the current language. Strings may be plain
+// (English-only, e.g. drum-row labels) or {en, es} — falls back to en.
+function PL(v) { return (v && typeof v === 'object' && !Array.isArray(v)) ? (v[st.lang] ?? v.en) : v; }
+
 function _ae(e) {
   let icon = e.icon;
   if (e.anim === 'stab') icon = `<div class="stab-icon"><div class="sk"></div><div class="sk bk"></div><div class="sk"></div><div class="sk bk"></div><div class="sk"></div></div>`;
   else if (e.anim === 'bass') icon = `<div class="bass-icon"><div class="bb"></div><div class="bb"></div><div class="bb"></div><div class="bb"></div><div class="bb"></div></div>`;
   const gear = e.gear ? `<span class="el-gear">${e.gear}</span>` : '';
-  return `<div class="element-item"><div class="element-icon">${icon}</div><div class="el-body"><div class="el-name">${e.name}${gear}</div><div class="el-desc">${e.desc}</div></div></div>`;
+  return `<div class="element-item"><div class="element-icon">${icon}</div><div class="el-body"><div class="el-name">${PL(e.name)}${gear}</div><div class="el-desc">${PL(e.desc)}</div></div></div>`;
 }
 
 function renderProduction() {
@@ -40,13 +44,15 @@ function renderProduction() {
   const ptEl = document.getElementById('prodTitle');
   if (ptEl) ptEl.textContent = g.title;
   const pmEl = document.getElementById('prodMeta');
-  if (pmEl) pmEl.textContent = `${g.bpm} BPM · ${g.sub}`;
+  if (pmEl) pmEl.textContent = `${g.bpm} BPM · ${PL(g.sub)}`;
   const bbEl = document.getElementById('bpmBadge');
   if (bbEl) bbEl.textContent = `${st.bpm || 120} BPM`;        // shared tempo (metronome / progression)
   const sbEl = document.getElementById('bpmSuggest');
   if (sbEl) {
     sbEl.textContent = `≈ ${g.bpm}`;
-    sbEl.title = `Use the suggested ${g.title} tempo (${g.bpm} BPM)`;
+    sbEl.title = st.lang === 'es'
+      ? `Usar el tempo sugerido de ${g.title} (${g.bpm} BPM)`
+      : `Use the suggested ${g.title} tempo (${g.bpm} BPM)`;
     sbEl.onclick = () => {
       st.bpm = g.bpm; saveState();
       if (typeof Metronome === 'object') Metronome.render();
@@ -59,7 +65,7 @@ function renderProduction() {
   if (pkm) pkm.textContent = gm().name;
   const pc = document.getElementById('prodCards');
   if (pc) pc.innerHTML = g.cards.map(c =>
-    `<div class="prod-card"><h3>${c.h}</h3><div class="bigline">${c.b}</div><p>${c.p}</p></div>`
+    `<div class="prod-card"><h3>${PL(c.h)}</h3><div class="bigline">${PL(c.b)}</div><p>${PL(c.p)}</p></div>`
   ).join('');
   const mg = document.getElementById('midiGrid');
   if (mg) mg.innerHTML = g.pattern.map((r, ri) =>
@@ -78,19 +84,19 @@ function renderProduction() {
   if (pl) pl.innerHTML = g.progressions.map(pr =>
     `<div class="prog-item">
       <div class="prog-chords">${pr.chords.map(c => `<span class="prog-chord">${c}</span>`).join('')}</div>
-      <div class="prog-desc">${pr.desc}</div>
+      <div class="prog-desc">${PL(pr.desc)}</div>
     </div>`
   ).join('');
   const gr2 = document.getElementById('grooveRules');
   if (gr2) gr2.innerHTML = g.groove.map((r, i) =>
     `<div class="groove-rule">
       <div class="rule-num">${String(i+1).padStart(2,'0')}</div>
-      <div class="rule-text">${r}</div>
+      <div class="rule-text">${PL(r)}</div>
     </div>`
   ).join('');
   const tp = document.getElementById('prodTips');
   if (tp) tp.innerHTML = (g.tips || []).map(sec =>
-    `<div class="tips-card"><h4>${sec.h}</h4><ul>${sec.items.map(i => `<li>${i}</li>`).join('')}</ul></div>`
+    `<div class="tips-card"><h4>${PL(sec.h)}</h4><ul>${sec.items.map(i => `<li>${PL(i)}</li>`).join('')}</ul></div>`
   ).join('');
 }
 

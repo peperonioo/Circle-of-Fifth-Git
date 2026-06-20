@@ -12,9 +12,13 @@ const Onboarding = (() => {
   // `radius` = spotlight corner radius, `place` = preferred tooltip side.
   const steps = [
     { sel: '#wheelSvg', pad: 6, radius: '50%',
-      title: { en: 'Start with the wheel', es: 'Empieza por el círculo' },
-      body:  { en: 'Welcome! This is the circle of fifths. Spin it to choose your key, tap any chord to hear it, and tap the centre to lock the key — every chord that belongs to it lights up.',
-               es: '¡Bienvenido! Esto es el círculo de quintas. Gíralo para elegir tu tonalidad, toca cualquier acorde para escucharlo y toca el centro para bloquear el key — se iluminan todos los acordes que le pertenecen.' } },
+      title: { en: 'The circle of fifths', es: 'El círculo de quintas' },
+      body:  { en: 'Welcome! Think of this as your map of music. Every key sits beside its closest neighbours — they share almost all their notes, which is exactly why chords near each other sound great together. Outer ring: the major keys. Inner ring: their relative minors.',
+               es: '¡Bienvenido! Piénsalo como tu mapa de la música. Cada tonalidad está junto a sus vecinas más cercanas — comparten casi todas sus notas, y por eso los acordes cercanos suenan tan bien juntos. Anillo exterior: las tonalidades mayores. Anillo interior: sus relativas menores.' } },
+    { sel: '#wheelSvg', pad: 6, radius: '50%',
+      title: { en: 'Make it yours', es: 'Hazlo tuyo' },
+      body:  { en: 'Spin it to choose your key, tap any chord to hear it, and tap the centre to lock the key — every chord that belongs to it lights up, turning the wheel into a guide.',
+               es: 'Gíralo para elegir tu tonalidad, toca cualquier acorde para escucharlo y toca el centro para bloquear la tonalidad — se iluminan todos los acordes que le pertenecen, convirtiendo la rueda en una guía.' } },
     { sel: '#degrees', pad: 8,
       title: { en: 'The chords in your key', es: 'Los acordes de tu tonalidad' },
       body:  { en: 'Right below the wheel are your diatonic chords — the degrees I to vii°. Tap any one to add it to your progression.',
