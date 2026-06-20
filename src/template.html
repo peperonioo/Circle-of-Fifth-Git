@@ -33,15 +33,7 @@
       <span class="version">V4.1</span>
     </div>
     <div class="topbar-right">
-      <div class="settings-mini">
-        <span data-i18n="settings.lang">Lang</span>
-        <select id="langSelect" onchange="setLanguage(this.value)">
-          <option value="en">EN</option>
-          <option value="es">ES</option>
-        </select>
-      </div>
-      <button class="help-btn" id="helpBtn" data-ico="help" onclick="Onboarding.open(true)" title="How it works" aria-label="How it works"></button>
-      <button class="theme-btn" id="themeBtn" data-ico="sun" onclick="toggleTheme()" title="Toggle light/dark" aria-label="Toggle light/dark"></button>
+      <button class="theme-btn" id="settingsBtn" data-ico="settings" data-ico-size="18" onclick="Settings.toggle()" title="Settings" aria-label="Settings"></button>
       <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('theory',this)" data-i18n="tabs.theory">Theory</button>
         <button class="tab-btn" onclick="switchTab('production',this)" data-i18n="tabs.production">Production</button>
@@ -331,16 +323,6 @@
     </div>
   </div>
 
-  <!-- BOTTOM BAR -->
-  <div class="bottom-bar">
-    <div class="palette-row" id="palRow">
-      <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)" data-i18n="settings.plasma">Plasma</span>
-    </div>
-    <div class="intensity-wrap">
-      <label data-i18n="settings.intensity">Intensity</label>
-      <input type="range" id="plasmaIntensity" min="0.1" max="2.5" step="0.1" value="1"/>
-    </div>
-  </div>
 </div>
 
 <div id="copyToast" class="copy-toast" role="status" aria-live="polite"></div>
@@ -411,6 +393,37 @@
 <!-- MODULATION COACH — where to change key next (filled by ModulationCoach) -->
 <div id="modulatePanel" class="modulate-panel" role="dialog" aria-label="Modulate" hidden></div>
 <div id="colorPanel" class="modulate-panel" role="dialog" aria-label="Colour chords" hidden></div>
+
+<!-- SETTINGS — theme · language · plasma -->
+<div id="settingsSheet" class="modulate-panel settings-sheet" role="dialog" aria-label="Settings" hidden>
+  <div class="mod-head">
+    <span class="mod-title" data-i18n="settings.title">Settings</span>
+    <button class="mod-x" onclick="Settings.close()" aria-label="Close">✕</button>
+  </div>
+  <div class="set-row">
+    <span class="set-label" data-i18n="settings.theme">Theme</span>
+    <div class="set-seg">
+      <button data-theme="dark"  onclick="Settings.setTheme('dark')"  data-i18n="settings.dark">Dark</button>
+      <button data-theme="light" onclick="Settings.setTheme('light')" data-i18n="settings.light">Light</button>
+    </div>
+  </div>
+  <div class="set-row">
+    <span class="set-label" data-i18n="settings.lang">Language</span>
+    <div class="set-seg">
+      <button data-lang="en" onclick="Settings.setLang('en')">EN</button>
+      <button data-lang="es" onclick="Settings.setLang('es')">ES</button>
+    </div>
+  </div>
+  <div class="set-block">
+    <span class="set-label" data-i18n="settings.plasma">Plasma</span>
+    <div class="palette-row" id="palRow"></div>
+    <div class="intensity-wrap">
+      <label data-i18n="settings.intensity">Intensity</label>
+      <input type="range" id="plasmaIntensity" min="0.1" max="2.5" step="0.1" value="1"/>
+    </div>
+  </div>
+  <button class="set-help" onclick="Onboarding.open(true);Settings.close()"><span data-ico="help" data-ico-size="15"></span><span data-i18n="settings.help">How it works</span></button>
+</div>
 
 <!-- TRANSPORT ISLAND (liquid-glass · mobile) — capsule ↔ panel cross-fade -->
 <div id="transportSheet" class="transport-sheet" data-state="peek" aria-label="Transport">

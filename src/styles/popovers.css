@@ -58,6 +58,22 @@
   font-size:20px; line-height:1; display:grid; place-items:center;
 }
 .cc-add:hover { background:rgba(232,68,26,.26) }
+/* Settings sheet (theme · language · plasma) */
+.set-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 2px }
+.set-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted) }
+.set-seg { display:flex; gap:3px; padding:3px; border-radius:10px; background:var(--glass-1); border:1px solid var(--glass-border) }
+.set-seg button { border:0; background:transparent; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; padding:6px 15px; border-radius:8px; cursor:pointer; transition:background .15s, color .15s }
+.set-seg button.on { background:var(--accent); color:#fff }
+.set-block { padding:11px 2px 4px; border-top:1px solid var(--glass-border); margin-top:4px }
+.set-block .set-label { display:block; margin-bottom:10px }
+.settings-sheet .palette-row { display:flex; gap:9px; margin-bottom:13px }
+.settings-sheet .pal-btn { width:30px; height:30px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0; transition:transform .15s, border-color .15s }
+.settings-sheet .pal-btn.active { border-color:var(--ink); transform:scale(1.12) }
+.settings-sheet .intensity-wrap { display:flex; align-items:center; gap:11px }
+.settings-sheet .intensity-wrap label { font-size:11px; color:var(--muted); white-space:nowrap }
+.settings-sheet .intensity-wrap input { flex:1 }
+.set-help { width:100%; margin-top:12px; display:flex; align-items:center; justify-content:center; gap:7px; padding:10px; border-radius:12px; border:1px solid var(--glass-border); background:var(--glass-1); color:var(--ink); font-size:12px; font-weight:600; cursor:pointer; transition:border-color .15s, color .15s }
+.set-help:hover { border-color:rgba(232,68,26,.42); color:var(--accent2) }
 @media (prefers-reduced-motion: reduce){ .modulate-panel { transition:opacity .15s } }
 
 

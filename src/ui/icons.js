@@ -20,6 +20,7 @@ const ICONS = {
   chevronR:  { p: '<path d="M9 6l6 6-6 6"/>' },
   close:     { p: '<path d="M6 6l12 12M18 6L6 18"/>' },
   trash:     { p: '<path d="M5 7h14"/><path d="M9 7V5.6A1.6 1.6 0 0 1 10.6 4h2.8A1.6 1.6 0 0 1 15 5.6V7"/><path d="M7 7l.8 12.1A1.6 1.6 0 0 0 9.4 20.6h5.2a1.6 1.6 0 0 0 1.6-1.5L17 7"/>' },
+  settings:  { p: '<path d="M4 6h2"/><circle cx="9" cy="6" r="2.1"/><path d="M12 6h8"/><path d="M4 12h8"/><circle cx="15" cy="12" r="2.1"/><path d="M18 12h2"/><path d="M4 18h2"/><circle cx="9" cy="18" r="2.1"/><path d="M12 18h8"/>' },
   arrowL:    { p: '<path d="M19 12H5M11 6l-6 6 6 6"/>' },
   arrowR:    { p: '<path d="M5 12h14M13 6l6 6-6 6"/>' },
   plus:      { p: '<path d="M12 5v14M5 12h14"/>' },

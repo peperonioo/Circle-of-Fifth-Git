@@ -156,7 +156,7 @@ function toggleTheme() {
   // Radial wipe from the theme button via the View Transitions API (graceful
   // fallback to an instant switch where it's unsupported).
   if (!document.startViewTransition || reduce) { apply(); return; }
-  const btn = document.getElementById('themeBtn');
+  const btn = document.getElementById('settingsBtn');
   const r = btn?.getBoundingClientRect();
   document.documentElement.style.setProperty('--vt-x', (r ? r.left + r.width / 2 : innerWidth - 40) + 'px');
   document.documentElement.style.setProperty('--vt-y', (r ? r.top + r.height / 2 : 40) + 'px');

@@ -261,7 +261,7 @@
         const hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
         return !hit || el === hit || el.contains(hit) || hit.contains(el);
       };
-      assert('Theme toggle is not covered by an overlay', reachable(document.getElementById('themeBtn')));
+      assert('Settings button is not covered by an overlay', reachable(document.getElementById('settingsBtn')));
       assert('Tabs are not covered by an overlay',         reachable(document.querySelector('.tab-btn')));
       assert('Wheel is not covered by an overlay',         reachable(document.getElementById('wheelInfoBtn')));
     })();

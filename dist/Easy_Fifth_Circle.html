@@ -983,6 +983,22 @@ body.light .gravity-pill.metric.high { color:#fff }
   font-size:20px; line-height:1; display:grid; place-items:center;
 }
 .cc-add:hover { background:rgba(232,68,26,.26) }
+/* Settings sheet (theme · language · plasma) */
+.set-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 2px }
+.set-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted) }
+.set-seg { display:flex; gap:3px; padding:3px; border-radius:10px; background:var(--glass-1); border:1px solid var(--glass-border) }
+.set-seg button { border:0; background:transparent; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; padding:6px 15px; border-radius:8px; cursor:pointer; transition:background .15s, color .15s }
+.set-seg button.on { background:var(--accent); color:#fff }
+.set-block { padding:11px 2px 4px; border-top:1px solid var(--glass-border); margin-top:4px }
+.set-block .set-label { display:block; margin-bottom:10px }
+.settings-sheet .palette-row { display:flex; gap:9px; margin-bottom:13px }
+.settings-sheet .pal-btn { width:30px; height:30px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0; transition:transform .15s, border-color .15s }
+.settings-sheet .pal-btn.active { border-color:var(--ink); transform:scale(1.12) }
+.settings-sheet .intensity-wrap { display:flex; align-items:center; gap:11px }
+.settings-sheet .intensity-wrap label { font-size:11px; color:var(--muted); white-space:nowrap }
+.settings-sheet .intensity-wrap input { flex:1 }
+.set-help { width:100%; margin-top:12px; display:flex; align-items:center; justify-content:center; gap:7px; padding:10px; border-radius:12px; border:1px solid var(--glass-border); background:var(--glass-1); color:var(--ink); font-size:12px; font-weight:600; cursor:pointer; transition:border-color .15s, color .15s }
+.set-help:hover { border-color:rgba(232,68,26,.42); color:var(--accent2) }
 @media (prefers-reduced-motion: reduce){ .modulate-panel { transition:opacity .15s } }
 
 
@@ -2308,15 +2324,7 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
       <span class="version">V4.1</span>
     </div>
     <div class="topbar-right">
-      <div class="settings-mini">
-        <span data-i18n="settings.lang">Lang</span>
-        <select id="langSelect" onchange="setLanguage(this.value)">
-          <option value="en">EN</option>
-          <option value="es">ES</option>
-        </select>
-      </div>
-      <button class="help-btn" id="helpBtn" data-ico="help" onclick="Onboarding.open(true)" title="How it works" aria-label="How it works"></button>
-      <button class="theme-btn" id="themeBtn" data-ico="sun" onclick="toggleTheme()" title="Toggle light/dark" aria-label="Toggle light/dark"></button>
+      <button class="theme-btn" id="settingsBtn" data-ico="settings" data-ico-size="18" onclick="Settings.toggle()" title="Settings" aria-label="Settings"></button>
       <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('theory',this)" data-i18n="tabs.theory">Theory</button>
         <button class="tab-btn" onclick="switchTab('production',this)" data-i18n="tabs.production">Production</button>
@@ -2606,16 +2614,6 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
     </div>
   </div>
 
-  <!-- BOTTOM BAR -->
-  <div class="bottom-bar">
-    <div class="palette-row" id="palRow">
-      <span style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)" data-i18n="settings.plasma">Plasma</span>
-    </div>
-    <div class="intensity-wrap">
-      <label data-i18n="settings.intensity">Intensity</label>
-      <input type="range" id="plasmaIntensity" min="0.1" max="2.5" step="0.1" value="1"/>
-    </div>
-  </div>
 </div>
 
 <div id="copyToast" class="copy-toast" role="status" aria-live="polite"></div>
@@ -2687,6 +2685,37 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
 <div id="modulatePanel" class="modulate-panel" role="dialog" aria-label="Modulate" hidden></div>
 <div id="colorPanel" class="modulate-panel" role="dialog" aria-label="Colour chords" hidden></div>
 
+<!-- SETTINGS — theme · language · plasma -->
+<div id="settingsSheet" class="modulate-panel settings-sheet" role="dialog" aria-label="Settings" hidden>
+  <div class="mod-head">
+    <span class="mod-title" data-i18n="settings.title">Settings</span>
+    <button class="mod-x" onclick="Settings.close()" aria-label="Close">✕</button>
+  </div>
+  <div class="set-row">
+    <span class="set-label" data-i18n="settings.theme">Theme</span>
+    <div class="set-seg">
+      <button data-theme="dark"  onclick="Settings.setTheme('dark')"  data-i18n="settings.dark">Dark</button>
+      <button data-theme="light" onclick="Settings.setTheme('light')" data-i18n="settings.light">Light</button>
+    </div>
+  </div>
+  <div class="set-row">
+    <span class="set-label" data-i18n="settings.lang">Language</span>
+    <div class="set-seg">
+      <button data-lang="en" onclick="Settings.setLang('en')">EN</button>
+      <button data-lang="es" onclick="Settings.setLang('es')">ES</button>
+    </div>
+  </div>
+  <div class="set-block">
+    <span class="set-label" data-i18n="settings.plasma">Plasma</span>
+    <div class="palette-row" id="palRow"></div>
+    <div class="intensity-wrap">
+      <label data-i18n="settings.intensity">Intensity</label>
+      <input type="range" id="plasmaIntensity" min="0.1" max="2.5" step="0.1" value="1"/>
+    </div>
+  </div>
+  <button class="set-help" onclick="Onboarding.open(true);Settings.close()"><span data-ico="help" data-ico-size="15"></span><span data-i18n="settings.help">How it works</span></button>
+</div>
+
 <!-- TRANSPORT ISLAND (liquid-glass · mobile) — capsule ↔ panel cross-fade -->
 <div id="transportSheet" class="transport-sheet" data-state="peek" aria-label="Transport">
   <button class="ts-cap" onclick="TransportSheet.open()" aria-label="Open transport">
@@ -2738,7 +2767,7 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
 // ── CONSTANTS ─────────────────────────────────────────
 // Pure data. No DOM access. No state mutation.
 
-const APP_VERSION = 'V5.38';
+const APP_VERSION = 'V5.39';
 const STORAGE_KEY = 'easy-fifth-circle:v1';
 
 const NOTES  = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
@@ -2863,9 +2892,14 @@ const I18N_EN = {
   'production.groove': 'Groove Construction',
   'production.tips':   'Arrangement & Fills',
   'production.rhythmGrid': 'Rhythm Grid — 1 bar · 16 steps',
-  'settings.lang':     'Lang',
+  'settings.lang':     'Language',
   'settings.plasma':   'Plasma',
   'settings.intensity':'Intensity',
+  'settings.title':    'Settings',
+  'settings.theme':    'Theme',
+  'settings.dark':     'Dark',
+  'settings.light':    'Light',
+  'settings.help':     'How it works',
   'play.play':         'Play',
   'play.stop':         'Stop',
   'roadmap.note':      'Tap a suggestion bubble to add it to the progression.',
@@ -2945,6 +2979,11 @@ const I18N_ES = {
   'settings.lang':     'Idioma',
   'settings.plasma':   'Plasma',
   'settings.intensity':'Intensidad',
+  'settings.title':    'Ajustes',
+  'settings.theme':    'Tema',
+  'settings.dark':     'Oscuro',
+  'settings.light':    'Claro',
+  'settings.help':     'Cómo funciona',
   'play.play':         'Reproducir',
   'play.stop':         'Detener',
   'roadmap.note':      'Toca una burbuja para añadirla a la progresión.',
@@ -3027,6 +3066,7 @@ const ICONS = {
   chevronR:  { p: '<path d="M9 6l6 6-6 6"/>' },
   close:     { p: '<path d="M6 6l12 12M18 6L6 18"/>' },
   trash:     { p: '<path d="M5 7h14"/><path d="M9 7V5.6A1.6 1.6 0 0 1 10.6 4h2.8A1.6 1.6 0 0 1 15 5.6V7"/><path d="M7 7l.8 12.1A1.6 1.6 0 0 0 9.4 20.6h5.2a1.6 1.6 0 0 0 1.6-1.5L17 7"/>' },
+  settings:  { p: '<path d="M4 6h2"/><circle cx="9" cy="6" r="2.1"/><path d="M12 6h8"/><path d="M4 12h8"/><circle cx="15" cy="12" r="2.1"/><path d="M18 12h2"/><path d="M4 18h2"/><circle cx="9" cy="18" r="2.1"/><path d="M12 18h8"/>' },
   arrowL:    { p: '<path d="M19 12H5M11 6l-6 6 6 6"/>' },
   arrowR:    { p: '<path d="M5 12h14M13 6l6 6-6 6"/>' },
   plus:      { p: '<path d="M12 5v14M5 12h14"/>' },
@@ -5289,6 +5329,11 @@ OverlayManager.register('color-chords', {
   isOpen:   () => !!(typeof ColorChords === 'object' && ColorChords.isOpen()),
   close:    () => { if (typeof ColorChords === 'object' && ColorChords.isOpen()) ColorChords.close(); },
   contains: (t) => !!(t.closest('#colorPanel') || t.closest('[onclick*="ColorChords"]')),
+});
+OverlayManager.register('settings', {
+  isOpen:   () => !!(typeof Settings === 'object' && Settings.isOpen()),
+  close:    () => { if (typeof Settings === 'object' && Settings.isOpen()) Settings.close(); },
+  contains: (t) => !!(t.closest('#settingsSheet') || t.closest('#settingsBtn')),
 });
 OverlayManager.register('theory-help', {
   isOpen: () => !!document.querySelector('.micro-popover.open'),
@@ -7767,6 +7812,36 @@ const TransportSheet = (() => {
 })();
 
 
+// == settings.js ==
+// ── SETTINGS (V5.39) ──────────────────────────────────
+// A gear in the top bar opens this sheet: theme, language and the plasma palette
+// (moved out of the top bar / bottom bar into one place).
+const Settings = (() => {
+  let _open = false;
+  const el = () => document.getElementById('settingsSheet');
+
+  function syncActive() {
+    const light = document.body.classList.contains('light');
+    el()?.querySelectorAll('[data-theme]').forEach(b => b.classList.toggle('on', (b.dataset.theme === 'light') === light));
+    el()?.querySelectorAll('[data-lang]').forEach(b => b.classList.toggle('on', b.dataset.lang === st.lang));
+  }
+
+  function setTheme(tk) {
+    const light = document.body.classList.contains('light');
+    if ((tk === 'light') !== light && typeof toggleTheme === 'function') toggleTheme();
+    syncActive();
+  }
+  function setLang(l) { if (typeof setLanguage === 'function') setLanguage(l); syncActive(); }
+
+  function show()  { const b = el(); if (!b) return; b.hidden = false; requestAnimationFrame(() => b.classList.add('open')); _open = true; syncActive();
+                     if (typeof OverlayManager === 'object') OverlayManager.opened('settings'); }
+  function close() { const b = el(); if (!b) return; b.classList.remove('open'); _open = false; setTimeout(() => { if (!_open) b.hidden = true; }, 200); }
+  function toggle(){ _open ? close() : show(); }
+
+  return { show, close, toggle, setTheme, setLang, syncActive, isOpen: () => _open };
+})();
+
+
 // == onboarding.js ==
 // ── ONBOARDING / GUIDED SPOTLIGHT TOUR ────────────────
 // A guided first-run tour that dims the whole page and spotlights each real UI
@@ -8620,7 +8695,7 @@ function toggleTheme() {
   // Radial wipe from the theme button via the View Transitions API (graceful
   // fallback to an instant switch where it's unsupported).
   if (!document.startViewTransition || reduce) { apply(); return; }
-  const btn = document.getElementById('themeBtn');
+  const btn = document.getElementById('settingsBtn');
   const r = btn?.getBoundingClientRect();
   document.documentElement.style.setProperty('--vt-x', (r ? r.left + r.width / 2 : innerWidth - 40) + 'px');
   document.documentElement.style.setProperty('--vt-y', (r ? r.top + r.height / 2 : 40) + 'px');
@@ -8959,7 +9034,7 @@ function toggleTheme() {
         const hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
         return !hit || el === hit || el.contains(hit) || hit.contains(el);
       };
-      assert('Theme toggle is not covered by an overlay', reachable(document.getElementById('themeBtn')));
+      assert('Settings button is not covered by an overlay', reachable(document.getElementById('settingsBtn')));
       assert('Tabs are not covered by an overlay',         reachable(document.querySelector('.tab-btn')));
       assert('Wheel is not covered by an overlay',         reachable(document.getElementById('wheelInfoBtn')));
     })();

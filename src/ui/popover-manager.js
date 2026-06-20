@@ -123,6 +123,11 @@ OverlayManager.register('color-chords', {
   close:    () => { if (typeof ColorChords === 'object' && ColorChords.isOpen()) ColorChords.close(); },
   contains: (t) => !!(t.closest('#colorPanel') || t.closest('[onclick*="ColorChords"]')),
 });
+OverlayManager.register('settings', {
+  isOpen:   () => !!(typeof Settings === 'object' && Settings.isOpen()),
+  close:    () => { if (typeof Settings === 'object' && Settings.isOpen()) Settings.close(); },
+  contains: (t) => !!(t.closest('#settingsSheet') || t.closest('#settingsBtn')),
+});
 OverlayManager.register('theory-help', {
   isOpen: () => !!document.querySelector('.micro-popover.open'),
   close:  () => document.querySelectorAll('.micro-popover.open').forEach(p => p.classList.remove('open')),
