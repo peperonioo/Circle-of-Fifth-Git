@@ -7,7 +7,10 @@
     "build": "node build.js",
     "test": "node test/ci-tests.mjs",
     "serve": "npx serve -p 4242 dist",
-    "dev": "node build.js && npx serve -p 4242 dist"
+    "dev": "node build.js && npx serve -p 4242 dist",
+    "cap:sync": "node build.js && npx cap sync",
+    "cap:ios": "node build.js && npx cap sync ios && npx cap open ios",
+    "cap:android": "node build.js && npx cap sync android && npx cap open android"
   },
   "engines": {
     "node": ">=16"
@@ -18,7 +21,13 @@
     "harmony",
     "producers"
   ],
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/ios": "^6.1.2"
+  },
   "devDependencies": {
+    "@capacitor/cli": "^6.1.2",
     "esbuild": "^0.28.1",
     "playwright-core": "^1.61.0"
   }

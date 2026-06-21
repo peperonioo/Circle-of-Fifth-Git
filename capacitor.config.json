@@ -1,0 +1,16 @@
+{
+  "appId": "com.peperonioo.easyfifthcircle",
+  "appName": "Easy Fifth Circle",
+  "webDir": "dist",
+  "backgroundColor": "#0a0a0b",
+  "server": {
+    "androidScheme": "https"
+  },
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#0a0a0b"
+  },
+  "android": {
+    "backgroundColor": "#0a0a0b"
+  }
+}
