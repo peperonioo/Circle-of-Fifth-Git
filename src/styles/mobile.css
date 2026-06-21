@@ -6,7 +6,9 @@
     font-size:15px;
   }
   .app {
-    padding:calc(10px + var(--mobile-safe-top)) 8px calc(22px + var(--mobile-safe-bottom));
+    /* Extra bottom room so the last surfaces clear the floating transport island
+       (its peek capsule sits ~64px off the bottom) instead of hiding behind it. */
+    padding:calc(10px + var(--mobile-safe-top)) 8px calc(92px + var(--mobile-safe-bottom));
     max-width:100%;
     padding-inline:8px !important;
   }
@@ -47,7 +49,7 @@
   .wheel-toggle-mobile button { font-size:12px; padding:9px 8px }
   /* Lighter wheel on mobile so scrolling stays smooth */
   #wheelSheen     { animation:none !important; opacity:0 !important }
-  .theory-bottom  { gap:9px }
+  .theory-bottom  { gap:14px }
   .degrees-row    { border-radius:12px }
   .degree         { padding:10px 4px }
   .degree .dn     { font-size:17px }
