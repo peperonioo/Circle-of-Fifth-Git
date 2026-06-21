@@ -96,7 +96,9 @@ OverlayManager.register('guitar-shapes', {
   // The strip lives in the guitar drawer beside the fretboard — playing a fret
   // note (inside #guitar / .fretboard-wrap) must NOT dismiss it.
   contains: (t) => !!(t.closest('#guitarShapeStrip') || t.closest('.gss-btn') ||
-                      t.closest('#guitar') || t.closest('.fretboard-wrap') || t.closest('#instrZoomBody')),
+                      t.closest('#guitar') || t.closest('.fretboard-wrap') || t.closest('#instrZoomBody') ||
+                      t.closest('#chordVariants') || t.closest('.builder-step') ||
+                      t.closest('#progressionBuilder') || t.closest('#flowRow')),
 });
 OverlayManager.register('dir-guide', {
   isOpen: () => !!(typeof WheelDirectionGuide === 'object' && WheelDirectionGuide.visible),

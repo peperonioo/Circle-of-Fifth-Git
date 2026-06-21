@@ -22,6 +22,17 @@ const GuitarShapes = (() => {
   const aM = f => [-1, f,   f+2, f+2, f+2, f  ];  // A-shape major
   const em = f => [f,  f+2, f+2, f,   f,   f  ];  // E-shape minor
   const am = f => [-1, f,   f+2, f+2, f+1, f  ];  // A-shape minor
+  const ed  = f => [f,  f+1, f+2, f,   f-1, f  ];  // E-shape diminished (root, ♭5, root, m3, ♭5, root)
+  const ad  = f => [-1, f,   f+1, f+2, f+1, -1 ];  // A-shape diminished (root, ♭5, root, m3)
+  // 7th chord barre shapes (verified interval by interval)
+  const e7m  = f => [f, f+2, f+2, f,   f+3, f];   // E-shape minor 7th  [root,5,root,m3,m7,root]
+  const e7d  = f => [f, f+2, f,   f+1, f,   f];   // E-shape dominant 7th [root,5,m7,M3,root,root]
+  const e7M  = f => [f, f+2, f+1, f+1, f,   f];   // E-shape major 7th  [root,5,M7,M3,root,root]
+  const e7hd = f => [f, f+1, f+2, f,   f+3, f];   // E-shape half-dim m7♭5 [root,♭5,root,m3,m7,root]
+  const e7di = f => [f, f+1, f+2, f,   f+2, f];   // E-shape dim7 [root,♭5,root,m3,bb7,root]
+  const a7m  = f => [-1, f, f+2, f,   f+1, f];    // A-shape minor 7th
+  const a7d  = f => [-1, f, f+2, f,   f+2, f];    // A-shape dominant 7th
+  const a7M  = f => [-1, f, f+2, f+1, f+2, f];    // A-shape major 7th
 
   const EF = r => (NI[r] - 4 + 12) % 12;   // root fret on low-E string
   const AF = r => (NI[r] - 9 + 12) % 12;   // root fret on A string
@@ -36,7 +47,7 @@ const GuitarShapes = (() => {
   const keyOf = fr => fr.join(',');
 
   // ── Full chord voicings ───────────────────────────
-  function chordVoicings(root, qual) {
+  function chordVoicings(root, qual, variant) {
     const r = ENH[root] || root;
     const out = [], seen = new Set();
     const add = (fr, label) => {
@@ -44,9 +55,25 @@ const GuitarShapes = (() => {
       const k = keyOf(fr); if (seen.has(k)) return;
       seen.add(k); out.push({ frets: fr, label });
     };
-    if (SPEC[`${r}:${qual}`]) add(SPEC[`${r}:${qual}`], T('open'));
+    // Open voicings only for plain triads (variant shapes use barre positions)
+    if (SPEC[`${r}:${qual}`] && (!variant || variant === 'triad')) add(SPEC[`${r}:${qual}`], T('open'));
     const ef = EF(r), af = AF(r);
-    const sE = qual === 'min' ? em : eM, sA = qual === 'min' ? am : aM;
+    let sE, sA;
+    if (variant && variant !== 'triad') {
+      if (qual === 'min') {
+        sE = (variant === 'm7' || variant === 'm9') ? e7m : variant === 'm7b5' ? e7hd : em;
+        sA = (variant === 'm7' || variant === 'm9') ? a7m : am;
+      } else if (qual === 'dim') {
+        sE = variant === 'dim7' ? e7di : variant === 'm7b5' ? e7hd : ed;
+        sA = ad;
+      } else {
+        sE = variant === 'maj7' ? e7M : (variant === '7' || variant === '9') ? e7d : eM;
+        sA = variant === 'maj7' ? a7M : (variant === '7' || variant === '9') ? a7d : aM;
+      }
+    } else {
+      sE = qual === 'min' ? em : qual === 'dim' ? ed : eM;
+      sA = qual === 'min' ? am : qual === 'dim' ? ad : aM;
+    }
     add(sE(ef === 0 ? 12 : ef), T('barreE'));
     add(sA(af === 0 ? 12 : af), T('barreA'));
     if (af + 12 <= 14) add(sA(af + 12), T('high'));
@@ -184,32 +211,38 @@ const GuitarShapes = (() => {
   let _view = 'chords', _chords = [], _sel = [], _activePos = -1;
   const isOpen = () => !!document.getElementById('guitarShapeStrip')?.classList.contains('gss-on');
   const clampi = (v, max) => Math.max(0, Math.min(v, max));
-  const _voicingsFor = c => c ? (_view === 'triads' ? triadVoicings(c.root, c.qual) : chordVoicings(c.root, c.qual)) : [];
+  const _voicingsFor = c => c ? (_view === 'triads' ? triadVoicings(c.root, c.qual) : chordVoicings(c.root, c.qual, c.variant)) : [];
 
-  // De-duplicated chord list — each unique chord once (order of first appearance).
+  // De-duplicated chord list — each unique chord+variant once (order of first appearance).
   // From the progression if there is one; otherwise the single current chord.
   function _collectChords() {
     const h = Array.isArray(st.history) ? st.history : [];
     const list = [], seen = new Set();
-    const push = (rootName, qual, name) => {
-      const r = ENH[rootName] || rootName, key = r + ':' + qual;
+    const push = (rootName, qual, name, variant) => {
+      const r = ENH[rootName] || rootName;
+      const v = variant || 'triad';
+      const key = r + ':' + qual + ':' + v;   // variant-aware de-dup
       if (seen.has(key)) return; seen.add(key);
-      list.push({ name, root: rootName, qual, rootPC: NI[r] ?? 0 });
+      list.push({ name, root: rootName, qual, rootPC: NI[r] ?? 0, variant: v });
     };
     if (h.length) {
       h.forEach(it => {
         const rootName = (typeof chordRootOf === 'function') ? chordRootOf(it) : String(it.chord || 'C').replace(/m$|°$/, '');
         const qual = it.quality === 'Min' ? 'min' : it.quality === 'Dim' ? 'dim' : 'maj';
-        push(rootName, qual, it.chord);
+        const variant = it.variant || 'triad';
+        const name = (variant !== 'triad' && typeof chordDisplay === 'function') ? chordDisplay(it) : it.chord;
+        push(rootName, qual, name, variant);
       });
     } else {
-      let root, qual;
+      let root, qual, variant = 'triad';
       if (typeof ChordVariants === 'object' && ChordVariants.ctx && ChordVariants.ctx.root) {
-        root = ChordVariants.ctx.root; qual = /min/i.test(ChordVariants.ctx.quality) ? 'min' : /dim/i.test(ChordVariants.ctx.quality) ? 'dim' : 'maj';
+        root = ChordVariants.ctx.root;
+        qual = /min/i.test(ChordVariants.ctx.quality) ? 'min' : /dim/i.test(ChordVariants.ctx.quality) ? 'dim' : 'maj';
+        variant = ChordVariants.ctx.current || 'triad';
       } else {
         root = st.key; qual = (typeof modeIsMinor === 'function' && modeIsMinor(st.mode)) ? 'min' : 'maj';
       }
-      push(root, qual, root + (qual === 'min' ? 'm' : qual === 'dim' ? '°' : ''));
+      push(root, qual, root + (qual === 'min' ? 'm' : qual === 'dim' ? '°' : ''), variant);
     }
     return list;
   }
@@ -320,12 +353,15 @@ const GuitarShapes = (() => {
       window.addEventListener('pointerup', up);
     },
 
-    // A builder bar was tapped → highlight the matching chord card.
-    hint(root, qual) {
+    // A builder bar was tapped → highlight the matching chord card (variant-aware).
+    hint(root, qual, variant) {
       if (!isOpen() || !root) return;
       const r = ENH[root] || root, q = /min/i.test(qual) ? 'min' : /dim/i.test(qual) ? 'dim' : 'maj';
+      const v = variant && variant !== 'triad' ? variant : null;
       _render();
-      const idx = _chords.findIndex(c => (ENH[c.root] || c.root) === r && c.qual === q);
+      // Prefer exact variant match, fall back to same root+quality
+      let idx = v ? _chords.findIndex(c => (ENH[c.root] || c.root) === r && c.qual === q && c.variant === v) : -1;
+      if (idx < 0) idx = _chords.findIndex(c => (ENH[c.root] || c.root) === r && c.qual === q);
       if (idx >= 0) _highlightCard(idx);
     },
 

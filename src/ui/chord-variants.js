@@ -104,8 +104,8 @@ const ChordVariants = {
     requestAnimationFrame(() => el.classList.add('open'));
     // Light up the current chord's notes on the piano/fretboard (build-a-chord guide).
     this._light(ctx.current);
-    // Update chord shape strip if it's currently visible
-    if (typeof GuitarShapes === 'object') GuitarShapes.hint(ctx.root, ctx.quality);
+    // Update chord shape strip if it's currently visible (pass current variant)
+    if (typeof GuitarShapes === 'object') GuitarShapes.hint(ctx.root, ctx.quality, ctx.current);
     // Escape + click-outside handled centrally by OverlayManager ('chord-variants').
     if (typeof OverlayManager === 'object') OverlayManager.opened('chord-variants');
   },
@@ -135,10 +135,14 @@ const ChordVariants = {
   pick(id) {
     const ctx = this.ctx; if (!ctx) return;
     const rootPitch = ni(ctx.root);
-    if (typeof AudioEngine === 'object') AudioEngine.playChord(variantDef(ctx.quality, id).iv.map(x => rootPitch + x));
+    const pitches = variantDef(ctx.quality, id).iv.map(x => rootPitch + x);
+    if (typeof AudioEngine === 'object') AudioEngine.playChord(pitches);
     const it = (st.history || [])[ctx.barIdx];
     if (it) { it.variant = id; HistoryEngine.render(); renderProgressionStory(); saveState(); }
     this.close();
+    // Re-light the picked chord on piano + fretboard (close() cleared setActiveChord)
+    if (typeof setActiveChord === 'function') setActiveChord(pitches);
+    if (typeof GuitarShapes === 'object') GuitarShapes.hint(ctx.root, ctx.quality, id);
   },
 
   _dup() {
