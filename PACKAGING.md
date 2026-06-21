@@ -28,13 +28,19 @@ This was scaffolded already:
 ## 1. One-time setup (your Mac)
 
 ```bash
-# install the JS deps (Capacitor core + cli + ios + android)
+# install the project's build deps
 npm install
+
+# add Capacitor (writes it into package.json + the lockfile on your machine).
+# It is intentionally NOT in package.json so CI's `npm ci` stays in sync — the
+# native toolchain is a developer-machine concern.
+npm install @capacitor/core @capacitor/cli @capacitor/ios @capacitor/android
 
 # build the web app into dist/
 npm run build
 
-# add the native platforms you want (creates ios/ and/or android/ folders)
+# add the native platforms you want (uses the existing capacitor.config.json;
+# creates ios/ and/or android/ folders)
 npx cap add ios
 npx cap add android
 ```
