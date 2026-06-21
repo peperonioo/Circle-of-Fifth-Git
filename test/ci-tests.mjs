@@ -4,7 +4,9 @@ import { chromium } from 'playwright-core';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 
-const FILE = pathToFileURL(path.resolve('dist/Easy_Fifth_Circle.html')).href;
+// Use the stable entry (build.js always copies the standalone build to index.html)
+// so renaming the named export never breaks the runner.
+const FILE = pathToFileURL(path.resolve('dist/index.html')).href;
 
 const launchOpts = { headless: true };
 if (process.env.PW_EXECUTABLE_PATH) launchOpts.executablePath = process.env.PW_EXECUTABLE_PATH;  // CI (setup-chrome)
