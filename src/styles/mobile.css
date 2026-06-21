@@ -35,7 +35,7 @@
   .circle-wrap    {
     order:0; transform-origin:50% 38%;
     transform:translate3d(0, calc(-30px * var(--sp,0)), 0) scale(calc(1 - .36 * var(--sp,0)));
-    opacity:calc(1 - .8 * var(--sp,0));
+    opacity:calc(1 - .5 * var(--sp,0));
     will-change:transform, opacity;
     backface-visibility:hidden;
   }

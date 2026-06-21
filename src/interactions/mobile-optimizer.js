@@ -45,7 +45,7 @@ const MobileOptimizer = {
     // the lower surfaces up — a native-style collapsing header. Only transform
     // and opacity are driven (GPU), so it stays smooth on phones. iOS-safe
     // (no CSS scroll-timeline, which WebKit doesn't support yet).
-    const RANGE = 160;                       // px of scroll over which it collapses
+    const RANGE = 260;                       // px of scroll over which it collapses (gentler = smoother)
     const setProgress = () => {
       if (!mq.matches) { document.body.style.removeProperty('--sp'); return; }
       const y = window.scrollY || document.documentElement.scrollTop || 0;
