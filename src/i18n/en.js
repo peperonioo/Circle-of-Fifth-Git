@@ -10,7 +10,7 @@ const I18N_EN = {
   'labels.scaleNotes': 'Scale notes',
   'toggle.major':      'Major',
   'toggle.minor':      'Minor',
-  'color.btn':         'Colour chords',
+  'color.btn':         'Color',
   'emotion.btn':       'Emotion',
   'strip.chords':      'Chords',
   'zoom.close':        'swipe down to close',

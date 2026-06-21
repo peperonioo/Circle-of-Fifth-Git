@@ -97,9 +97,14 @@
             <button id="viewMajorBtn" class="active" data-view="major" onclick="setWheelView('major')" data-i18n="toggle.major">Major</button>
             <button id="viewMinorBtn" data-view="minor" onclick="setWheelView('minor')" data-i18n="toggle.minor">Minor</button>
           </div>
-          <button class="card-action-btn" onclick="EmotionSuggester.toggle()" aria-haspopup="dialog">
-            <span class="cab-ico" aria-hidden="true">♡</span><span data-i18n="emotion.btn">Emotion</span>
-          </button>
+          <div class="card-actions">
+            <button class="card-action-btn" onclick="EmotionSuggester.toggle()" aria-haspopup="dialog">
+              <span class="cab-ico" aria-hidden="true">♡</span><span data-i18n="emotion.btn">Emotion</span>
+            </button>
+            <button class="card-action-btn" onclick="ColorChords.toggle()" aria-haspopup="dialog">
+              <span class="cab-ico" aria-hidden="true">✦</span><span data-i18n="color.btn">Color</span>
+            </button>
+          </div>
         </div>
         <div class="card">
           <div class="lbl" data-i18n="labels.mode">Mode</div>
@@ -378,7 +383,7 @@
 
 <!-- EMOTION SUGGESTER — seed the builder from a feeling (filled by EmotionSuggester) -->
 <div id="emotionPanel" class="modulate-panel" role="dialog" aria-label="Emotion suggester" hidden></div>
-<div id="colorPanel" class="modulate-panel" role="dialog" aria-label="Colour chords" hidden></div>
+<div id="colorPanel" class="modulate-panel" role="dialog" aria-label="Beyond the key" hidden></div>
 
 <!-- SETTINGS — theme · language · plasma -->
 <div id="settingsSheet" class="modulate-panel settings-sheet" role="dialog" aria-label="Settings" hidden>

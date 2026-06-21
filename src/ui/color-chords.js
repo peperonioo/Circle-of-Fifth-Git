@@ -1,78 +1,178 @@
-// ── COLOR CHORDS (V5.36 · transport-sheet branch) ─────
-// Chords from OUTSIDE the current scale — secondary dominants and borrowed
-// chords — each with what it does and where it resolves. Tap a row to hear it
-// on the boards, tap "+" to drop it into the progression. The producer's spice.
+// ── COLOUR & MODULATION — Beyond the Key (V5.45) ────────
+// Unified "beyond the key" panel in two levels:
+//
+//  BORROW — non-diatonic chords from parallel modes.
+//           Add one to your progression, then return home.
+//
+//  MODULATE — change key permanently using a pivot chord
+//             (a chord shared by both keys — the bridge).
+//
+// The pivot chord IS the borrowed chord taken one step further.
+// One panel, two levels of harmonic adventure.
+
 const ColorChords = (() => {
-  const DOM7 = [0, 4, 7, 10], MAJ = [0, 4, 7], MIN = [0, 3, 7];
+  // ── Colour chord data ──────────────────────────────
+  const DOM7 = [0,4,7,10], MAJ = [0,4,7], MIN = [0,3,7];
   const L  = o => o[st.lang] || o.en;
   const nm = pc => dn(na(((pc % 12) + 12) % 12));
 
-  function chords() {
-    const T   = ni((typeof gr === 'function' && gr()[0]) ? gr()[0] : (st.key || 'C'));
+  function colorChords() {
+    const row = (typeof gc === 'function') ? gc() : [];
+    const T   = row[0] ? ni(row[0].note) : ni(st.key || 'C');
     const maj = (typeof modeIsMinor === 'function') ? !modeIsMinor(st.mode) : (st.wheelView !== 'minor');
     const up  = n => (T + n) % 12;
-    const dom7  = (pc, role, why) => ({ pc, iv: DOM7, name: nm(pc) + '7', quality: 'Maj', variant: '7',  role, why });
-    const major = (pc, role, why) => ({ pc, iv: MAJ,  name: nm(pc),       quality: 'Maj', variant: null, role, why });
-    const minor = (pc, role, why) => ({ pc, iv: MIN,  name: nm(pc) + 'm', quality: 'Min', variant: null, role, why });
+    const dom7  = (pc, role, why) => ({ pc, iv:DOM7, name:nm(pc)+'7',  quality:'Maj', variant:'7',   role, why });
+    const major = (pc, role, why) => ({ pc, iv:MAJ,  name:nm(pc),      quality:'Maj', variant:null,  role, why });
+    const minor = (pc, role, why) => ({ pc, iv:MIN,  name:nm(pc)+'m',  quality:'Min', variant:null,  role, why });
 
     return maj ? [
-      dom7 (up(2),  { en: 'V7 / V',  es: 'V7 / V'  }, { en: 'Tension that pulls hard to V.', es: 'Tensión que tira fuerte hacia el V.' }),
-      dom7 (up(4),  { en: 'V7 / vi', es: 'V7 / vi' }, { en: 'Leads to the relative minor.',  es: 'Lleva a la relativa menor.' }),
-      minor(up(5),  { en: 'iv',      es: 'iv'      }, { en: 'Borrowed minor — bittersweet, → I.', es: 'Menor prestado — agridulce, → I.' }),
-      major(up(10), { en: '♭VII',    es: '♭VII'    }, { en: 'Rock / mixolydian colour, → I.', es: 'Color rock / mixolidio, → I.' }),
-      major(up(8),  { en: '♭VI',     es: '♭VI'     }, { en: 'Cinematic lift, → I or V.',     es: 'Subida cinematográfica, → I o V.' }),
+      dom7 (up(2),  {en:'V7/V',       es:'V7/V'      }, {en:'Tension pulling hard to V.',          es:'Tensión que tira fuerte hacia el V.'}),
+      dom7 (up(4),  {en:'V7/vi',      es:'V7/vi'     }, {en:'Leads to the relative minor.',         es:'Lleva a la relativa menor.'}),
+      minor(up(5),  {en:'iv',         es:'iv'        }, {en:'Borrowed minor — bittersweet, → I.',   es:'Menor prestado — agridulce, → I.'}),
+      major(up(10), {en:'♭VII',       es:'♭VII'      }, {en:'Rock / Mixolydian colour, → I.',       es:'Color rock/mixolidio, → I.'}),
+      major(up(8),  {en:'♭VI',        es:'♭VI'       }, {en:'Cinematic lift, → I or V.',            es:'Subida cinematográfica, → I o V.'}),
     ] : [
-      dom7 (up(7),  { en: 'V7',          es: 'V7'           }, { en: 'The strong pull home (harmonic minor).', es: 'El tirón fuerte a casa (menor armónica).' }),
-      major(up(1),  { en: '♭II',         es: '♭II'          }, { en: 'Neapolitan — dark, dramatic, → V.',      es: 'Napolitana — oscura y dramática, → V.' }),
-      major(up(5),  { en: 'IV',          es: 'IV'           }, { en: 'Dorian brightening.',                    es: 'Brillo dórico.' }),
-      dom7 (up(2),  { en: 'V7 / V',      es: 'V7 / V'       }, { en: 'Pulls toward the dominant.',             es: 'Tira hacia el dominante.' }),
-      major(up(0),  { en: 'I (Picardy)', es: 'I (Picardía)' }, { en: 'A hopeful major ending.',               es: 'Un final mayor esperanzado.' }),
+      dom7 (up(7),  {en:'V7',         es:'V7'        }, {en:'Strong pull home (harmonic minor).',   es:'Tirón fuerte a casa (menor armónica).'}),
+      major(up(1),  {en:'♭II',        es:'♭II'       }, {en:'Neapolitan — dark, dramatic, → V.',    es:'Napolitana — oscura y dramática, → V.'}),
+      major(up(5),  {en:'IV',         es:'IV'        }, {en:'Dorian brightening.',                  es:'Brillo dórico.'}),
+      dom7 (up(2),  {en:'V7/V',       es:'V7/V'      }, {en:'Pulls toward the dominant.',           es:'Tira hacia el dominante.'}),
+      major(up(0),  {en:'I (Picardy)',es:'I (Picardía)'},{en:'A hopeful major ending.',             es:'Un final mayor esperanzado.'}),
     ];
   }
 
+  // ── Modulation data ────────────────────────────────
+  const PCF = {}; FIFTHS.forEach(k => { PCF[ni(k)] = k; });
+  const _SMAJ = [0,2,4,5,7,9,11], _QMAJ = ['','m','m','','','m','°'];
+  const _SMIN = [0,2,3,5,7,8,10], _QMIN = ['m','°','','m','m','',''];
+
+  function _triads(pc, maj) {
+    const S = maj ? _SMAJ : _SMIN, Q = maj ? _QMAJ : _QMIN;
+    return S.map((s, i) => ({ pc:(pc+s)%12, q:Q[i] }));
+  }
+  const _cn    = c  => dn(na(c.pc)) + c.q;
+  const _kname = (pc, maj) => `${dn(na(pc))} ${st.lang==='es' ? (maj?'mayor':'menor') : (maj?'major':'minor')}`;
+  const _place = (pc, maj) => maj ? {sector:PCF[pc],view:'major'} : {sector:PCF[(pc+3)%12],view:'minor'};
+
+  function _pivot(curPc, curMaj, tgtPc, tgtMaj) {
+    const shared = _triads(curPc,curMaj).filter(a => _triads(tgtPc,tgtMaj).some(b => b.pc===a.pc && b.q===a.q));
+    if (!shared.length) return null;
+    return _cn(shared.find(s => s.pc !== curPc) || shared[0]);
+  }
+
+  function modTargets() {
+    const row    = (typeof gc === 'function') ? gc() : [];
+    const homePc = row[0] ? ni(row[0].note) : ni(st.key || 'C');
+    const homeMaj= (typeof modeIsMinor === 'function') ? !modeIsMinor(st.mode) : (st.wheelView !== 'minor');
+    const up = n => (homePc + n) % 12;
+
+    const defs = [
+      homeMaj
+        ? [up(9), false, {en:'Relative minor',es:'Relativa menor'}, {en:'Same notes — darker and inward.',   es:'Mismas notas — más oscuro e interior.'}]
+        : [up(3), true,  {en:'Relative major',es:'Relativa mayor'}, {en:'Same notes — brighter and open.',   es:'Mismas notas — más luminoso y abierto.'}],
+      [up(7), true,  {en:'Dominant',    es:'Dominante'},    {en:'Up a fifth — lifts the energy.',     es:'Una quinta arriba — sube la energía.'}],
+      [up(5), true,  {en:'Subdominant', es:'Subdominante'}, {en:'Down a fifth — warmer, grounded.',   es:'Una quinta abajo — más cálido, asentado.'}],
+      [homePc, !homeMaj, {en:'Parallel',es:'Paralela'},     {en:'Same root, flips the mood.',         es:'Misma raíz — voltea el mood.'}],
+      [up(2), true,  {en:'Up a step',   es:'Un tono arriba'},{en:'The classic final-chorus lift.',    es:'El subidón clásico de estribillo.'}],
+    ];
+    return defs.map(([pc,maj,label,why]) => ({
+      label:L(label), why:L(why), name:_kname(pc,maj),
+      pivot:_pivot(homePc,homeMaj,pc,maj), ..._place(pc,maj),
+    }));
+  }
+
+  // ── Render ─────────────────────────────────────────
   let _open = false;
-  const el = () => document.getElementById('colorPanel');
+  const el  = () => document.getElementById('colorPanel');
 
   function render() {
     const box = el(); if (!box) return;
-    const es = st.lang === 'es';
+    const es  = st.lang === 'es';
+    const cc  = colorChords();
+    const mts = modTargets();
+
     box.innerHTML = `
       <div class="mod-head">
-        <span class="mod-title">${es ? 'Acordes de color' : 'Colour chords'}</span>
+        <span class="mod-title">${es ? 'Más allá de la escala' : 'Beyond the key'}</span>
         <button class="mod-x" onclick="ColorChords.close()" aria-label="Close">✕</button>
       </div>
-      <div class="mod-list">
-        ${chords().map((c, i) => `
-          <div class="cc-item" onclick="ColorChords.preview(${i})">
-            <span class="mod-role">${L(c.role)}</span>
-            <span class="cc-name">${c.name}</span>
-            <span class="mod-why">${L(c.why)}</span>
-            <button class="cc-add" onclick="event.stopPropagation();ColorChords.add(${i})" aria-label="Add to progression">＋</button>
-          </div>`).join('')}
+      <div class="cx-body">
+
+        <div class="cx-section">
+          <div class="cx-label">
+            <span class="cx-tag">${es ? 'PRÉSTAMO' : 'BORROW'}</span>
+            <span class="cx-sub">${es ? 'lo usas y vuelves a casa' : 'use it and return home'}</span>
+          </div>
+          <div class="mod-list">
+            ${cc.map((c,i) => `
+              <div class="cc-item" onclick="ColorChords.preview(${i})">
+                <span class="mod-role">${L(c.role)}</span>
+                <span class="cc-name">${c.name}</span>
+                <span class="mod-why">${L(c.why)}</span>
+                <button class="cc-add" onclick="event.stopPropagation();ColorChords.add(${i})" aria-label="Add">＋</button>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <div class="cx-sep">
+          <span>${es ? 'o llévate la música a otro lugar' : 'or take the music somewhere new'}</span>
+        </div>
+
+        <div class="cx-section">
+          <div class="cx-label">
+            <span class="cx-tag cx-tag-mod">${es ? 'MODULACIÓN' : 'MODULATE'}</span>
+            <span class="cx-sub">${es ? 'el pivote es el puente entre dos tonalidades' : 'the pivot chord bridges two keys'}</span>
+          </div>
+          <div class="mod-list">
+            ${mts.map(tg => `
+              <button class="cx-mod-item" onclick="ColorChords.jump('${tg.sector}','${tg.view}')">
+                <span class="mod-role">${tg.label}</span>
+                <span class="cx-mod-name">${tg.name}</span>
+                ${tg.pivot ? `<span class="cx-pivot">${es?'pivote':'pivot'} · <b>${tg.pivot}</b></span>` : '<span></span>'}
+                <span class="cx-mod-why">${tg.why}</span>
+              </button>`).join('')}
+          </div>
+        </div>
+
       </div>`;
   }
 
   function preview(i) {
-    const c = chords()[i]; if (!c) return;
+    const c = colorChords()[i]; if (!c) return;
     const pitches = c.iv.map(x => c.pc + x);
     if (typeof setActiveChord === 'function') setActiveChord(pitches);
     if (typeof AudioEngine === 'object') AudioEngine.playChord(pitches);
-    el()?.querySelectorAll('.cc-item').forEach((it, j) => it.classList.toggle('on', j === i));
+    el()?.querySelectorAll('.cc-item').forEach((it,j) => it.classList.toggle('on', j===i));
   }
 
   function add(i) {
-    const c = chords()[i]; if (!c) return;
-    if (typeof HistoryEngine === 'object' && HistoryEngine.addCustom) {
-      HistoryEngine.addCustom({ note: nm(c.pc), chord: c.name, quality: c.quality, variant: c.variant });
-    }
-    if (typeof tel === 'function') tel('color_chord', { role: c.role.en });
-    if (typeof AudioEngine === 'object') AudioEngine.playChord(c.iv.map(x => c.pc + x));
+    const c = colorChords()[i]; if (!c) return;
+    if (typeof HistoryEngine === 'object' && HistoryEngine.addCustom)
+      HistoryEngine.addCustom({ note:nm(c.pc), chord:c.name, quality:c.quality, variant:c.variant });
+    if (typeof tel === 'function') tel('color_chord', { role:c.role.en });
+    if (typeof AudioEngine === 'object') AudioEngine.playChord(c.iv.map(x => c.pc+x));
   }
 
-  function show()  { const b = el(); if (!b) return; render(); b.hidden = false; requestAnimationFrame(() => b.classList.add('open')); _open = true;
-                     if (typeof OverlayManager === 'object') OverlayManager.opened('color-chords'); }
-  function close() { const b = el(); if (!b) return; b.classList.remove('open'); _open = false; setTimeout(() => { if (!_open) b.hidden = true; }, 200); }
-  function toggle(){ _open ? close() : show(); }
+  function jump(sector, view) {
+    if (typeof wheelLocked !== 'undefined' && wheelLocked && typeof setWheelLock === 'function') setWheelLock(false);
+    AppActions.setKey(sector);
+    AppActions.setWheelView(view);
+    if (typeof tel === 'function') tel('modulate');
+    close();
+  }
 
-  return { toggle, show, close, preview, add, isOpen: () => _open };
+  function show() {
+    const b = el(); if (!b) return;
+    render(); b.hidden = false;
+    requestAnimationFrame(() => b.classList.add('open'));
+    _open = true;
+    if (typeof OverlayManager === 'object') OverlayManager.opened('color-chords');
+  }
+  function close() {
+    const b = el(); if (!b) return;
+    b.classList.remove('open'); _open = false;
+    setTimeout(() => { if (!_open) b.hidden = true; }, 200);
+  }
+  function toggle() { _open ? close() : show(); }
+
+  return { toggle, show, close, preview, add, jump, isOpen: () => _open };
 })();

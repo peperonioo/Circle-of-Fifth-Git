@@ -2,9 +2,11 @@
    Dropdown and popovers always beat cards.           */
 
 /* Small full-width action button at the bottom of a sidebar card (desktop only) */
+/* Row of small action buttons at the bottom of a sidebar card (desktop only) */
+.card-actions     { display:flex; gap:6px; margin-top:8px }
 .card-action-btn {
   display:inline-flex; align-items:center; justify-content:center; gap:6px;
-  margin-top:8px; width:100%; padding:8px 10px;
+  flex:1; padding:8px 10px;
   border:1px solid var(--glass-border); border-radius:10px;
   background:var(--glass-1); color:var(--muted);
   font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; cursor:pointer;
@@ -83,6 +85,31 @@
   font-size:20px; line-height:1; display:grid; place-items:center;
 }
 .cc-add:hover { background:rgba(232,68,26,.26) }
+
+/* ── Beyond the Key — unified Colour + Modulate panel ─ */
+.cx-body        { overflow-y:auto; max-height:min(72vh,460px); overscroll-behavior:contain }
+.cx-section     { margin-bottom:4px }
+.cx-label       { display:flex; align-items:center; gap:8px; margin-bottom:8px; padding:0 2px }
+.cx-tag         { font-family:'DM Mono',monospace; font-size:8.5px; letter-spacing:.14em; text-transform:uppercase;
+                  color:var(--accent2); background:var(--degree-tonic); border-radius:5px; padding:2px 7px; flex:0 0 auto }
+.cx-tag-mod     { color:var(--muted); background:rgba(128,128,128,.14) }
+.cx-sub         { font-size:10px; color:var(--muted); line-height:1.3 }
+.cx-sep         { display:flex; align-items:center; gap:9px; margin:10px 0;
+                  color:var(--muted); font-size:10px; font-style:italic; white-space:nowrap }
+.cx-sep::before, .cx-sep::after { content:''; flex:1; height:1px; background:var(--glass-border) }
+.cx-mod-item {
+  display:grid; grid-template-columns:1fr auto; grid-template-areas:'role pivot' 'name pivot' 'why why';
+  gap:1px 10px; text-align:left; cursor:pointer; width:100%;
+  padding:9px 12px; border-radius:13px; border:1px solid var(--glass-border); background:var(--glass-1);
+  transition:border-color .15s, background .15s, transform .12s;
+}
+.cx-mod-item:hover { border-color:rgba(232,68,26,.42); background:var(--glass-2); transform:translateY(-1px) }
+.cx-mod-item .mod-role { grid-area:role }
+.cx-mod-name    { grid-area:name; font-family:'DM Serif Display',Georgia,serif; font-size:17px; color:var(--ink); line-height:1.1 }
+.cx-pivot       { grid-area:pivot; align-self:center; font-family:'DM Mono',monospace; font-size:9px; color:var(--muted); white-space:nowrap; text-align:right }
+.cx-pivot b     { color:var(--ink) }
+.cx-mod-why     { grid-area:why; font-size:10.5px; color:var(--muted); line-height:1.3; margin-top:3px }
+
 /* Settings sheet (theme · language · plasma) */
 .set-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 2px }
 .set-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted) }
