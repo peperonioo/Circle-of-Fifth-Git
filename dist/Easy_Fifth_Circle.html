@@ -1621,21 +1621,25 @@ body[data-tab="production"] .instr-dock { display: none; }
 }
 body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96), rgba(244,241,236,.98)); color:#1a1a1a; border-color:rgba(0,0,0,.1) }
 .instr-zoom.open .iz-panel { transform:none }
-.iz-grip { display:none }
-.iz-head { display:flex; align-items:center; justify-content:space-between; padding:14px 16px 8px }
+.iz-head { display:flex; align-items:center; padding:14px 18px 8px }
 .iz-title { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted) }
+.iz-strip { padding:0 18px 8px }
+/* Close button floats over the overlay (NOT inside the rotated panel) so it stays
+   at a fixed, obvious screen corner and is always tappable. */
 .iz-close {
-  width:40px; height:40px; border-radius:50%; flex:none; cursor:pointer;
-  background:var(--glass-2); border:1px solid var(--glass-border); color:var(--ink);
-  display:grid; place-items:center; transition:background .15s, transform .12s;
+  position:absolute; top:calc(12px + var(--mobile-safe-top,0px)); right:14px; z-index:10;
+  width:48px; height:48px; border-radius:50%; cursor:pointer;
+  background:rgba(20,20,26,.7); border:1px solid rgba(255,255,255,.22); color:#fff;
+  display:grid; place-items:center; backdrop-filter:blur(10px);
+  transition:background .15s, transform .12s;
 }
-.iz-close:hover  { background:var(--glass-3) }
-.iz-close:active { transform:scale(.92) }
-.iz-strip { padding:0 16px 8px }
-@media (max-width:860px){
-  .iz-grip { display:block; width:44px; height:5px; border-radius:3px; background:rgba(255,255,255,.28); margin:10px auto 2px }
-  body.light .iz-grip { background:rgba(0,0,0,.2) }
-  .iz-close { width:44px; height:44px }   /* a comfortable thumb target */
+body.light .iz-close { background:rgba(255,255,255,.8); border-color:rgba(0,0,0,.12); color:#1a1a1a }
+.iz-close:hover  { background:rgba(40,40,50,.85) }
+.iz-close:active { transform:scale(.9) }
+.iz-swipe-hint {
+  position:absolute; left:50%; bottom:calc(14px + var(--mobile-safe-bottom,0px)); transform:translateX(-50%); z-index:10;
+  font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+  color:rgba(255,255,255,.5); pointer-events:none; display:none;
 }
 .iz-body  { padding:6px 18px 20px; overflow:auto; display:flex; align-items:center; justify-content:center }
 /* Enlarged boards */
@@ -1651,10 +1655,22 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
   .iz-panel { width:100vw; height:100vh; max-height:100vh; border-radius:0 }
   .piano.zoom { height:min(72vw, 320px) }
 }
-/* Portrait phone: keep the fullscreen upright (the old -90° rotation made the
-   close button impossible to find/tap). The board just scrolls sideways. */
+/* Portrait phone: rotate the panel to landscape so the instrument uses the long
+   axis. The close × + swipe hint live outside the panel (fixed screen corners),
+   so the rotation no longer hides the close. */
 @media (max-width:860px) and (orientation:portrait) {
-  .piano.zoom { height:min(58vw, 300px) }
+  .iz-swipe-hint { display:block }
+  .instr-zoom .iz-panel {
+    position:absolute;
+    width:100dvh; height:100dvw; max-height:none;
+    top:calc(50dvh - 50dvw); left:calc(50dvw - 50dvh);
+    border-radius:0;
+    transform:rotate(-90deg) scale(.96);
+    transition:transform .3s cubic-bezier(.34,1.4,.4,1);
+  }
+  .instr-zoom.open .iz-panel { transform:rotate(-90deg) }
+  .piano.zoom { height:min(44dvw, 260px) }
+  .fretboard-wrap.zoom { max-height:100dvw }
 }
 
 /* == onboarding.css == */
@@ -2633,11 +2649,12 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
 
 <!-- INSTRUMENT FULLSCREEN / ENLARGE -->
 <div id="instrZoom" class="instr-zoom" onclick="if(event.target===this)InstrumentZoom.close()">
+  <!-- Close lives OUTSIDE the (rotated) panel so it stays at a fixed screen corner -->
+  <button class="iz-close" onclick="InstrumentZoom.close()" aria-label="Close"><span data-ico="close" data-ico-size="22"></span></button>
+  <span class="iz-swipe-hint" data-i18n="zoom.close">swipe down to close</span>
   <div class="iz-panel" id="instrZoomPanel" role="dialog" aria-modal="true" aria-label="Instrument">
-    <div class="iz-grip" aria-hidden="true"></div>
     <div class="iz-head">
       <span id="instrZoomTitle" class="iz-title">Piano</span>
-      <button class="iz-close" onclick="InstrumentZoom.close()" aria-label="Close"><span data-ico="close" data-ico-size="18"></span></button>
     </div>
     <div id="instrZoomStrip" class="ts-prog-strip iz-strip"></div>
     <div id="instrZoomBody" class="iz-body"></div>
@@ -2781,7 +2798,7 @@ body.light .iz-panel { background:linear-gradient(180deg, rgba(252,250,247,.96),
 // ── CONSTANTS ─────────────────────────────────────────
 // Pure data. No DOM access. No state mutation.
 
-const APP_VERSION = 'V5.41';
+const APP_VERSION = 'V5.42';
 const STORAGE_KEY = 'easy-fifth-circle:v1';
 
 const NOTES  = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
@@ -2871,6 +2888,7 @@ const I18N_EN = {
   'color.btn':         'Colour chords',
   'key.btn':           'Key',
   'strip.chords':      'Chords',
+  'zoom.close':        'swipe down to close',
   'common.minor':      'minor',
   'common.major':      'major',
   'builder.title':     'Progression builder',
@@ -2955,6 +2973,7 @@ const I18N_ES = {
   'color.btn':         'Acordes de color',
   'key.btn':           'Tonalidad',
   'strip.chords':      'Acordes',
+  'zoom.close':        'desliza para cerrar',
   'common.minor':      'menor',
   'common.major':      'mayor',
   'builder.title':     'Constructor de progresión',
@@ -7306,26 +7325,19 @@ const InstrumentZoom = {
     (which === 'piano' ? renderPiano : renderGuitar)();
     if (typeof OverlayManager === 'object') OverlayManager.opened('instr-zoom');
   },
-  // Swipe the panel down (from the grip / header) to dismiss — the easy close.
+  // A clear downward swipe anywhere on the overlay dismisses it. We only detect
+  // the gesture (no live translate) so it works regardless of the panel rotation,
+  // and a tap (to play) or a horizontal fret pan never closes it.
   _wireSwipe() {
-    const panel = document.getElementById('instrZoomPanel'); if (!panel || panel._swipe) return;
-    panel._swipe = true;
-    let startY = 0, dragging = false;
-    panel.addEventListener('pointerdown', ev => {
-      if (!ev.target.closest('.iz-grip, .iz-head')) return;
-      if (ev.target.closest('.iz-close')) return;       // let the × do its thing
-      dragging = true; startY = ev.clientY; panel.style.transition = 'none';
-    });
-    window.addEventListener('pointermove', ev => {
-      if (!dragging) return;
-      panel.style.transform = `translateY(${Math.max(0, ev.clientY - startY)}px)`;
-    });
-    window.addEventListener('pointerup', ev => {
-      if (!dragging) return; dragging = false;
-      const dy = Math.max(0, ev.clientY - startY);
-      panel.style.transition = ''; panel.style.transform = '';
-      if (dy > 80) this.close();
-    });
+    const ov = document.getElementById('instrZoom'); if (!ov || ov._swipe) return;
+    ov._swipe = true;
+    let sx = 0, sy = 0, tracking = false;
+    ov.addEventListener('pointerdown', ev => { tracking = true; sx = ev.clientX; sy = ev.clientY; }, { passive: true });
+    ov.addEventListener('pointerup', ev => {
+      if (!tracking) return; tracking = false;
+      const dy = ev.clientY - sy, dx = ev.clientX - sx;
+      if (dy > 90 && Math.abs(dy) > Math.abs(dx) * 1.4) this.close();   // deliberate swipe down
+    }, { passive: true });
   },
   close() {
     if (!this.open) return;

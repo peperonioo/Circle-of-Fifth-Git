@@ -14,6 +14,7 @@ const I18N_ES = {
   'color.btn':         'Acordes de color',
   'key.btn':           'Tonalidad',
   'strip.chords':      'Acordes',
+  'zoom.close':        'desliza para cerrar',
   'common.minor':      'menor',
   'common.major':      'mayor',
   'builder.title':     'Constructor de progresión',

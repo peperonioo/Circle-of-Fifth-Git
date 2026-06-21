@@ -176,26 +176,19 @@ const InstrumentZoom = {
     (which === 'piano' ? renderPiano : renderGuitar)();
     if (typeof OverlayManager === 'object') OverlayManager.opened('instr-zoom');
   },
-  // Swipe the panel down (from the grip / header) to dismiss — the easy close.
+  // A clear downward swipe anywhere on the overlay dismisses it. We only detect
+  // the gesture (no live translate) so it works regardless of the panel rotation,
+  // and a tap (to play) or a horizontal fret pan never closes it.
   _wireSwipe() {
-    const panel = document.getElementById('instrZoomPanel'); if (!panel || panel._swipe) return;
-    panel._swipe = true;
-    let startY = 0, dragging = false;
-    panel.addEventListener('pointerdown', ev => {
-      if (!ev.target.closest('.iz-grip, .iz-head')) return;
-      if (ev.target.closest('.iz-close')) return;       // let the × do its thing
-      dragging = true; startY = ev.clientY; panel.style.transition = 'none';
-    });
-    window.addEventListener('pointermove', ev => {
-      if (!dragging) return;
-      panel.style.transform = `translateY(${Math.max(0, ev.clientY - startY)}px)`;
-    });
-    window.addEventListener('pointerup', ev => {
-      if (!dragging) return; dragging = false;
-      const dy = Math.max(0, ev.clientY - startY);
-      panel.style.transition = ''; panel.style.transform = '';
-      if (dy > 80) this.close();
-    });
+    const ov = document.getElementById('instrZoom'); if (!ov || ov._swipe) return;
+    ov._swipe = true;
+    let sx = 0, sy = 0, tracking = false;
+    ov.addEventListener('pointerdown', ev => { tracking = true; sx = ev.clientX; sy = ev.clientY; }, { passive: true });
+    ov.addEventListener('pointerup', ev => {
+      if (!tracking) return; tracking = false;
+      const dy = ev.clientY - sy, dx = ev.clientX - sx;
+      if (dy > 90 && Math.abs(dy) > Math.abs(dx) * 1.4) this.close();   // deliberate swipe down
+    }, { passive: true });
   },
   close() {
     if (!this.open) return;
