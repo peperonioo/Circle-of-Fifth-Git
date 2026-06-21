@@ -1,6 +1,18 @@
 /* ── OVERLAY SYSTEM ───────────────────────────────────
    Dropdown and popovers always beat cards.           */
 
+/* Small full-width action button at the bottom of a sidebar card (desktop only) */
+.card-action-btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  margin-top:8px; width:100%; padding:8px 10px;
+  border:1px solid var(--glass-border); border-radius:10px;
+  background:var(--glass-1); color:var(--muted);
+  font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; cursor:pointer;
+  transition:color .15s, border-color .15s, background .15s;
+}
+.card-action-btn:hover { color:var(--accent2); border-color:rgba(232,68,26,.42); background:var(--glass-2) }
+.card-action-btn .cab-ico { font-size:13px; opacity:.85 }
+
 .modulate-panel {
   position:fixed; left:50%; top:50%; transform:translate(-50%,-46%) scale(.97);
   z-index:var(--z-modal, 9500); width:min(346px, calc(100vw - 32px));
