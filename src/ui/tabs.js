@@ -71,7 +71,7 @@ function renderProduction() {
   const mg = document.getElementById('midiGrid');
   if (mg) mg.innerHTML = g.pattern.map((r, ri) =>
     `<div class="midi-row" style="grid-template-columns:60px repeat(16,1fr);gap:3px">
-      <div class="midi-label">${r.label}</div>
+      <div class="midi-label">${PL(r.label)}</div>
       ${r.p.map((v, i) =>
         `<div class="step${v ? ' on '+r.cl : ''} ${i % 4 === 0 ? 'beat-1' : ''}" id="s-${ri}-${i}"></div>`
       ).join('')}

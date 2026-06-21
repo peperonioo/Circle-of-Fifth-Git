@@ -72,10 +72,10 @@ const PRODUCTION_DATA = {
     chordLane:[0,0,0,1, 0,0,1,0, 0,0,0,1, 0,0,1,0],
     bassLane: [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0],
     pattern:[
-      {label:'Kick', cl:'',        snd:'kick', p:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0]},
-      {label:'Clap', cl:'clap',    snd:'clap', p:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0]},
-      {label:'Hat',  cl:'hat-c',   snd:'hat',  p:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0]},
-      {label:'Open', cl:'hat-o',   snd:'open', p:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0]},
+      {label:{en:'Kick', es:'Bombo'}, cl:'',      snd:'kick', p:[1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0]},
+      {label:{en:'Clap', es:'Clap'},  cl:'clap',  snd:'clap', p:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0]},
+      {label:{en:'Hat',  es:'H-hat'}, cl:'hat-c', snd:'hat',  p:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0]},
+      {label:{en:'Open', es:'Open'},  cl:'hat-o', snd:'open', p:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0]},
     ],
   },
   neosoul: {
@@ -126,10 +126,65 @@ const PRODUCTION_DATA = {
     chordLane:[1,0,0,0, 0,0,1,0, 0,0,1,0, 0,0,0,0],
     bassLane: [1,0,0,0, 0,0,1,0, 0,1,0,0, 0,0,1,0],
     pattern:[
-      {label:'Kick', cl:'',        snd:'kick',  p:[1,0,0,1,0,0,1,0,0,0,1,0,0,1,0,0]},
-      {label:'Snare',cl:'clap',    snd:'snare', p:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1]},
-      {label:'Hat',  cl:'hat-c',   snd:'hat',   p:[1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1]},
-      {label:'Shake',cl:'shaker',  snd:'shaker',p:[0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1]},
+      {label:{en:'Kick', es:'Bombo'}, cl:'',      snd:'kick',   p:[1,0,0,1,0,0,1,0,0,0,1,0,0,1,0,0]},
+      {label:{en:'Snare',es:'Caja'},  cl:'clap',  snd:'snare',  p:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1]},
+      {label:{en:'Hat',  es:'H-hat'}, cl:'hat-c', snd:'hat',    p:[1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1]},
+      {label:{en:'Shake',es:'Shkr'},  cl:'shaker',snd:'shaker', p:[0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1]},
+    ],
+  },
+
+  jazz: {
+    title:'Jazz', bpm:140,
+    sub:{en:'4/4 · swing 8ths · 120–200 BPM', es:'4/4 · corcheas con swing · 120–200 BPM'},
+    cards:[
+      {h:{en:'Feel',es:'Sensación'}, b:{en:'Swing 8ths',es:'Corcheas con swing'}, p:{en:'"Long-short" feel: divide the beat into a triplet, play 1st and 3rd.', es:'Feel "largo-corto": divide el tiempo en tresillo y toca el 1.º y el 3.º.'}},
+      {h:{en:'Harmony',es:'Armonía'}, b:{en:'ii–V–I (the blueprint)',es:'ii–V–I (el esquema esencial)'}, p:{en:'Extended 9ths, 11ths, 13ths; alterations on the V (♭9, ♯11, ♭13).', es:'Extensiones de 9.ª, 11.ª, 13.ª; alteraciones en el V (♭9, ♯11, ♭13).'}},
+      {h:{en:'Voice',es:'Voz'}, b:{en:'Comping — space is the instrument',es:'Comping — el espacio es el instrumento'}, p:{en:'Piano fills gaps; drop-2 voicings; stay out of the bass\'s way.', es:'El piano llena los huecos; voicings de drop-2; sin pisar al bajo.'}},
+    ],
+    elements:[
+      {icon:'🥁',name:{en:'Ride',es:'Ride'},          desc:{en:'Ping ride on every 8th (swing feel); "ching" on 2 & 4 is the heartbeat.', es:'Ride con "ping" en cada corchea (feel swing); el "ching" en 2 y 4 es el corazón.'}, gear:'20″ ride cymbal', anim:null},
+      {icon:'👏',name:{en:'Snare',es:'Caja'},          desc:{en:'Crisp backbeat on 2 & 4; brushes for smaller settings.', es:'Backbeat claro en 2 y 4; escobillas para formatos más íntimos.'}, gear:'14″ snare / brushes', anim:null},
+      {icon:'🎹',name:{en:'Piano',es:'Piano'},          desc:{en:'Left-hand voicings on the off-beats — shell voicings, drop-2.', es:'Voicings con la mano izquierda a contratiempo — shell voicings, drop-2.'}, gear:'Acoustic / Rhodes', anim:'stab'},
+      {icon:'🎸',name:{en:'Walking bass',es:'Bajo caminante'}, desc:{en:'Four-to-the-bar quarter notes guiding the harmony — the foundation.', es:'Negras hacia el acorde en cada tiempo — la fundación.'}, gear:'Upright / Fender bass', anim:'bass'},
+      {icon:'🎺',name:{en:'Horns',es:'Vientos'},        desc:{en:'Lead melody, call-and-response, or long-tone pads on the changes.', es:'Melodía principal, pregunta-respuesta o notas largas sobre los cambios de acorde.'}, gear:'Trumpet / tenor sax', anim:null},
+      {icon:'🥁',name:{en:'Hi-hat',es:'Hi-hat'},        desc:{en:'Foot hi-hat on 2 & 4 marks the backbeat alongside the snare.', es:'Hi-hat de pie en los tiempos 2 y 4 marca el backbeat junto a la caja.'}, gear:'Foot pedal, 14″ hats', anim:null},
+    ],
+    progressions:[
+      {chords:['Dm7','G7','Cmaj7','Am7'],    desc:{en:'ii7–V7–Imaj7–vi7: the jazz blueprint', es:'ii7–V7–Imaj7–vi7: el esquema del jazz'}},
+      {chords:['Am7','D7','Gmaj7','Cmaj7'],  desc:{en:'Cycle of 4ths — smooth voice-leading', es:'Ciclo de 4ths — conducción suave de voces'}},
+      {chords:['Cm7','F7','Bbmaj7','Ebmaj7'],desc:{en:'ii–V–I in B♭ with tritone subs', es:'ii–V–I en Si♭ con sustitución de tritono'}},
+    ],
+    groove:[
+      {en:'Swing 8ths: "1-and-a, 2-and-a…" — the "and" falls late, on the triplet third.', es:'Corcheas con swing: "1-y-a, 2-y-a…" — el "y" cae tarde, en el tercer tercio del tresillo.'},
+      {en:'Ride cymbal drives the feel; snare is the backbeat; kick is sparse and supportive.', es:'El ride lleva el feel; la caja es el backbeat; el bombo es escaso y de apoyo.'},
+      {en:'Walking bass moves by step or interval toward the next chord root.', es:'El bajo caminante se mueve por grados o intervalos hacia la raíz del siguiente acorde.'},
+      {en:'Piano comps in the spaces — never over-fill; react to the other players.', es:'El piano hace comping en los espacios — nunca de más; reacciona a los demás instrumentos.'},
+    ],
+    tips:[
+      {h:{en:'Arrangement',es:'Arreglo'}, items:[
+        {en:'Head (melody) → solos → head out: the classic AABA jazz form.', es:'Head (melodía) → solos → head out: la forma AABA clásica del jazz.'},
+        {en:'Let the rhythm section breathe during solos — less is more.', es:'Deja respirar a la sección rítmica durante los solos — menos es más.'},
+        {en:'Dynamics: softer behind a vocal/horn melody, louder under a piano solo.', es:'Dinámica: más suave detrás de una melodía vocal/de viento, más fuerte bajo un solo de piano.'},
+      ]},
+      {h:{en:'Fills & transitions',es:'Fills y transiciones'}, items:[
+        {en:'Trading 4s: drummer and soloist swap 4-bar phrases.', es:'Trading 4s: batería y solista se turnan frases de 4 compases.'},
+        {en:'Kicks on the last beat of a phrase "kick" the soloist into the next section.', es:'Bombos en el último tiempo de la frase "lanzan" al solista a la siguiente sección.'},
+        {en:'A short run or turn into a new section keeps the momentum.', es:'Un breve run o giro al entrar en una nueva sección mantiene el impulso.'},
+      ]},
+      {h:{en:'Sound design',es:'Diseño de sonido'}, items:[
+        {en:'Minimal processing: mild compression, no heavy reverb on the kit.', es:'Procesado mínimo: compresión leve, sin reverb exagerada en la batería.'},
+        {en:'Upright or P-bass with foam mute for the warm, articulate tone.', es:'Contrabajo o P-bass con sordina de espuma para un tono cálido y articulado.'},
+        {en:'A room mic on the kit adds natural ambience without digital reverb.', es:'Un micrófono de sala añade ambiente natural sin reverb digital.'},
+      ]},
+    ],
+    chordStyle:'stab',
+    chordLane:[0,0,1,0, 1,0,1,0, 0,0,1,0, 1,0,0,0],
+    bassLane: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+    pattern:[
+      {label:{en:'Ride', es:'Ride'},  cl:'hat-c', snd:'hat',   p:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0]},
+      {label:{en:'Snare',es:'Caja'}, cl:'clap',  snd:'snare', p:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0]},
+      {label:{en:'Kick', es:'Bombo'},cl:'',      snd:'kick',  p:[1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0]},
+      {label:{en:'H-hat',es:'H-hat'},cl:'shaker',snd:'shaker',p:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0]},
     ],
   },
 };

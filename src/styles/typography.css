@@ -1,15 +1,20 @@
-/* ── TYPOGRAPHY PASS (Claude Design treatment) ──────────────
-   Same DM family (Serif Display · Sans · Mono) — applied consistently.
-   One eyebrow-label recipe (today they range 7–11px / .1–.14em), a
-   locked scale, Serif for display, Mono for data. Loaded late to win. */
+/* ── TYPOGRAPHY PASS (Claude Design · V5.46) ────────────────
+   Family: DM Serif Display (display/chords) · DM Sans (body) · DM Mono (labels/data)
+   Scale:  Display56 / Title30 / Body15 / Label10.5 / Data28
+   Loaded second-to-last — wins over all layout/component rules. */
 
 :root {
-  --fs-display: 56px; --fs-title: 30px; --fs-body: 15px; --fs-label: 10.5px; --fs-data: 28px;
-  --ls-label: .16em;
+  --fs-display: 56px;
+  --fs-title:   30px;
+  --fs-body:    15px;
+  --fs-label:   10.5px;
+  --fs-data:    28px;
+  --ls-label:   .16em;
+  --lh-body:    1.55;
 }
 
-/* Eyebrow / section labels — DM Mono, uppercase, tracked, muted.
-   Unifies the side-card labels, builder/section titles and micro-labels. */
+/* ── EYEBROW LABELS — DM Mono, uppercase, tracked ─────────────
+   Every "KEY / ROOT", "MODE", section title, meta label. */
 .lbl,
 .builder-title,
 .builder-next-title,
@@ -17,7 +22,12 @@
 .tips-card h4,
 .metro-title,
 .iz-title,
-.lib-section-title {
+.lib-section-title,
+.settings-mini span,
+.pal-label,
+.intensity-wrap label,
+.prod-section-head,
+.genre-label {
   font-family: 'DM Mono', monospace !important;
   font-size: var(--fs-label) !important;
   letter-spacing: var(--ls-label) !important;
@@ -25,25 +35,94 @@
   font-weight: 500 !important;
   line-height: 1.3 !important;
 }
+
+/* Colour split: dim for ambient labels, ink for active titles */
 .lbl,
 .builder-title,
 .gravity-card .g-label,
-.lib-section-title { color: var(--muted) !important; }
-.builder-next-title { color: var(--ink) !important; opacity: .9 !important; }
+.lib-section-title,
+.pal-label,
+.intensity-wrap label,
+.prod-section-head,
+.genre-label          { color: var(--muted) !important; }
+.builder-next-title   { color: var(--ink) !important; opacity: .9 !important; }
 
-/* Sub / hint lines — DM Sans, readable, muted. */
-.builder-sub,
-.builder-next-hint,
-.card .sub {
-  font-family: 'DM Sans', sans-serif;
-  color: var(--muted);
-  line-height: 1.45;
-}
-
-/* Display — chord names, big values, titles use DM Serif Display. */
+/* ── DISPLAY TITLES — DM Serif Display, Title30 ───────────────
+   Chord name in side cards, production bigline, gravity value. */
 .card .big,
 .prod-card .bigline,
-.gravity-card .g-value { font-family: 'DM Serif Display', serif !important; letter-spacing: -.01em; }
+.gravity-card .g-value {
+  font-family: 'DM Serif Display', serif !important;
+  font-size: var(--fs-title) !important;
+  letter-spacing: -.02em !important;
+  line-height: 1 !important;
+}
 
-/* Data — numbers and tempo stay DM Mono. */
-.metro-bpm, .metro-bpm-big { font-family: 'DM Mono', monospace; }
+/* Relative minor / accent display (side card row 2) */
+.card .accent-t {
+  font-family: 'DM Serif Display', serif !important;
+  font-size: 20px !important;
+  letter-spacing: -.01em !important;
+  line-height: 1.1 !important;
+}
+
+/* ── CHORD NAMES — DM Serif Display, 22px ─────────────────────
+   Degree strip + builder pills: the chord name is the headline. */
+.degree .dn,
+.builder-step .step-chord {
+  font-family: 'DM Serif Display', serif !important;
+  font-size: 22px !important;
+  letter-spacing: -.01em !important;
+  line-height: 1 !important;
+}
+/* Timeline bars are narrower — scale down slightly */
+.builder-row.is-timeline .builder-step .step-chord {
+  font-size: 19px !important;
+}
+
+/* ── ROMAN NUMERALS — DM Mono ──────────────────────────────── */
+.degree .roman {
+  font-family: 'DM Mono', monospace !important;
+  font-size: 11px !important;
+  letter-spacing: .04em !important;
+}
+
+/* ── QUALITY LABEL (Maj/Min/Dim) ───────────────────────────── */
+.degree .dq {
+  font-family: 'DM Mono', monospace !important;
+  font-size: 9px !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+}
+
+/* ── BODY / HINT TEXT — DM Sans, 12.5px, generous line-height ─ */
+.builder-sub,
+.builder-next-hint,
+.card .sub,
+.deg-popup p,
+.builder-next-summary {
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 12.5px !important;
+  line-height: var(--lh-body) !important;
+  color: var(--muted) !important;
+}
+
+/* Restore ink colour for popup body + bold spans */
+.deg-popup p            { color: var(--ink) !important; }
+.builder-meta b,
+.builder-next-summary b { color: var(--ink) !important; font-weight: 600 !important; }
+
+/* Builder meta row (chord count / key context line) */
+.builder-meta {
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+}
+
+/* ── DATA — BPM and numeric displays → DM Mono ─────────────── */
+.metro-bpm,
+.metro-bpm-big {
+  font-family: 'DM Mono', monospace !important;
+  font-size: var(--fs-data) !important;
+  letter-spacing: -.02em !important;
+}
