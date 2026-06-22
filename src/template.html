@@ -454,9 +454,20 @@
 </div>
 <!-- %%JS%% -->
 <script>
-/* PWA: register the service worker (skipped for the standalone file:// build). */
+/* PWA: register the service worker (skipped for the standalone file:// build).
+   Self-healing updates: force an update check, and when a NEW worker takes
+   control (an installed PWA got a fresh build) reload once so users never get
+   stuck on a stale cached version. The first-ever install is skipped. */
 if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
-  addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  addEventListener('load', function () {
+    var hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('sw.js').then(function (reg) { try { reg.update(); } catch (e) {} }).catch(function () {});
+    var reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (reloaded || !hadController) return;
+      reloaded = true; location.reload();
+    });
+  });
 }
 </script>
 </body>
