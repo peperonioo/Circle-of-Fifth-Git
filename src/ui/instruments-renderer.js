@@ -105,6 +105,17 @@ function pickProgChord(i) {
 function _hear(pitch)       { if (typeof AudioEngine === 'object') AudioEngine.playNote(pitch, 0.9); }
 function _hearGuitar(pitch) { if (typeof AudioEngine === 'object') AudioEngine.playGuitarNote(pitch); }
 
+// Instrument voice for chord/piano playback: piano · epiano · brass.
+function setVoice(s, btn) {
+  st.pianoSound = s; if (typeof saveState === 'function') saveState();
+  _syncVoiceUI();
+  if (typeof AudioEngine === 'object') { if (AudioEngine.resume) AudioEngine.resume(); AudioEngine.playChord([0, 4, 7]); }
+}
+function _syncVoiceUI() {
+  const s = (typeof st === 'object' && st.pianoSound) || 'piano';
+  document.querySelectorAll('.snd-btn').forEach(b => b.classList.toggle('on', b.dataset.snd === s));
+}
+
 function renderPiano() {
   const root = document.getElementById('piano'); if (!root) return;
   root.innerHTML = '';
@@ -183,6 +194,15 @@ const InstrumentZoom = {
     const which = this.which;
     this.open = false; this._el = null; this._parent = null; this.which = null;
     (which === 'piano' ? renderPiano : renderGuitar)();
+    // Return to the previous screen (the instrument in the transport island),
+    // not the main wheel — re-open the island on phones and scroll it into view.
+    if (typeof TransportSheet === 'object' && matchMedia('(max-width:860px)').matches) {
+      if (!TransportSheet.isOpen()) TransportSheet.open();
+      requestAnimationFrame(() => {
+        document.getElementById('transportSheet')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        if (typeof gotoInstrument === 'function') gotoInstrument(which || 'piano');
+      });
+    }
   },
 };
 

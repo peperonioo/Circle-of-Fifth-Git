@@ -230,6 +230,7 @@ function toggleTheme() {
   // doesn't change where it appears — only which stacking context it lives in.
   const _metro = document.getElementById('metronome');
   if (_metro && _metro.parentElement !== document.body) document.body.appendChild(_metro);
+  if (typeof _syncVoiceUI === 'function') _syncVoiceUI();   // reflect the saved instrument sound
   if (typeof tel === 'function') tel('app_open');
 
   // First-run welcome tour (once; re-openable from the header "?" button).

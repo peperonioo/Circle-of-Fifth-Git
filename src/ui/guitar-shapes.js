@@ -371,10 +371,12 @@ const GuitarShapes = (() => {
 
     // Dots → pick a specific voicing for one chord.
     setVoicing(pos, i) { _sel[pos] = i; _updateCard(pos); _highlightCard(pos); _strum(pos); },
-    // Arrows → step to the lower/higher position (clamped).
+    // Arrows / sideways slide → step through positions, wrapping around
+    // (slide past the last → back to the first, and vice versa).
     step(pos, dir) {
       const vs = _voicingsFor(_chords[pos]); if (vs.length <= 1) return;
-      _sel[pos] = Math.max(0, Math.min(vs.length - 1, (_sel[pos] || 0) + dir));
+      const n = vs.length;
+      _sel[pos] = (((_sel[pos] || 0) + dir) % n + n) % n;
       _updateCard(pos); _highlightCard(pos); _strum(pos);
     },
 

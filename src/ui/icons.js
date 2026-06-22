@@ -8,6 +8,8 @@ const ICONS = {
   play:      { p: '<path d="M8 5.2c0-.6.65-1 1.18-.68l9.1 6.3a.8.8 0 0 1 0 1.36l-9.1 6.3A.8.8 0 0 1 8 17.8z"/>', f: 1 },
   stop:      { p: '<rect x="6" y="6" width="12" height="12" rx="2.5"/>', f: 1 },
   countin:   { p: '<path d="M9 4h6l3 16H6z"/><path d="M12 8l4 7"/><path d="M7 16h10"/>' },
+  loop:      { p: '<path d="M17 1.8l3.4 3.4-3.4 3.4"/><path d="M3.6 11.2V9.6a4 4 0 0 1 4-4h12.8"/><path d="M7 22.2l-3.4-3.4 3.4-3.4"/><path d="M20.4 12.8v1.6a4 4 0 0 1-4 4H3.6"/>' },
+  more:      { p: '<circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/>' },
   voicing:   { p: '<path d="M12 3l8.5 4.2L12 11.4 3.5 7.2z"/><path d="M3.5 12L12 16.2 20.5 12"/><path d="M3.5 16.8L12 21l8.5-4.2"/>' },
   sun:       { p: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6"/>' },
   moon:      { p: '<path d="M20.5 13.5A8 8 0 0 1 10.5 3.5a6.6 6.6 0 1 0 10 10z"/>' },

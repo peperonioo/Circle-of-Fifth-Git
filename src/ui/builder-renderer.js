@@ -362,10 +362,33 @@ function stopProgression() {
   setProgBtn(false);
   if (_metroStartedByPlay) { Metronome.stop(); _metroStartedByPlay = false; }
 }
-// The ▶/■ button toggles between starting and stopping playback.
+// The ▶/■ button toggles playback. It's a UNIVERSAL stop: if anything is
+// playing anywhere (the progression, the metronome, or the production groove)
+// one tap stops it all — no need to hunt down the exact button you started it
+// from. Otherwise it starts the progression.
 function toggleProgPlay() {
-  if (_progRAF) stopProgression();
-  else playProgression();
+  const metroOn = !!document.getElementById('metronome')?.classList.contains('running');
+  const prodOn  = (typeof playing !== 'undefined' && playing);
+  if (_progRAF || metroOn || prodOn) {
+    if (_progRAF) stopProgression();
+    if (metroOn && typeof Metronome === 'object' && Metronome.stop) Metronome.stop();
+    if (prodOn && typeof stopPlay === 'function') stopPlay();
+    return;
+  }
+  playProgression();
+}
+
+// Loop toggle — repeats the progression until you stop it.
+function toggleLoop(el) {
+  st.loop = !st.loop; saveState();
+  if (el) { el.classList.toggle('active', !!st.loop); el.setAttribute('aria-pressed', !!st.loop); }
+}
+// Reveal/hide the secondary builder actions (keeps the bar clean by default).
+function toggleBuilderMore(el) {
+  const m = document.getElementById('builderMore'); if (!m) return;
+  const open = m.hasAttribute('hidden');
+  if (open) m.removeAttribute('hidden'); else m.setAttribute('hidden', '');
+  if (el) { el.classList.toggle('active', open); el.setAttribute('aria-expanded', open); }
 }
 
 // Playback option toggles (7th chords, count-in). Persisted in state.
@@ -381,6 +404,7 @@ function togglePlayOpt(key, el) {
 function initPlayOpts() {
   const c = document.getElementById('countInBtn'); if (c) { c.classList.toggle('active', !!st.countIn); c.setAttribute('aria-pressed', !!st.countIn); }
   const v = document.getElementById('voicingBtn'); if (v) { v.classList.toggle('active', !!st.voicingOpen); v.setAttribute('aria-pressed', !!st.voicingOpen); }
+  const l = document.getElementById('loopBtn');   if (l) { l.classList.toggle('active', !!st.loop); l.setAttribute('aria-pressed', !!st.loop); }
 }
 
 function playProgression() {
@@ -443,6 +467,13 @@ function playProgression() {
     }
     bars.forEach((b, k) => b.classList.toggle('playing', k === cur && elapsed < totalSec));
     if (elapsed < totalSec) { _progRAF = requestAnimationFrame(frame); }
+    else if (st.loop) {
+      // Loop on: restart from the top without stopping (the running metronome /
+      // count-in state carries over, so there's no extra count-in on each cycle).
+      bars.forEach(b => b.classList.remove('playing'));
+      _progRAF = 0; _playheadBeat = 0;
+      playProgression();
+    }
     else {
       bars.forEach(b => b.classList.remove('playing'));
       if (ph) ph.classList.remove('on');

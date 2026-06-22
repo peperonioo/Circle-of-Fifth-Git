@@ -104,3 +104,8 @@
 .genre-btn:focus-visible {
   outline: 2px solid var(--accent-light); outline-offset: 2px;
 }
+
+/* Builder: secondary actions collapse behind the "⋯" button to keep the bar clean. */
+.builder-more { display:flex; gap:6px; align-items:center }
+.builder-more[hidden] { display:none }
+#loopBtn.active, #moreBtn.active { background:var(--glass-2); border-color:rgba(232,68,26,.42); color:var(--accent2); }

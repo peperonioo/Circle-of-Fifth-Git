@@ -220,12 +220,16 @@
           </div>
           <div class="builder-actions">
             <button class="builder-btn play" id="playProgBtn" data-ico="play" onclick="toggleProgPlay()"><span data-i18n="builder.play">Play</span></button>
-            <button class="builder-btn opt" id="countInBtn" data-ico="countin" onclick="togglePlayOpt('countIn',this)" title="One-bar count-in before play" aria-label="Count-in before play" aria-pressed="false"></button>
-            <button class="builder-btn opt" id="voicingBtn" data-ico="voicing" onclick="togglePlayOpt('voicingOpen',this)" title="Open (spread) voicing" aria-label="Open voicing" aria-pressed="false"></button>
-            <button class="builder-btn" data-lib-trigger data-ico="library" onclick="Library.toggle()" title="Saved progressions & presets"><span data-i18n="builder.library">Library</span></button>
-            <button class="builder-btn" data-ico="share" onclick="shareProgression()" title="Copy a shareable link"><span data-i18n="builder.share">Share</span></button>
-            <button class="builder-btn" data-ico="download" onclick="exportMIDI()" title="Download as a MIDI file"><span data-i18n="builder.midi">MIDI</span></button>
-            <button class="builder-btn danger" data-ico="trash" onclick="HistoryEngine.clear()" title="Clear progression"><span data-i18n="builder.clear">Clear</span></button>
+            <button class="builder-btn opt" id="loopBtn" data-ico="loop" onclick="toggleLoop(this)" title="Loop the progression" aria-label="Loop" aria-pressed="false"></button>
+            <button class="builder-btn opt" id="moreBtn" data-ico="more" onclick="toggleBuilderMore(this)" title="More actions" aria-label="More actions" aria-expanded="false"></button>
+            <div class="builder-more" id="builderMore" hidden>
+              <button class="builder-btn opt" id="countInBtn" data-ico="countin" onclick="togglePlayOpt('countIn',this)" title="One-bar count-in before play" aria-label="Count-in before play" aria-pressed="false"></button>
+              <button class="builder-btn opt" id="voicingBtn" data-ico="voicing" onclick="togglePlayOpt('voicingOpen',this)" title="Open (spread) voicing" aria-label="Open voicing" aria-pressed="false"></button>
+              <button class="builder-btn" data-lib-trigger data-ico="library" onclick="Library.toggle()" title="Saved progressions & presets"><span data-i18n="builder.library">Library</span></button>
+              <button class="builder-btn" data-ico="share" onclick="shareProgression()" title="Copy a shareable link"><span data-i18n="builder.share">Share</span></button>
+              <button class="builder-btn" data-ico="download" onclick="exportMIDI()" title="Download as a MIDI file"><span data-i18n="builder.midi">MIDI</span></button>
+              <button class="builder-btn danger" data-ico="trash" onclick="HistoryEngine.clear()" title="Clear progression"><span data-i18n="builder.clear">Clear</span></button>
+            </div>
           </div>
         </div>
         <div id="flowRow" class="builder-row"></div>
@@ -267,7 +271,14 @@
               onclick="event.stopPropagation();event.preventDefault();InstrumentZoom.show('piano')">⤢</button>
             <span class="chev">⌄</span>
           </summary>
-          <div class="drawer-body"><div id="piano" class="piano"></div></div>
+          <div class="drawer-body">
+            <div class="snd-sel" role="group" aria-label="Instrument sound">
+              <button class="snd-btn on" data-snd="piano"  onclick="setVoice('piano',this)">Piano</button>
+              <button class="snd-btn"    data-snd="epiano" onclick="setVoice('epiano',this)">E-Piano</button>
+              <button class="snd-btn"    data-snd="brass"  onclick="setVoice('brass',this)">Brass</button>
+            </div>
+            <div id="piano" class="piano"></div>
+          </div>
         </details>
         <details class="drawer">
           <summary>

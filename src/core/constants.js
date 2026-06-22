@@ -1,7 +1,7 @@
 // ── CONSTANTS ─────────────────────────────────────────
 // Pure data. No DOM access. No state mutation.
 
-const APP_VERSION = 'V5.51';
+const APP_VERSION = 'V5.52';
 // NOTE: storage key kept as-is across the "Quinta" rebrand so existing saved
 // state/progressions are not wiped. It's an internal key, never shown to users.
 const STORAGE_KEY = 'easy-fifth-circle:v1';
@@ -72,5 +72,6 @@ const defaultState = {
   palette:0, intensity:1, wheelView:'major', lang:'en',
   history:[], mood:'balanced', bpm:100,
   sevenths:false, countIn:false, voicingOpen:false, metroSound:'woodblock',
+  pianoSound:'piano', loop:false,
   onboarded:false,
 };

@@ -362,11 +362,76 @@ const AudioEngine = {
 
   _freq(pitch) { return 261.63 * Math.pow(2, pitch / 12); }, // pitch 0 = middle C
 
-  // One Rhodes-ish voice via FM: a sine carrier shaped by a 1:1 "body"
+  // Dispatch to the selected instrument voice (persisted in st.pianoSound).
+  _voice(freq, t0, dur, gainScale = 1) {
+    const snd = (typeof st === 'object' && st.pianoSound) || 'piano';
+    if (snd === 'epiano') return this._voiceEP(freq, t0, dur, gainScale);
+    if (snd === 'brass')  return this._voiceBrass(freq, t0, dur, gainScale);
+    return this._voicePiano(freq, t0, dur, gainScale);
+  },
+
+  // ── Acoustic piano — additive, mildly inharmonic partials with a bright,
+  // percussive attack that decays into a long, warm sustain. Closest a pure
+  // synth gets to a real piano without samples (samples would bloat the build).
+  _voicePiano(freq, t0, dur, gainScale = 1) {
+    const ctx = this.ctx, out = this.voiceBus || this.master;
+    const amp = ctx.createGain();
+    const lp  = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 0.5;
+    lp.frequency.setValueAtTime(Math.min(8000, freq * 8 + 2600), t0);
+    lp.frequency.exponentialRampToValueAtTime(Math.max(700, freq * 3), t0 + 0.4);   // brightness fades
+    amp.connect(lp); lp.connect(out);
+    const parts = [[1, 1.0], [2, 0.52], [3, 0.34], [4, 0.18], [5, 0.10], [6, 0.05]];
+    const oscs = [];
+    parts.forEach(([h, a]) => {
+      const o = ctx.createOscillator(); o.type = 'sine';
+      o.frequency.value = freq * h * (1 + 0.0007 * h * h);                          // slight string stretch
+      const g = ctx.createGain(); g.gain.value = a;
+      o.connect(g); g.connect(amp); oscs.push(o);
+    });
+    const peak = 0.34 * gainScale;
+    amp.gain.setValueAtTime(0.0001, t0);
+    amp.gain.exponentialRampToValueAtTime(peak, t0 + 0.004);                        // sharp hammer attack
+    amp.gain.exponentialRampToValueAtTime(peak * 0.5, t0 + 0.14);                   // fast initial decay
+    amp.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + 1.1);                  // long sustain tail
+    const end = t0 + dur + 1.15;
+    oscs.forEach(o => { o.start(t0); o.stop(end); });
+    if (this._active) { const e = { oscs, amp }; this._active.add(e); oscs[0].onended = () => this._active && this._active.delete(e); }
+  },
+
+  // ── Synth brass — a stack of detuned saws through a resonant low-pass whose
+  // envelope "swells" open on attack (the brass blat) then settles, with a touch
+  // of delayed vibrato on the sustain.
+  _voiceBrass(freq, t0, dur, gainScale = 1) {
+    const ctx = this.ctx, out = this.voiceBus || this.master;
+    const amp = ctx.createGain();
+    const lp  = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 4;
+    lp.frequency.setValueAtTime(420, t0);
+    lp.frequency.linearRampToValueAtTime(Math.min(4600, freq * 6 + 1800), t0 + 0.07);
+    lp.frequency.exponentialRampToValueAtTime(Math.max(950, freq * 2.4), t0 + 0.5);
+    amp.connect(lp); lp.connect(out);
+    const oscs = [];
+    [-8, 0, 8].forEach(d => {
+      const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = freq; o.detune.value = d;
+      o.connect(amp); oscs.push(o);
+    });
+    const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 5.2;
+    const lfoG = ctx.createGain(); lfoG.gain.setValueAtTime(0, t0); lfoG.gain.linearRampToValueAtTime(freq * 0.006, t0 + 0.28);
+    lfo.connect(lfoG); oscs.forEach(o => lfoG.connect(o.frequency)); oscs.push(lfo);
+    const peak = 0.16 * gainScale;
+    amp.gain.setValueAtTime(0.0001, t0);
+    amp.gain.linearRampToValueAtTime(peak, t0 + 0.055);                             // swell
+    amp.gain.setValueAtTime(peak, t0 + dur);
+    amp.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + 0.2);
+    const end = t0 + dur + 0.25;
+    oscs.forEach(o => { o.start(t0); o.stop(end); });
+    if (this._active) { const e = { oscs, amp }; this._active.add(e); oscs[0].onended = () => this._active && this._active.delete(e); }
+  },
+
+  // One Rhodes-ish E-piano voice via FM: a sine carrier shaped by a 1:1 "body"
   // modulator plus a high-ratio "tine" modulator that gives the percussive
   // bell attack. Modulation-index envelopes make it bright on attack and warm
   // on sustain — the classic electric-piano character.
-  _voice(freq, t0, dur, gainScale = 1) {
+  _voiceEP(freq, t0, dur, gainScale = 1) {
     const ctx = this.ctx;
     const carrier = ctx.createOscillator(); carrier.type = 'sine'; carrier.frequency.value = freq;
     const mod  = ctx.createOscillator(); mod.type  = 'sine'; mod.frequency.value  = freq;        // body (ratio 1)
