@@ -103,18 +103,38 @@ const GuitarShapes = (() => {
     return out.slice(0, 4);
   }
 
-  // ── Triads on the top-3 strings (G, B, e) ─────────
-  function triadVoicings(root, qual) {
-    const r = ENH[root] || root, rootPC = NI[r];
-    const iv = qual === 'min' ? [0, 3, 7] : qual === 'dim' ? [0, 3, 6] : [0, 4, 7];
-    const triad = new Set(iv.map(x => (rootPC + x) % 12));
+  // The 3 ESSENTIAL tones to show on the top-3 strings for each chord — root +
+  // the quality 3rd + the one defining colour tone (the 5th is dropped on
+  // extended chords). 9th chords go rootless (3·♭7·9) so they differ from the
+  // plain 7th. Keyed by interval signature, like SHAPES — this is what makes a
+  // G7 triad look different from a G9 / G6 / Gmaj7 instead of all showing G.
+  const TRIAD3 = {
+    '0,4,7':[0,4,7], '0,4,7,11':[0,4,11], '0,4,7,10':[0,4,10], '0,4,7,9':[0,4,9],
+    '0,2,4,7':[0,4,2], '0,2,7':[0,2,7], '0,5,7':[0,5,7], '0,2,4,7,10':[4,10,2],
+    '0,3,7':[0,3,7], '0,3,7,10':[0,3,10], '0,2,3,7,10':[3,10,2], '0,3,7,9':[0,3,9], '0,2,3,7':[0,3,2],
+    '0,3,6':[0,3,6], '0,3,6,10':[0,6,10], '0,3,6,9':[0,3,9],
+  };
+
+  // ── Three-note voicings on the top-3 strings (G, B, e) — variant-aware ─────
+  function triadVoicings(root, qual, variant) {
+    const r = ENH[root] || root, rootPC = NI[r] ?? 0;
+    let ivFull;
+    if (variant && variant !== 'triad' && typeof variantDef === 'function') {
+      const Q = qual === 'min' ? 'Min' : qual === 'dim' ? 'Dim' : 'Maj';
+      ivFull = variantDef(Q, variant).iv;
+    } else {
+      ivFull = qual === 'min' ? [0, 3, 7] : qual === 'dim' ? [0, 3, 6] : [0, 4, 7];
+    }
+    const ess = TRIAD3[sigOf(ivFull)] || (qual === 'min' ? [0, 3, 7] : qual === 'dim' ? [0, 3, 6] : [0, 4, 7]);
+    const essPC = ess.map(x => ((rootPC + x) % 12 + 12) % 12);
+    const want = new Set(essPC);
     const S = [3, 4, 5];                              // string indices g, b, e
     const found = [], seen = new Set();
     for (let pos = 0; pos <= 13; pos++) {
       const opts = S.map(si => {
         const o = [];
         for (let f = pos; f < pos + 4 && f <= 16; f++)
-          if (triad.has((TUNE[si] + f) % 12)) o.push(f);
+          if (want.has((TUNE[si] + f) % 12)) o.push(f);
         return o;
       });
       if (opts.some(o => !o.length)) continue;
@@ -125,10 +145,9 @@ const GuitarShapes = (() => {
         const fr = [-1, -1, -1, fg, fb, fe];
         const k = keyOf(fr); if (seen.has(k)) continue;
         seen.add(k);
-        // Inversion from the lowest-sounding note (G string).
-        const lowPC = (TUNE[3] + fg) % 12;
-        const lbl = lowPC === rootPC ? T('root')
-                  : lowPC === (rootPC + iv[1]) % 12 ? T('inv1') : T('inv2');
+        // Label by which essential tone is in the bass (lowest, G string).
+        const idx = essPC.indexOf((TUNE[3] + fg) % 12);
+        const lbl = idx === 0 ? T('root') : idx === 1 ? T('inv1') : T('inv2');
         found.push({ frets: fr, label: lbl, _min: Math.min(fg, fb, fe) });
       }
     }
@@ -233,7 +252,7 @@ const GuitarShapes = (() => {
   let _view = 'chords', _chords = [], _sel = [], _activePos = -1;
   const isOpen = () => !!document.getElementById('guitarShapeStrip')?.classList.contains('gss-on');
   const clampi = (v, max) => Math.max(0, Math.min(v, max));
-  const _voicingsFor = c => c ? (_view === 'triads' ? triadVoicings(c.root, c.qual) : chordVoicings(c.root, c.qual, c.variant)) : [];
+  const _voicingsFor = c => c ? (_view === 'triads' ? triadVoicings(c.root, c.qual, c.variant) : chordVoicings(c.root, c.qual, c.variant)) : [];
 
   // De-duplicated chord list — each unique chord+variant once (order of first appearance).
   // From the progression if there is one; otherwise the single current chord.
