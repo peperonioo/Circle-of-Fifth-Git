@@ -119,6 +119,7 @@ body.light .builder-step  { background:rgba(0,0,0,.04) }
   border-radius:11px !important;
   background:linear-gradient(180deg, rgba(232,68,26,.14), rgba(255,255,255,.04));
   overflow:visible;               /* let the floating toolbar escape the bar */
+  transition:left .13s var(--ui-ease);   /* pushed clips slide aside smoothly */
 }
 .builder-step.dragging { transition:none; box-shadow:0 8px 22px -6px rgba(232,68,26,.5); }
 .builder-row.is-timeline .builder-step .step-chord {

@@ -37,6 +37,25 @@ function _layout(h) {
 // Beat → pixels is a straight multiply now that clips are absolutely positioned.
 function _beatToPx(beat) { return beat * _pxBeat(); }
 
+// While dragging a clip, push the clips it overlaps out of the way — in the drag
+// direction — and let that cascade, so clips behave like solid objects ("physics").
+// Mutates `pos` (a copy of the starts array); `di` is the dragged clip's index.
+function _pushCollisions(pos, h, di, dir) {
+  const len = k => Math.max(0.25, h[k].beats || 2);
+  const others = h.map((_, k) => k).filter(k => k !== di);
+  if (dir >= 0) {                                        // dragging right → shove right
+    let frontier = pos[di] + len(di);
+    others.sort((a, b) => pos[a] - pos[b]).forEach(k => {
+      if (pos[k] < frontier && pos[k] + len(k) > pos[di]) { pos[k] = frontier; frontier = pos[k] + len(k); }
+    });
+  } else {                                               // dragging left → shove left
+    let frontier = pos[di];
+    others.sort((a, b) => pos[b] - pos[a]).forEach(k => {
+      if (pos[k] + len(k) > frontier && pos[k] < pos[di] + len(di)) { pos[k] = Math.max(0, frontier - len(k)); frontier = pos[k]; }
+    });
+  }
+}
+
 function _updatePlayheadPos() {
   const ph = document.getElementById('builderPlayhead');
   if (ph) ph.style.transform = `translateX(${_beatToPx(_playheadBeat)}px)`;
@@ -297,28 +316,39 @@ const BarDrag = {
   start(e, i) {
     if (e.target.closest('.step-resize')) return;   // resize is its own gesture
     const bar = e.currentTarget;
-    const item = (st.history || [])[i];
+    const h = st.history;
+    const item = h && h[i];
     if (!item) return;
+    const root = document.getElementById('flowRow');
+    const els = h.map((_, k) => root.querySelector(`.builder-step[data-i="${k}"]`));
     const pxBeat = _pxBeat();
     const startX = e.clientX, startStart = item.start || 0;
-    let dragging = false, snapped = startStart;
+    const orig = h.map(it => it.start || 0);            // snapshot — recompute from this each move
+    let dragging = false, pos = orig.slice();
     try { bar.setPointerCapture(e.pointerId); } catch (_) {}
 
+    const apply = p => {
+      for (let k = 0; k < h.length; k++) if (els[k]) {
+        els[k].style.setProperty('--start', p[k]);
+        els[k].classList.toggle('off', (p[k] % 1) !== 0);
+      }
+    };
     const move = ev => {
       const dx = ev.clientX - startX;
       if (!dragging && Math.abs(dx) > 6) { dragging = true; bar.classList.add('dragging'); bar.style.zIndex = '6'; }
       if (!dragging) return;
       ev.preventDefault();
-      snapped = Math.max(0, Math.round((startStart + dx / pxBeat) / SNAP) * SNAP);   // free placement, 1/4-beat snap
-      bar.style.left = `calc(${snapped} * var(--px-beat))`;
-      bar.classList.toggle('off', (snapped % 1) !== 0);
+      const snapped = Math.max(0, Math.round((startStart + dx / pxBeat) / SNAP) * SNAP);  // 1/4-beat snap
+      pos = orig.slice(); pos[i] = snapped;
+      _pushCollisions(pos, h, i, dx >= 0 ? 1 : -1);     // shove overlapped clips aside, cascading
+      apply(pos);
     };
     const up = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
       bar.classList.remove('dragging'); bar.style.zIndex = '';
       if (dragging) {
-        item.start = snapped;
+        for (let k = 0; k < h.length; k++) h[k].start = pos[k];
         HistoryEngine.render(); renderProgressionStory(); saveState();
         if (typeof AudioEngine === 'object') AudioEngine.tick(360, 0.06);
       } else {
