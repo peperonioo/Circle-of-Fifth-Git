@@ -3,6 +3,15 @@
 
 let _playheadBeat = 0, _metroStartedByPlay = false;
 
+// Each chord occupies (lead-in rest + its duration) beats on the timeline. `lead`
+// (default 0) pushes a chord later so it can land off the beat — a contratiempo.
+// Returns each chord's audio/visual start beat (after its lead) + the total length.
+function _chordStarts(h) {
+  let acc = 0;
+  const starts = h.map(it => { const s = acc + (it.lead || 0); acc += (it.lead || 0) + Math.max(0.25, it.beats || 2); return s; });
+  return { starts, total: acc };
+}
+
 // Convert a beat position to pixels within #flowRow.
 function _beatToPx(beat) {
   const root = document.getElementById('flowRow');
@@ -11,8 +20,7 @@ function _beatToPx(beat) {
   if (!h.length) return 0;
   const bars = [...root.querySelectorAll('.builder-step')];
   if (!bars.length) return 0;
-  let acc = 0;
-  const starts = h.map(it => { const s = acc; acc += Math.max(1, it.beats || 2); return s; });
+  const { starts } = _chordStarts(h);
   let cur = 0;
   for (let k = 0; k < starts.length; k++) if (beat >= starts[k]) cur = k;
   const bar = bars[cur]; if (!bar) return 0;
@@ -36,9 +44,7 @@ const PlayheadDrag = {
     if (!h.length) return;
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
     const bars = [...root.querySelectorAll('.builder-step')];
-    let acc = 0;
-    const starts = h.map(it => { const s = acc; acc += Math.max(1, it.beats || 2); return s; });
-    const totalBeats = acc;
+    const { starts, total: totalBeats } = _chordStarts(h);
     const move = ev => {
       const rowRect = root.getBoundingClientRect();
       const relX = ev.clientX - rowRect.left + root.scrollLeft;
@@ -176,8 +182,8 @@ const HistoryEngine = {
     document.body.classList.toggle('building', h.length > 0);
     if (typeof renderInstrProgStrip === 'function') renderInstrProgStrip();
 
-    // Clear __justAdded flag + migrate older items that have no duration yet.
-    h.forEach(it => { delete it.__justAdded; if (it.beats == null) it.beats = 2; });
+    // Clear __justAdded flag + migrate older items (no duration / no lead yet).
+    h.forEach(it => { delete it.__justAdded; if (it.beats == null) it.beats = 2; if (it.lead == null) it.lead = 0; });
 
     if (!h.length) {
       root.classList.remove('is-timeline');
@@ -190,10 +196,11 @@ const HistoryEngine = {
     // DAW-style timeline: each chord is a bar whose width = its duration.
     root.classList.add('is-timeline');
     root.innerHTML = h.map((it, i) => `
-      <div data-uid="${it.uid || i}" data-i="${i}" class="builder-step" style="--beats:${it.beats}"
+      <div data-uid="${it.uid || i}" data-i="${i}" class="builder-step${(it.lead || 0) % 1 ? ' off' : ''}" style="--beats:${it.beats};--lead:${it.lead || 0}"
         role="button" tabindex="0"
-        aria-label="${chordLabel(it)}, ${casedRoman(it.degree, it.quality)}, ${it.beats} beats. Enter for chord settings, Delete to remove."
+        aria-label="${chordLabel(it)}, ${casedRoman(it.degree, it.quality)}, ${it.beats} beats${(it.lead || 0) ? ', off-beat' : ''}. Enter for chord settings, Delete to remove."
         onpointerdown="BarDrag.start(event,${i})" onkeydown="BarDrag.key(event,${i})">
+        <span class="step-shift" title="Drag to nudge off the beat" onpointerdown="OffsetDrag.start(event,${i})"></span>
         <span class="step-num" aria-hidden="true">${i + 1}</span>
         <span class="step-chord">${chordLabel(it)}</span>
         <span class="step-sub"><span class="step-degree">${casedRoman(it.degree, it.quality)}</span><span class="step-len">${fmtBeats(it.beats)}</span></span>
@@ -252,6 +259,38 @@ const DurationDrag = {
   },
 };
 
+// Drag the left grip to push a chord later in time (a lead-in rest), snapping to
+// 1/4-beat (16th) steps — that's how you place a chord off the beat (contratiempo).
+const OffsetDrag = {
+  start(e, i) {
+    e.preventDefault(); e.stopPropagation();
+    const bar = e.currentTarget.closest('.builder-step');
+    const item = (st.history || [])[i];
+    if (!bar || !item) return;
+    const pxBeat = parseFloat(getComputedStyle(bar).getPropertyValue('--px-beat')) || 48;
+    const startX = e.clientX, startLead = item.lead || 0;
+    bar.classList.add('shifting');
+    try { bar.setPointerCapture(e.pointerId); } catch (_) {}
+    let last = startLead;
+    const move = ev => {
+      const d  = Math.round(((ev.clientX - startX) / pxBeat) * 4) / 4;   // snap ¼ beat (16th)
+      const nl = Math.max(0, Math.min(8, startLead + d));
+      item.lead = nl;
+      bar.style.setProperty('--lead', nl);
+      bar.classList.toggle('off', (nl % 1) !== 0);
+      if (nl !== last) { last = nl; if (typeof AudioEngine === 'object') AudioEngine.tick(360, 0.06); }
+    };
+    const up = () => {
+      bar.classList.remove('shifting');
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      saveState(); BuilderEngine.meta();
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  },
+};
+
 const BuilderEngine = {
   meta() {
     const el = document.getElementById('builderMeta'); if (!el) return;
@@ -282,7 +321,7 @@ const BuilderEngine = {
 // chord and opens its variant/settings chooser.
 const BarDrag = {
   start(e, i) {
-    if (e.target.closest('.step-resize')) return;          // resize is its own gesture
+    if (e.target.closest('.step-resize') || e.target.closest('.step-shift')) return;   // resize/offset are their own gestures
     const bar = e.currentTarget;
     const row = document.getElementById('flowRow');
     const startX = e.clientX;
@@ -451,12 +490,8 @@ function playProgression() {
   if (!h.length) { AudioEngine.playChord(chordPitchesForDegree(curDeg >= 0 ? curDeg : 0)); return; }
 
   const secPerBeat = 60 / (st.bpm || 100);
-  const allEntries = h.map(it => ({ pitches: chordPitchesForItem(it), beats: Math.max(1, it.beats || 2) }));
-
-  // Cumulative beat starts across all entries.
-  let bAcc = 0;
-  const starts = allEntries.map(e => { const s = bAcc; bAcc += e.beats; return s; });
-  const totalBeats = bAcc;
+  const chordBeats = h.map(it => Math.max(0.25, it.beats || 2));     // each chord's own duration
+  const { starts, total: totalBeats } = _chordStarts(h);            // audio start of each chord (after its lead)
 
   // Clamp playhead — if at/near the end, wrap to 0.
   const startBeat = _playheadBeat >= totalBeats - 0.25 ? 0 : Math.max(0, _playheadBeat);
@@ -464,12 +499,17 @@ function playProgression() {
   for (let k = 0; k < starts.length; k++) if (startBeat >= starts[k]) startIdx = k; else break;
   const withinBeat = startBeat - starts[startIdx];
 
-  // Slice audio entries from the start position (first entry may be shorter).
-  const entries = allEntries.slice(startIdx).map((e, i) =>
-    i === 0 && withinBeat > 0.05
-      ? { pitches: e.pitches, beats: Math.max(0.5, e.beats - withinBeat) }
-      : e
-  );
+  // Build the audio timeline from startIdx on. A chord's `lead` becomes a silent
+  // rest before it — that's what puts it off the beat (contratiempo). The chord we
+  // resume on plays immediately (its lead already elapsed).
+  const entries = [];
+  for (let k = startIdx; k < h.length; k++) {
+    const lead = (k === startIdx) ? 0 : (h[k].lead || 0);
+    if (lead > 0.001) entries.push({ pitches: [], beats: lead });    // rest = silence
+    let beats = chordBeats[k];
+    if (k === startIdx && withinBeat > 0.05) beats = Math.max(0.25, beats - withinBeat);
+    entries.push({ pitches: chordPitchesForItem(h[k]), beats });
+  }
 
   // Count-in: start the Metronome so it ticks through the whole progression.
   let leadSec = 0;
@@ -496,7 +536,7 @@ function playProgression() {
     for (let k = 0; k < starts.length; k++) if (globalBeat >= starts[k]) cur = k;
     const bar = bars[cur];
     if (bar && ph) {
-      const frac = Math.min(1, (globalBeat - starts[cur]) / allEntries[cur].beats);
+      const frac = Math.min(1, Math.max(0, (globalBeat - starts[cur]) / chordBeats[cur]));
       ph.style.transform = `translateX(${bar.offsetLeft + frac * bar.offsetWidth}px)`;
       _playheadBeat = globalBeat;
     }
