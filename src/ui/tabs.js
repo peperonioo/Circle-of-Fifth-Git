@@ -111,6 +111,10 @@ function togglePlay() { if (playing) stopPlay(); else startPlay(); }
 
 function startPlay() {
   if (typeof AudioEngine !== 'object' || !AudioEngine.resume()) return;
+  // Only one chord source plays at a time. The production groove already voices
+  // the progression, so cancel the dry Theory playback first — otherwise the two
+  // run together and the chords double up. (Theory's play does the reverse.)
+  if (typeof _progRAF !== 'undefined' && _progRAF && typeof stopProgression === 'function') stopProgression();
   playing = true; _prodStep = 0; _prodBar = 0; _prodPrevUpper = null; _prodVoicing = null;
   const playBtn = document.getElementById('playBtn');
   if (playBtn) { playBtn.classList.add('playing'); const l = playBtn.querySelector('span'); if (l) l.textContent = t('play.stop'); if (typeof setIcon === 'function') setIcon(playBtn, 'stop'); }
