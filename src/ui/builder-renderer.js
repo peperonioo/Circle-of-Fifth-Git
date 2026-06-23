@@ -3,30 +3,39 @@
 
 let _playheadBeat = 0, _metroStartedByPlay = false;
 
-// Each chord occupies (lead-in rest + its duration) beats on the timeline. `lead`
-// (default 0) pushes a chord later so it can land off the beat — a contratiempo.
-// Returns each chord's audio/visual start beat (after its lead) + the total length.
-function _chordStarts(h) {
-  let acc = 0;
-  const starts = h.map(it => { const s = acc + (it.lead || 0); acc += (it.lead || 0) + Math.max(0.25, it.beats || 2); return s; });
-  return { starts, total: acc };
+const SNAP = 0.25;      // 1/4-beat (16th-note) grid snap for free placement
+const GRID_MIN = 8;     // always show at least 2 bars of grid to drop clips into
+
+// Horizontal pixels per beat (set in CSS on the timeline row).
+function _pxBeat() {
+  const root = document.getElementById('flowRow');
+  const v = root && parseFloat(getComputedStyle(root).getPropertyValue('--px-beat'));
+  return v || 48;
 }
 
-// Convert a beat position to pixels within #flowRow.
-function _beatToPx(beat) {
-  const root = document.getElementById('flowRow');
-  if (!root) return 0;
-  const h = Array.isArray(st.history) ? st.history : [];
-  if (!h.length) return 0;
-  const bars = [...root.querySelectorAll('.builder-step')];
-  if (!bars.length) return 0;
-  const { starts } = _chordStarts(h);
-  let cur = 0;
-  for (let k = 0; k < starts.length; k++) if (beat >= starts[k]) cur = k;
-  const bar = bars[cur]; if (!bar) return 0;
-  const frac = Math.min(1, Math.max(0, (beat - starts[cur]) / Math.max(1, h[cur].beats || 2)));
-  return bar.offsetLeft + frac * bar.offsetWidth;
+// Absolute timeline: each chord has `start` (beats from the section start) and a
+// duration `beats`. Clips can sit anywhere on the grid — including off the beat and
+// overlapping — which is what free-drag placement needs. Legacy items (ordered, or
+// carrying the old `lead`) are migrated to an absolute `start` once.
+function _layout(h) {
+  // Where the timeline currently ends (from clips that already have a start).
+  let end = 0;
+  h.forEach(it => { if (typeof it.start === 'number') end = Math.max(end, it.start + Math.max(0.25, it.beats || 2)); });
+  // Assign a start to any item without one: new chords land after the last clip;
+  // a legacy `lead` (V5.60) is honoured so off-beat placements survive the upgrade.
+  h.forEach(it => {
+    if (typeof it.start !== 'number') {
+      it.start = Math.max(0, end + (it.lead || 0));
+      end = it.start + Math.max(0.25, it.beats || 2);
+    }
+  });
+  let total = 0;
+  h.forEach(it => { total = Math.max(total, (it.start || 0) + Math.max(0.25, it.beats || 2)); });
+  return { starts: h.map(it => it.start || 0), total };
 }
+
+// Beat → pixels is a straight multiply now that clips are absolutely positioned.
+function _beatToPx(beat) { return beat * _pxBeat(); }
 
 function _updatePlayheadPos() {
   const ph = document.getElementById('builderPlayhead');
@@ -43,19 +52,12 @@ const PlayheadDrag = {
     const h = Array.isArray(st.history) ? st.history : [];
     if (!h.length) return;
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
-    const bars = [...root.querySelectorAll('.builder-step')];
-    const { starts, total: totalBeats } = _chordStarts(h);
+    const { total: totalBeats } = _layout(h);
+    const pxBeat = _pxBeat();
     const move = ev => {
       const rowRect = root.getBoundingClientRect();
       const relX = ev.clientX - rowRect.left + root.scrollLeft;
-      let beat = 0;
-      for (let k = 0; k < bars.length; k++) {
-        const bL = bars[k].offsetLeft, bR = bL + bars[k].offsetWidth;
-        if (relX < bL) { beat = starts[k]; break; }
-        if (relX <= bR) { beat = starts[k] + (relX - bL) / bars[k].offsetWidth * Math.max(1, h[k].beats || 2); break; }
-        if (k === bars.length - 1) beat = totalBeats;
-      }
-      _playheadBeat = Math.max(0, Math.min(totalBeats - 0.01, beat));
+      _playheadBeat = Math.max(0, Math.min(totalBeats - 0.01, relX / pxBeat));   // absolute position
       const ph = document.getElementById('builderPlayhead');
       if (ph) ph.style.transform = `translateX(${_beatToPx(_playheadBeat)}px)`;
     };
@@ -182,8 +184,8 @@ const HistoryEngine = {
     document.body.classList.toggle('building', h.length > 0);
     if (typeof renderInstrProgStrip === 'function') renderInstrProgStrip();
 
-    // Clear __justAdded flag + migrate older items (no duration / no lead yet).
-    h.forEach(it => { delete it.__justAdded; if (it.beats == null) it.beats = 2; if (it.lead == null) it.lead = 0; });
+    // Clear __justAdded flag + migrate older items (no duration yet).
+    h.forEach(it => { delete it.__justAdded; if (it.beats == null) it.beats = 2; });
 
     if (!h.length) {
       root.classList.remove('is-timeline');
@@ -193,19 +195,23 @@ const HistoryEngine = {
       return;
     }
 
-    // DAW-style timeline: each chord is a bar whose width = its duration.
+    // DAW-style grid: each chord is a clip placed at its absolute start, width = its
+    // duration. Clips can be dragged freely (and off the beat). _layout() assigns a
+    // start to any legacy/new item.
     root.classList.add('is-timeline');
+    const { total } = _layout(h);
+    const gridBeats = Math.max(GRID_MIN, Math.ceil(total / 4) * 4);   // round up to whole bars, ≥2 bars
+    root.style.setProperty('--grid-beats', gridBeats);
     root.innerHTML = h.map((it, i) => `
-      <div data-uid="${it.uid || i}" data-i="${i}" class="builder-step${(it.lead || 0) % 1 ? ' off' : ''}" style="--beats:${it.beats};--lead:${it.lead || 0}"
+      <div data-uid="${it.uid || i}" data-i="${i}" class="builder-step${(it.start || 0) % 1 ? ' off' : ''}" style="--beats:${it.beats};--start:${it.start || 0}"
         role="button" tabindex="0"
-        aria-label="${chordLabel(it)}, ${casedRoman(it.degree, it.quality)}, ${it.beats} beats${(it.lead || 0) ? ', off-beat' : ''}. Enter for chord settings, Delete to remove."
+        aria-label="${chordLabel(it)}, ${casedRoman(it.degree, it.quality)}, ${it.beats} beats${(it.start || 0) % 1 ? ', off-beat' : ''}. Enter for chord settings, Delete to remove."
         onpointerdown="BarDrag.start(event,${i})" onkeydown="BarDrag.key(event,${i})">
-        <span class="step-shift" title="Drag to nudge off the beat" onpointerdown="OffsetDrag.start(event,${i})"></span>
         <span class="step-num" aria-hidden="true">${i + 1}</span>
         <span class="step-chord">${chordLabel(it)}</span>
         <span class="step-sub"><span class="step-degree">${casedRoman(it.degree, it.quality)}</span><span class="step-len">${fmtBeats(it.beats)}</span></span>
         <span class="step-resize" title="Drag to set duration" onpointerdown="DurationDrag.start(event,${i})"></span>
-      </div>`).join('') + `<div class="builder-playhead" id="builderPlayhead" onpointerdown="PlayheadDrag.start(event)"></div>`;
+      </div>`).join('') + `<div class="builder-playhead" id="builderPlayhead" onpointerdown="PlayheadDrag.start(event)"></div><div class="builder-spacer" aria-hidden="true"></div>`;
 
     // Re-rendering closes any open per-chord chooser.
     if (typeof ChordVariants === 'object') ChordVariants.close();
@@ -259,38 +265,6 @@ const DurationDrag = {
   },
 };
 
-// Drag the left grip to push a chord later in time (a lead-in rest), snapping to
-// 1/4-beat (16th) steps — that's how you place a chord off the beat (contratiempo).
-const OffsetDrag = {
-  start(e, i) {
-    e.preventDefault(); e.stopPropagation();
-    const bar = e.currentTarget.closest('.builder-step');
-    const item = (st.history || [])[i];
-    if (!bar || !item) return;
-    const pxBeat = parseFloat(getComputedStyle(bar).getPropertyValue('--px-beat')) || 48;
-    const startX = e.clientX, startLead = item.lead || 0;
-    bar.classList.add('shifting');
-    try { bar.setPointerCapture(e.pointerId); } catch (_) {}
-    let last = startLead;
-    const move = ev => {
-      const d  = Math.round(((ev.clientX - startX) / pxBeat) * 4) / 4;   // snap ¼ beat (16th)
-      const nl = Math.max(0, Math.min(8, startLead + d));
-      item.lead = nl;
-      bar.style.setProperty('--lead', nl);
-      bar.classList.toggle('off', (nl % 1) !== 0);
-      if (nl !== last) { last = nl; if (typeof AudioEngine === 'object') AudioEngine.tick(360, 0.06); }
-    };
-    const up = () => {
-      bar.classList.remove('shifting');
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', up);
-      saveState(); BuilderEngine.meta();
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up);
-  },
-};
-
 const BuilderEngine = {
   meta() {
     const el = document.getElementById('builderMeta'); if (!el) return;
@@ -316,42 +290,37 @@ const BuilderEngine = {
   },
 };
 
-// ── Bar drag-to-reorder + tap (V4.5) ──────────────────
-// Drag a timeline bar sideways to reorder it freely; a tap (no drag) plays the
-// chord and opens its variant/settings chooser.
+// ── Bar free-drag + tap (V5.61) ───────────────────────
+// Drag a clip sideways to place it anywhere on the grid (snaps to 1/4-beat, so it
+// can land off the beat); a tap (no drag) plays the chord and opens its chooser.
 const BarDrag = {
   start(e, i) {
-    if (e.target.closest('.step-resize') || e.target.closest('.step-shift')) return;   // resize/offset are their own gestures
+    if (e.target.closest('.step-resize')) return;   // resize is its own gesture
     const bar = e.currentTarget;
-    const row = document.getElementById('flowRow');
-    const startX = e.clientX;
-    let dragging = false, targetIndex = i;
+    const item = (st.history || [])[i];
+    if (!item) return;
+    const pxBeat = _pxBeat();
+    const startX = e.clientX, startStart = item.start || 0;
+    let dragging = false, snapped = startStart;
     try { bar.setPointerCapture(e.pointerId); } catch (_) {}
 
     const move = ev => {
       const dx = ev.clientX - startX;
-      if (!dragging && Math.abs(dx) > 6) { dragging = true; bar.classList.add('dragging'); }
+      if (!dragging && Math.abs(dx) > 6) { dragging = true; bar.classList.add('dragging'); bar.style.zIndex = '6'; }
       if (!dragging) return;
       ev.preventDefault();
-      bar.style.transform = `translateX(${dx}px) translateY(-3px) scale(1.04)`;
-      bar.style.zIndex = '5';
-      // Which slot is the bar's centre over?
-      const cx = bar.getBoundingClientRect().left + bar.offsetWidth / 2;
-      const others = [...row.querySelectorAll('.builder-step')].filter(b => b !== bar);
-      targetIndex = 0;
-      others.forEach(b => { const r = b.getBoundingClientRect(); if (cx > r.left + r.width / 2) targetIndex++; });
+      snapped = Math.max(0, Math.round((startStart + dx / pxBeat) / SNAP) * SNAP);   // free placement, 1/4-beat snap
+      bar.style.left = `calc(${snapped} * var(--px-beat))`;
+      bar.classList.toggle('off', (snapped % 1) !== 0);
     };
     const up = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
-      bar.classList.remove('dragging'); bar.style.transform = ''; bar.style.zIndex = '';
+      bar.classList.remove('dragging'); bar.style.zIndex = '';
       if (dragging) {
-        const h = st.history;
-        if (Array.isArray(h) && targetIndex !== i && targetIndex >= 0 && targetIndex < h.length) {
-          const [moved] = h.splice(i, 1);
-          h.splice(targetIndex, 0, moved);
-          HistoryEngine.render(); renderProgressionStory(); saveState();
-        }
+        item.start = snapped;
+        HistoryEngine.render(); renderProgressionStory(); saveState();
+        if (typeof AudioEngine === 'object') AudioEngine.tick(360, 0.06);
       } else {
         // Tap → sound the chord + open its chooser.
         const it = (st.history || [])[i];
@@ -490,26 +459,12 @@ function playProgression() {
   if (!h.length) { AudioEngine.playChord(chordPitchesForDegree(curDeg >= 0 ? curDeg : 0)); return; }
 
   const secPerBeat = 60 / (st.bpm || 100);
+  const pxBeat     = _pxBeat();
   const chordBeats = h.map(it => Math.max(0.25, it.beats || 2));     // each chord's own duration
-  const { starts, total: totalBeats } = _chordStarts(h);            // audio start of each chord (after its lead)
+  const { starts, total: totalBeats } = _layout(h);                 // absolute start of each clip
 
-  // Clamp playhead — if at/near the end, wrap to 0.
+  // Resume from the playhead (or the top if it's at/near the end).
   const startBeat = _playheadBeat >= totalBeats - 0.25 ? 0 : Math.max(0, _playheadBeat);
-  let startIdx = 0;
-  for (let k = 0; k < starts.length; k++) if (startBeat >= starts[k]) startIdx = k; else break;
-  const withinBeat = startBeat - starts[startIdx];
-
-  // Build the audio timeline from startIdx on. A chord's `lead` becomes a silent
-  // rest before it — that's what puts it off the beat (contratiempo). The chord we
-  // resume on plays immediately (its lead already elapsed).
-  const entries = [];
-  for (let k = startIdx; k < h.length; k++) {
-    const lead = (k === startIdx) ? 0 : (h[k].lead || 0);
-    if (lead > 0.001) entries.push({ pitches: [], beats: lead });    // rest = silence
-    let beats = chordBeats[k];
-    if (k === startIdx && withinBeat > 0.05) beats = Math.max(0.25, beats - withinBeat);
-    entries.push({ pitches: chordPitchesForItem(h[k]), beats });
-  }
 
   // Count-in: start the Metronome so it ticks through the whole progression.
   let leadSec = 0;
@@ -519,7 +474,23 @@ function playProgression() {
     leadSec = 4 * secPerBeat + 0.08;   // 4-beat count-in matches Metronome's internal lookahead
   }
 
-  const { totalSec } = AudioEngine.playTimeline(entries, secPerBeat, leadSec);
+  // Schedule each clip at its absolute start (in time order, voice-led). Clips can
+  // overlap or leave gaps, so we schedule them directly rather than as a packed
+  // sequence — that's what makes free placement and contratiempo audible.
+  const order = h.map((_, k) => k).sort((a, b) => starts[a] - starts[b]);
+  const t0audio = AudioEngine.now() + leadSec;
+  let prevUpper = null;
+  order.forEach(k => {
+    const s = starts[k], endB = s + chordBeats[k];
+    if (endB <= startBeat + 0.001) return;                          // already passed
+    const whenBeat = s - startBeat;
+    const when = t0audio + Math.max(0, whenBeat) * secPerBeat;
+    const durB = whenBeat < 0 ? endB - startBeat : chordBeats[k];   // mid-clip resume → remaining time
+    const v = AudioEngine._leadVoicing(prevUpper, chordPitchesForItem(h[k]));
+    AudioEngine.playChord(v.all, Math.min(2.4, durB * secPerBeat * 0.96), when, false);
+    prevUpper = v.upper;
+  });
+  const totalSec = Math.max(0.1, (totalBeats - startBeat) * secPerBeat);
   setProgBtn(true);
 
   const root = document.getElementById('flowRow');
@@ -532,15 +503,8 @@ function playProgression() {
     const elapsed = (performance.now() - t0) / 1000;
     if (elapsed < 0) { _progRAF = requestAnimationFrame(frame); return; }  // count-in: hold
     const globalBeat = startBeat + elapsed / secPerBeat;
-    let cur = 0;
-    for (let k = 0; k < starts.length; k++) if (globalBeat >= starts[k]) cur = k;
-    const bar = bars[cur];
-    if (bar && ph) {
-      const frac = Math.min(1, Math.max(0, (globalBeat - starts[cur]) / chordBeats[cur]));
-      ph.style.transform = `translateX(${bar.offsetLeft + frac * bar.offsetWidth}px)`;
-      _playheadBeat = globalBeat;
-    }
-    bars.forEach((b, k) => b.classList.toggle('playing', k === cur && elapsed < totalSec));
+    if (ph) { ph.style.transform = `translateX(${globalBeat * pxBeat}px)`; _playheadBeat = globalBeat; }
+    bars.forEach((b, k) => b.classList.toggle('playing', elapsed < totalSec && globalBeat >= starts[k] && globalBeat < starts[k] + chordBeats[k]));
     if (elapsed < totalSec) { _progRAF = requestAnimationFrame(frame); }
     else {
       // A part finished. Decide what's next: continue the song (A→B), loop, or stop.

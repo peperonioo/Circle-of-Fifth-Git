@@ -90,32 +90,37 @@ body.light .builder-step  { background:rgba(0,0,0,.04) }
 .builder-arrow:nth-of-type(n+5){ animation-delay:800ms }
 @media (prefers-reduced-motion: reduce){ .builder-arrow{ animation:none; opacity:.42 } }
 
-/* ── DAW timeline mode ──────────────────────────────*/
+/* ── DAW grid mode (absolute clip placement) ─────────*/
 .builder-row.is-timeline {
   position:relative;
+  display:block;                  /* clips are absolutely positioned on the grid */
   --px-beat:48px;                 /* horizontal pixels per beat */
-  align-items:stretch; gap:5px;
-  padding:14px 0 8px;             /* top room for the floating toolbars */
+  height:66px; min-height:66px;
+  padding:0; gap:0;
+  overflow-x:auto; overflow-y:hidden;
   scroll-padding-left:8px;
   /* Ableton-style grid backdrop: faint beat lines, a stronger one every bar (4 beats). */
   background-image:
     repeating-linear-gradient(90deg, color-mix(in oklab, var(--accent) 26%, transparent) 0 1px, transparent 1px calc(var(--px-beat) * 4)),
     repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px var(--px-beat));
-  background-size:100% calc(100% - 22px);
+  background-size:calc(var(--grid-beats,8) * var(--px-beat)) 44px;
   background-position:0 14px;
   background-repeat:no-repeat;
 }
+/* spacer forces the scroll width to the full grid (clips are absolute) */
+.builder-row.is-timeline .builder-spacer { display:block; width:calc(var(--grid-beats,8) * var(--px-beat)); height:1px; }
 .builder-row.is-timeline .builder-step {
-  flex:0 0 auto;
+  position:absolute; top:14px; bottom:8px;
+  left:calc(var(--start,0) * var(--px-beat));
   width:calc(var(--beats,2) * var(--px-beat));
-  margin-left:calc(var(--lead,0) * var(--px-beat));   /* lead-in rest pushes the chord off the beat */
-  min-width:46px;
-  flex-direction:column; align-items:flex-start; justify-content:center; gap:3px;
+  min-width:42px;
+  display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:3px;
   padding:8px 13px 8px 11px;      /* right padding clears the resize grip */
   border-radius:11px !important;
   background:linear-gradient(180deg, rgba(232,68,26,.14), rgba(255,255,255,.04));
   overflow:visible;               /* let the floating toolbar escape the bar */
 }
+.builder-step.dragging { transition:none; box-shadow:0 8px 22px -6px rgba(232,68,26,.5); }
 .builder-row.is-timeline .builder-step .step-chord {
   max-width:100%; overflow:hidden; text-overflow:clip;
 }
@@ -145,22 +150,9 @@ body.light .builder-row.is-timeline .builder-step {
 .builder-step:hover .step-resize::before,
 .builder-step.resizing .step-resize::before { background:var(--accent) }
 .builder-step.resizing { box-shadow:0 0 0 1px rgba(232,68,26,.5); transition:none }
-/* Left-edge grip to nudge the chord off the beat (contratiempo) */
-.builder-row.is-timeline .builder-step .step-shift {
-  position:absolute; top:0; left:0; bottom:0; width:13px;
-  cursor:ew-resize; touch-action:none; z-index:5;
-  display:flex; align-items:center; justify-content:center;
-  opacity:0; transition:opacity .14s var(--ui-ease);
-}
-.builder-row.is-timeline .builder-step:hover .step-shift,
-.builder-step.shifting .step-shift { opacity:1 }
-.builder-step .step-shift::before {
-  content:''; width:3px; height:42%; border-radius:3px; background:var(--accent2); opacity:.55;
-}
-.builder-step.shifting .step-shift::before { opacity:1 }
-.builder-step.shifting { box-shadow:0 0 0 1px rgba(255,178,74,.55); transition:none }
-.builder-step.off { box-shadow:inset 2px 0 0 var(--accent2) }   /* off-beat marker */
-.builder-step.off.shifting { box-shadow:0 0 0 1px rgba(255,178,74,.55) }
+.builder-step.off { box-shadow:inset 2px 0 0 var(--accent2) }   /* off-beat (not on a downbeat) marker */
+.builder-row.is-timeline .builder-step { cursor:grab }
+.builder-step.dragging { cursor:grabbing }
 
 /* Sweeping playhead — always visible (dim when idle, bright when playing) */
 .builder-playhead {
