@@ -339,8 +339,8 @@ const BarDrag = {
       if (!dragging) return;
       ev.preventDefault();
       const snapped = Math.max(0, Math.round((startStart + dx / pxBeat) / SNAP) * SNAP);  // 1/4-beat snap
-      pos = orig.slice(); pos[i] = snapped;
-      _pushCollisions(pos, h, i, dx >= 0 ? 1 : -1);     // shove overlapped clips aside, cascading
+      pos[i] = snapped;                                  // pos persists across moves (push is a ratchet)
+      _pushCollisions(pos, h, i, snapped >= startStart ? 1 : -1);   // shove overlapped clips aside; they stay shoved
       apply(pos);
     };
     const up = () => {
