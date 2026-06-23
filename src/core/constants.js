@@ -1,7 +1,7 @@
 // ── CONSTANTS ─────────────────────────────────────────
 // Pure data. No DOM access. No state mutation.
 
-const APP_VERSION = 'V5.56';
+const APP_VERSION = 'V5.57';
 // NOTE: storage key kept as-is across the "Quinta" rebrand so existing saved
 // state/progressions are not wiped. It's an internal key, never shown to users.
 const STORAGE_KEY = 'easy-fifth-circle:v1';
@@ -70,9 +70,7 @@ const PALETTES = [
     flow:['#05202a','#1fa6ff','#9b3cff','#ff5fa2','#00e0b8']},
   {name:'Dusk',   bg:'#0c080f', colors:['#ff5fa2','#a64bff','#ffb347'],
     flow:['#180b24','#a64bff','#ff5fa2','#ffb347','#46e0c0']},
-  {name:'Amber',  bg:'#0c0a06', colors:['#ffd24a','#ff7a1a','#ff2e6e'],
-    flow:['#1c0e06','#ff2e6e','#ff7a1a','#ffd24a','#7b2ff7']},
-  {name:'Sunset', bg:'#0d0608', colors:['#ff6a3d','#ff2e63','#ffd24a'],
+  {name:'Sunset', bg:'#0d0608', colors:['#ffd24a','#ff7a1a','#ffe08a'],   // swatch is yellow (golden palette)
     flow:['#2a0a18','#a01e5a','#ff4d4d','#ff9e3d','#ffe08a']},      // wine→magenta→red→orange→gold
   {name:'Ocean',  bg:'#060c12', colors:['#2a9bd6','#1fd6c0','#9b6bff'],
     flow:['#06182e','#13427a','#1f8fd6','#3fd0e0','#bfeeff']},      // deep blue→teal→cyan→pale
