@@ -375,6 +375,8 @@ function toggleProgPlay() {
     if (prodOn && typeof stopPlay === 'function') stopPlay();
     return;
   }
+  // Chain on → play the whole song from the top (section A).
+  if (st.chain && _sectionHas('A') && st.activeSection !== 'A') switchSection('A');
   playProgression();
 }
 
@@ -382,6 +384,37 @@ function toggleProgPlay() {
 function toggleLoop(el) {
   st.loop = !st.loop; saveState();
   if (el) { el.classList.toggle('active', !!st.loop); el.setAttribute('aria-pressed', !!st.loop); }
+}
+
+// ── A/B sections ──────────────────────────────────────
+// Switch the editable part. st.history mirrors the active section, so swapping it
+// re-points everything (render, add, play) at the other part without touching them.
+function switchSection(name, opts) {
+  opts = opts || {};
+  if ((name !== 'A' && name !== 'B') || !st.sections) return;
+  if (name === st.activeSection && !opts.force) { _syncSectionTabs(); return; }
+  st.sections[st.activeSection] = st.history;          // stash the current part
+  st.activeSection = name;
+  st.history = st.sections[name] || (st.sections[name] = []);
+  if (!opts.keepPlaying && typeof _progRAF !== 'undefined' && _progRAF) stopProgression();
+  _playheadBeat = 0;
+  HistoryEngine.render();
+  if (typeof renderProgressionStory === 'function') renderProgressionStory();
+  if (typeof GuitarShapes === 'object') GuitarShapes.onProgressionChange();
+  _syncSectionTabs();
+  saveState();
+}
+function _syncSectionTabs() {
+  document.querySelectorAll('.sect-tab').forEach(b =>
+    b.classList.toggle('active', b.dataset.sect === st.activeSection));
+}
+function _sectionHas(name) {
+  return !!(st.sections && Array.isArray(st.sections[name]) && st.sections[name].length);
+}
+// Chain toggle — when on, Play runs the whole song A→B instead of just one part.
+function toggleChain(el) {
+  st.chain = !st.chain; saveState();
+  if (el) { el.classList.toggle('active', !!st.chain); el.setAttribute('aria-pressed', !!st.chain); }
 }
 // Reveal/hide the secondary builder actions (keeps the bar clean by default).
 function toggleBuilderMore(el) {
@@ -405,6 +438,8 @@ function initPlayOpts() {
   const c = document.getElementById('countInBtn'); if (c) { c.classList.toggle('active', !!st.countIn); c.setAttribute('aria-pressed', !!st.countIn); }
   const v = document.getElementById('voicingBtn'); if (v) { v.classList.toggle('active', !!st.voicingOpen); v.setAttribute('aria-pressed', !!st.voicingOpen); }
   const l = document.getElementById('loopBtn');   if (l) { l.classList.toggle('active', !!st.loop); l.setAttribute('aria-pressed', !!st.loop); }
+  const ch = document.getElementById('chainBtn'); if (ch) { ch.classList.toggle('active', !!st.chain); ch.setAttribute('aria-pressed', !!st.chain); }
+  if (typeof _syncSectionTabs === 'function') _syncSectionTabs();
 }
 
 function playProgression() {
@@ -467,20 +502,26 @@ function playProgression() {
     }
     bars.forEach((b, k) => b.classList.toggle('playing', k === cur && elapsed < totalSec));
     if (elapsed < totalSec) { _progRAF = requestAnimationFrame(frame); }
-    else if (st.loop) {
-      // Loop on: restart from the top without stopping (the running metronome /
-      // count-in state carries over, so there's no extra count-in on each cycle).
+    else {
+      // A part finished. Decide what's next: continue the song (A→B), loop, or stop.
       bars.forEach(b => b.classList.remove('playing'));
       _progRAF = 0; _playheadBeat = 0;
-      playProgression();
-    }
-    else {
-      bars.forEach(b => b.classList.remove('playing'));
-      if (ph) ph.classList.remove('on');
-      _progRAF = 0; setProgBtn(false);
-      _playheadBeat = 0;
-      _updatePlayheadPos();
-      if (_metroStartedByPlay) { Metronome.stop(); _metroStartedByPlay = false; }
+      const chaining = !!st.chain && _sectionHas('A') && _sectionHas('B');
+      if (chaining && st.activeSection === 'A') {
+        switchSection('B', { keepPlaying: true });    // A → B (keeps metronome running)
+        playProgression();
+      } else if (st.loop) {
+        // Loop on: restart without stopping (the running metronome/count-in state
+        // carries over, so there's no extra count-in each cycle).
+        if (chaining) switchSection('A', { keepPlaying: true });   // song loop → back to A
+        playProgression();
+      } else {
+        if (chaining && st.activeSection === 'B') switchSection('A', { keepPlaying: true }); // reset view to A
+        if (ph) ph.classList.remove('on');
+        setProgBtn(false);
+        _updatePlayheadPos();
+        if (_metroStartedByPlay) { Metronome.stop(); _metroStartedByPlay = false; }
+      }
     }
   };
   _progRAF = requestAnimationFrame(frame);

@@ -217,10 +217,15 @@
         <div class="builder-head">
           <div>
             <h2 class="builder-title" data-i18n="builder.title">Progression builder</h2>
+            <div class="sect-tabs" role="group" aria-label="Song sections">
+              <button class="sect-tab active" data-sect="A" onclick="switchSection('A')" aria-label="Section A">A</button>
+              <button class="sect-tab" data-sect="B" onclick="switchSection('B')" aria-label="Section B">B</button>
+            </div>
           </div>
           <div class="builder-actions">
             <button class="builder-btn play" id="playProgBtn" data-ico="play" onclick="toggleProgPlay()"><span data-i18n="builder.play">Play</span></button>
             <button class="builder-btn opt" id="loopBtn" data-ico="loop" onclick="toggleLoop(this)" title="Loop the progression" aria-label="Loop" aria-pressed="false"></button>
+            <button class="builder-btn opt sect-chain" id="chainBtn" onclick="toggleChain(this)" title="Play section A then B as one song" aria-label="Chain A to B" aria-pressed="false">A→B</button>
             <button class="builder-btn opt" id="moreBtn" data-ico="more" onclick="toggleBuilderMore(this)" title="More actions" aria-label="More actions" aria-expanded="false"></button>
             <div class="builder-more" id="builderMore" hidden>
               <button class="builder-btn opt" id="countInBtn" data-ico="countin" onclick="togglePlayOpt('countIn',this)" title="One-bar count-in before play" aria-label="Count-in before play" aria-pressed="false"></button>
