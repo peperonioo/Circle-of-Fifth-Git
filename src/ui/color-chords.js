@@ -56,7 +56,8 @@ const ColorChords = (() => {
   function _pivot(curPc, curMaj, tgtPc, tgtMaj) {
     const shared = _triads(curPc,curMaj).filter(a => _triads(tgtPc,tgtMaj).some(b => b.pc===a.pc && b.q===a.q));
     if (!shared.length) return null;
-    return _cn(shared.find(s => s.pc !== curPc) || shared[0]);
+    const c = shared.find(s => s.pc !== curPc) || shared[0];
+    return { pc:c.pc, q:c.q, name:_cn(c) };       // the bridge chord, addable to the progression
   }
 
   function modTargets() {
@@ -97,10 +98,14 @@ const ColorChords = (() => {
       </div>
       <div class="cx-body">
 
+        <p class="cx-intro">${es
+          ? 'Acordes de fuera de tu tonalidad. <b>Préstalos</b> para dar color y volver, o <b>modula</b> a otra tonalidad.'
+          : 'Chords from outside your key. <b>Borrow</b> one for colour and return, or <b>modulate</b> to a new key.'}</p>
+
         <div class="cx-section">
           <div class="cx-label">
             <span class="cx-tag">${es ? 'PRÉSTAMO' : 'BORROW'}</span>
-            <span class="cx-sub">${es ? 'lo usas y vuelves a casa' : 'use it and return home'}</span>
+            <span class="cx-sub">${es ? 'toca para oírlo · ＋ lo añade a tu progresión' : 'tap to hear · ＋ adds it to your progression'}</span>
           </div>
           <div class="mod-list">
             ${cc.map((c,i) => `
@@ -108,7 +113,7 @@ const ColorChords = (() => {
                 <span class="mod-role">${L(c.role)}</span>
                 <span class="cc-name">${c.name}</span>
                 <span class="mod-why">${L(c.why)}</span>
-                <button class="cc-add" onclick="event.stopPropagation();ColorChords.add(${i})" aria-label="Add">＋</button>
+                <button class="cc-add" onclick="event.stopPropagation();ColorChords.add(${i})" aria-label="${es?'Añadir a la progresión':'Add to progression'}">＋</button>
               </div>`).join('')}
           </div>
         </div>
@@ -120,14 +125,14 @@ const ColorChords = (() => {
         <div class="cx-section">
           <div class="cx-label">
             <span class="cx-tag cx-tag-mod">${es ? 'MODULACIÓN' : 'MODULATE'}</span>
-            <span class="cx-sub">${es ? 'el pivote es el puente entre dos tonalidades' : 'the pivot chord bridges two keys'}</span>
+            <span class="cx-sub">${es ? 'añade el acorde pivote (el puente) y cambia de tonalidad' : 'adds the pivot chord (the bridge), then changes key'}</span>
           </div>
           <div class="mod-list">
-            ${mts.map(tg => `
-              <button class="cx-mod-item" onclick="ColorChords.jump('${tg.sector}','${tg.view}')">
+            ${mts.map((tg,i) => `
+              <button class="cx-mod-item${tg.pivot ? '' : ' no-pivot'}" onclick="ColorChords.modulateTo(${i})">
                 <span class="mod-role">${tg.label}</span>
                 <span class="cx-mod-name">${tg.name}</span>
-                ${tg.pivot ? `<span class="cx-pivot">${es?'pivote':'pivot'} · <b>${tg.pivot}</b></span>` : '<span></span>'}
+                ${tg.pivot ? `<span class="cx-pivot">${es?'añade':'add'} <b>${tg.pivot.name}</b> →</span>` : '<span></span>'}
                 <span class="cx-mod-why">${tg.why}</span>
               </button>`).join('')}
           </div>
@@ -156,8 +161,22 @@ const ColorChords = (() => {
     if (typeof wheelLocked !== 'undefined' && wheelLocked && typeof setWheelLock === 'function') setWheelLock(false);
     AppActions.setKey(sector);
     AppActions.setWheelView(view);
-    if (typeof tel === 'function') tel('modulate');
     close();
+  }
+
+  // Modulate = drop the pivot chord (the bridge, shared by both keys) into the
+  // progression, then switch the wheel to the new key so what you add next is in it.
+  function modulateTo(i) {
+    const tg = modTargets()[i]; if (!tg) return;
+    if (tg.pivot) {
+      const q = tg.pivot.q, quality = q === 'm' ? 'Min' : q === '°' ? 'Dim' : 'Maj';
+      const iv = q === 'm' ? MIN : q === '°' ? [0,3,6] : MAJ;
+      if (typeof HistoryEngine === 'object' && HistoryEngine.addCustom)
+        HistoryEngine.addCustom({ note:nm(tg.pivot.pc), chord:tg.pivot.name, quality, variant:null });
+      if (typeof AudioEngine === 'object') AudioEngine.playChord(iv.map(x => tg.pivot.pc + x));
+    }
+    if (typeof tel === 'function') tel('modulate', { pivot: !!tg.pivot });
+    jump(tg.sector, tg.view);
   }
 
   function show() {
@@ -174,5 +193,5 @@ const ColorChords = (() => {
   }
   function toggle() { _open ? close() : show(); }
 
-  return { toggle, show, close, preview, add, jump, isOpen: () => _open };
+  return { toggle, show, close, preview, add, jump, modulateTo, isOpen: () => _open };
 })();
