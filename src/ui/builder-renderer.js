@@ -89,11 +89,18 @@ function _pushCollisions(pos, h, di, dir) {
     others.sort((a, b) => pos[a] - pos[b]).forEach(k => {
       if (pos[k] < frontier && pos[k] + len(k) > pos[di]) { pos[k] = frontier; frontier = pos[k] + len(k); }
     });
-  } else {                                               // dragging left → shove left
+  } else {                                               // dragging left → shove left; the start (0) is a hard wall
     let frontier = pos[di];
+    const moved = [];
     others.sort((a, b) => pos[b] - pos[a]).forEach(k => {
-      if (pos[k] + len(k) > frontier && pos[k] < pos[di] + len(di)) { pos[k] = Math.max(0, frontier - len(k)); frontier = pos[k]; }
+      if (pos[k] + len(k) > frontier && pos[k] < pos[di] + len(di)) { pos[k] = frontier - len(k); moved.push(k); frontier = pos[k]; }
     });
+    // No room left before the start → push the dragged clip (and the shoved chain)
+    // back by the overflow so clips hit a wall instead of piling up on top of each other.
+    if (moved.length) {
+      const overflow = -Math.min(...moved.map(k => pos[k]));
+      if (overflow > 0) { pos[di] += overflow; moved.forEach(k => pos[k] += overflow); }
+    }
   }
 }
 
