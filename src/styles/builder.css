@@ -90,6 +90,20 @@ body.light .builder-step  { background:rgba(0,0,0,.04) }
 .builder-arrow:nth-of-type(n+5){ animation-delay:800ms }
 @media (prefers-reduced-motion: reduce){ .builder-arrow{ animation:none; opacity:.42 } }
 
+/* ── Bar/beat ruler + snap selector ──────────────────*/
+.builder-ruler        { position:relative; height:18px; margin:0 0 3px; overflow:hidden }
+.builder-ruler[hidden]{ display:none }
+.ruler-marks          { position:absolute; left:0; top:0; height:100%; will-change:transform }
+.rk-bar               { position:absolute; top:1px; font-family:'DM Mono',monospace; font-size:9px; color:var(--muted); transform:translateX(2px) }
+.rk-beat              { position:absolute; top:11px; width:1px; height:5px; background:var(--line) }
+.snap-btn             { position:absolute; right:0; top:0; height:18px; padding:0 9px; border-radius:6px;
+                        border:1px solid var(--line); background:rgba(14,12,18,.92); color:var(--muted);
+                        font-family:'DM Mono',monospace; font-size:9.5px; letter-spacing:.02em; cursor:pointer; z-index:2;
+                        transition:color .15s, border-color .15s }
+body.light .snap-btn  { background:rgba(250,247,241,.94) }
+.snap-btn:hover       { color:var(--ink); border-color:rgba(232,68,26,.42) }
+.snap-btn::before     { content:'snap '; color:var(--muted); opacity:.7 }
+
 /* ── DAW grid mode (absolute clip placement) ─────────*/
 .builder-row.is-timeline {
   position:relative;

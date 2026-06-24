@@ -3,8 +3,49 @@
 
 let _playheadBeat = 0, _metroStartedByPlay = false;
 
-const SNAP = 0.25;      // 1/4-beat (16th-note) grid snap for free placement
 const GRID_MIN = 8;     // always show at least 2 bars of grid to drop clips into
+// Drag snap, in beats. Cycled by the snap button on the ruler.
+const SNAP_STEPS = [{ label: '1/4', v: 1 }, { label: '1/8', v: 0.5 }, { label: '1/16', v: 0.25 }, { label: 'free', v: 0 }];
+function _snapVal() { return (typeof st.snap === 'number') ? st.snap : 0.25; }
+function _snapTo(x) { const s = _snapVal(); return s > 0 ? Math.round(x / s) * s : x; }
+function _snapLabel() { return (SNAP_STEPS.find(s => s.v === _snapVal()) || SNAP_STEPS[2]).label; }
+function cycleSnap() {
+  const i = SNAP_STEPS.findIndex(s => s.v === _snapVal());
+  const next = SNAP_STEPS[(i + 1) % SNAP_STEPS.length] || SNAP_STEPS[2];
+  st.snap = next.v; saveState();
+  const b = document.getElementById('snapBtn'); if (b) b.textContent = next.label;
+}
+
+// Build the bar/beat ruler above the grid (bar numbers + beat ticks), aligned to
+// the same px-beat as the clips, and keep it scroll-synced with the grid.
+function _renderRuler(gridBeats) {
+  const ruler = document.getElementById('builderRuler');
+  const marks = document.getElementById('rulerMarks');
+  const snapB = document.getElementById('snapBtn');
+  if (!ruler || !marks) return;
+  ruler.hidden = false;
+  if (snapB) snapB.textContent = _snapLabel();
+  const pxBeat = _pxBeat();
+  const bars = Math.ceil(gridBeats / 4);
+  let html = '';
+  for (let b = 0; b < bars; b++) {
+    html += `<span class="rk-bar" style="left:${b * 4 * pxBeat}px">${b + 1}</span>`;
+    for (let bt = 1; bt < 4; bt++) html += `<span class="rk-beat" style="left:${(b * 4 + bt) * pxBeat}px"></span>`;
+  }
+  marks.style.width = (gridBeats * pxBeat) + 'px';
+  marks.innerHTML = html;
+  const fr = document.getElementById('flowRow');
+  if (fr) {
+    marks.style.transform = `translateX(${-fr.scrollLeft}px)`;
+    if (!fr._rulerSync) {       // sync the ruler to horizontal grid scroll (once)
+      fr._rulerSync = true;
+      fr.addEventListener('scroll', () => {
+        const m = document.getElementById('rulerMarks');
+        if (m) m.style.transform = `translateX(${-fr.scrollLeft}px)`;
+      }, { passive: true });
+    }
+  }
+}
 
 // Horizontal pixels per beat (set in CSS on the timeline row).
 function _pxBeat() {
@@ -209,6 +250,7 @@ const HistoryEngine = {
     if (!h.length) {
       root.classList.remove('is-timeline');
       root.innerHTML = `<div class="builder-empty">${t('builder.empty')}</div>`;
+      const ruler = document.getElementById('builderRuler'); if (ruler) ruler.hidden = true;
       BuilderEngine.meta();
       if (typeof GuitarShapes === 'object') GuitarShapes.onProgressionChange();
       return;
@@ -221,6 +263,7 @@ const HistoryEngine = {
     const { total } = _layout(h);
     const gridBeats = Math.max(GRID_MIN, Math.ceil(total / 4) * 4);   // round up to whole bars, ≥2 bars
     root.style.setProperty('--grid-beats', gridBeats);
+    _renderRuler(gridBeats);
     root.innerHTML = h.map((it, i) => `
       <div data-uid="${it.uid || i}" data-i="${i}" class="builder-step${(it.start || 0) % 1 ? ' off' : ''}" style="--beats:${it.beats};--start:${it.start || 0}"
         role="button" tabindex="0"
@@ -266,8 +309,9 @@ const DurationDrag = {
     try { bar.setPointerCapture(e.pointerId); } catch (_) {}
     let lastBeats = startBeats;
     const move = ev => {
-      const dBeats = Math.round(((ev.clientX - startX) / pxBeat) * 2) / 2;  // snap ½
-      const nb = Math.max(1, Math.min(8, startBeats + dBeats));
+      const raw = startBeats + (ev.clientX - startX) / pxBeat;
+      const s = _snapVal();
+      const nb = Math.max(0.25, Math.min(16, s > 0 ? Math.round(raw / s) * s : raw));  // snap per the ruler setting
       item.beats = nb;
       bar.style.setProperty('--beats', nb);
       const lab = bar.querySelector('.step-len'); if (lab) lab.textContent = fmtBeats(nb);
@@ -338,7 +382,7 @@ const BarDrag = {
       if (!dragging && Math.abs(dx) > 6) { dragging = true; bar.classList.add('dragging'); bar.style.zIndex = '6'; }
       if (!dragging) return;
       ev.preventDefault();
-      const snapped = Math.max(0, Math.round((startStart + dx / pxBeat) / SNAP) * SNAP);  // 1/4-beat snap
+      const snapped = Math.max(0, _snapTo(startStart + dx / pxBeat));   // snap per the ruler setting
       pos[i] = snapped;                                  // pos persists across moves (push is a ratchet)
       _pushCollisions(pos, h, i, snapped >= startStart ? 1 : -1);   // shove overlapped clips aside; they stay shoved
       apply(pos);
