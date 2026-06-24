@@ -57,7 +57,7 @@ const AudioEngine = {
   drumHit(type, when = 0, accent = false) {
     if (!this.resume()) return;
     const t = when || this.ctx.currentTime;
-    const fn = { kick:'_kick', clap:'_clap', snare:'_snare', hat:'_hat', open:'_openhat', shaker:'_shaker', rim:'_rim' }[type];
+    const fn = { kick:'_kick', clap:'_clap', snare:'_snare', hat:'_hat', open:'_openhat', shaker:'_shaker', rim:'_rim', tom:'_tom', ride:'_ride', cowbell:'_cowbell' }[type];
     if (fn && this[fn]) this[fn](t, accent);
   },
   _noise(t, dur, decay) {
@@ -130,6 +130,36 @@ const AudioEngine = {
     const g = ctx.createGain(); g.gain.setValueAtTime(accent ? 0.3 : 0.22, t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
     o.connect(g); g.connect(this.drumBus); o.start(t); o.stop(t + 0.04);
+  },
+  _tom(t, accent) {                       // pitched membrane — sine with a downward sweep
+    const ctx = this.ctx, o = ctx.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(accent ? 220 : 180, t);
+    o.frequency.exponentialRampToValueAtTime(88, t + 0.18);
+    const g = ctx.createGain(); g.gain.setValueAtTime(accent ? 0.5 : 0.4, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+    o.connect(g); g.connect(this.drumBus); o.start(t); o.stop(t + 0.32);
+  },
+  _ride(t, accent) {                      // metallic ping (inharmonic squares) + a short wash
+    const ctx = this.ctx, out = this.drumBus;
+    [2300, 3450, 5200].forEach((f, i) => {
+      const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = f;
+      const g = ctx.createGain(); g.gain.setValueAtTime((accent ? 0.055 : 0.04) / (i + 1), t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+      o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.52);
+    });
+    const src = this._noise(t, 0.45, 1.2);
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 7200; bp.Q.value = 0.7;
+    const ng = ctx.createGain(); ng.gain.setValueAtTime(accent ? 0.1 : 0.07, t);
+    ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+    src.connect(bp); bp.connect(ng); ng.connect(out);
+  },
+  _cowbell(t, accent) {                   // 808 cowbell — two detuned squares through a bandpass
+    const ctx = this.ctx, out = this.drumBus;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2640; bp.Q.value = 1.1;
+    const g = ctx.createGain(); g.gain.setValueAtTime(accent ? 0.28 : 0.2, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+    bp.connect(g); g.connect(out);
+    [540, 800].forEach(f => { const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = f; o.connect(bp); o.start(t); o.stop(t + 0.2); });
   },
 
   _impulse(dur, decay) {

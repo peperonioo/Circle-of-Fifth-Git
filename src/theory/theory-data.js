@@ -76,6 +76,7 @@ const PRODUCTION_DATA = {
       {label:{en:'Clap', es:'Clap'},  cl:'clap',  snd:'clap', p:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0]},
       {label:{en:'Hat',  es:'H-hat'}, cl:'hat-c', snd:'hat',  p:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0]},
       {label:{en:'Open', es:'Open'},  cl:'hat-o', snd:'open', p:[0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0]},
+      {label:{en:'Bell', es:'Cowb'},  cl:'cowb',  snd:'cowbell', p:[0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0]},
     ],
   },
   neosoul: {
@@ -130,6 +131,7 @@ const PRODUCTION_DATA = {
       {label:{en:'Snare',es:'Caja'},  cl:'clap',  snd:'snare',  p:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1]},
       {label:{en:'Hat',  es:'H-hat'}, cl:'hat-c', snd:'hat',    p:[1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1]},
       {label:{en:'Shake',es:'Shkr'},  cl:'shaker',snd:'shaker', p:[0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1]},
+      {label:{en:'Rim',  es:'Rim'},   cl:'rim',   snd:'rim',    p:[0,0,1,0,0,1,0,0,0,0,1,0,0,1,0,0]},
     ],
   },
 
@@ -181,10 +183,11 @@ const PRODUCTION_DATA = {
     chordLane:[0,0,1,0, 1,0,1,0, 0,0,1,0, 1,0,0,0],
     bassLane: [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
     pattern:[
-      {label:{en:'Ride', es:'Ride'},  cl:'hat-c', snd:'hat',   p:[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0]},
+      {label:{en:'Ride', es:'Ride'},  cl:'ride',  snd:'ride',  p:[1,0,0,0,1,0,1,0,1,0,0,0,1,0,1,0]},  // spang-a-lang
       {label:{en:'Snare',es:'Caja'}, cl:'clap',  snd:'snare', p:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0]},
       {label:{en:'Kick', es:'Bombo'},cl:'',      snd:'kick',  p:[1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0]},
       {label:{en:'H-hat',es:'H-hat'},cl:'shaker',snd:'shaker',p:[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0]},
+      {label:{en:'Tom',  es:'Tom'},  cl:'tom',   snd:'tom',   p:[0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1]},
     ],
   },
 };

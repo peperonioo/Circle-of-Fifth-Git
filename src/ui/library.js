@@ -13,6 +13,10 @@ const PROG_PRESETS = [
   { name: 'i–♭VI–♭VII–i',     tag: 'Cinematic', idx: [0, 5, 6, 0] },
   { name: 'i–♭VII–♭VI–V',     tag: 'Andalusian',idx: [0, 6, 5, 4] },
   { name: '12-bar blues',     tag: 'Blues',     idx: [0, 0, 0, 0, 3, 3, 0, 0, 4, 3, 0, 4] },
+  { name: 'I–V–vi–iii–IV',    tag: 'Canon',     idx: [0, 4, 5, 2, 3, 0, 3, 4] },
+  { name: 'I–vi–ii–V',        tag: 'Doo-wop',   idx: [0, 5, 1, 4] },
+  { name: 'i–iv–v–i',         tag: 'Minor',     idx: [0, 3, 4, 0] },
+  { name: 'I–IV–vi–V',        tag: 'Pop II',    idx: [0, 3, 5, 4] },
 ];
 
 const Library = {
