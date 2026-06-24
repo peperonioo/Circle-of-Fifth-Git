@@ -47,6 +47,27 @@ function _renderRuler(gridBeats) {
   }
 }
 
+// Scroll-driven focus: once you scroll down to the progression builder (the wheel
+// has gone off the top), it expands to fill the screen so the section you're in is
+// the protagonist. Hysteresis (enter at 34% of the viewport, leave at 56%) avoids
+// flicker at the boundary. Only kicks in when you're actually building.
+function initBuilderFocus() {
+  const el = document.getElementById('progressionBuilder'); if (!el) return;
+  let ticking = false;
+  const update = () => {
+    ticking = false;
+    const body = document.body;
+    if (!body.classList.contains('building')) { body.classList.remove('focus-builder'); return; }
+    const top = el.getBoundingClientRect().top, vh = innerHeight || 1;
+    const on = body.classList.contains('focus-builder');
+    if (!on && top < vh * 0.34) body.classList.add('focus-builder');
+    else if (on && top > vh * 0.56) body.classList.remove('focus-builder');
+  };
+  addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+  addEventListener('resize', () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+  update();
+}
+
 // Horizontal pixels per beat (set in CSS on the timeline row).
 function _pxBeat() {
   const root = document.getElementById('flowRow');

@@ -7,8 +7,17 @@
   box-shadow:0 4px 16px rgba(0,0,0,.15);
   position:relative; overflow:visible !important;
   will-change:transform,opacity;
+  transition:min-height .38s var(--ui-ease), box-shadow .38s var(--ui-ease);
 }
 body.light .progression-builder { background:rgba(250,247,241,.92) }
+
+/* Scroll-into-focus: the builder becomes the protagonist and fills the screen. */
+body.focus-builder .progression-builder {
+  min-height:90svh; display:flex; flex-direction:column;
+  box-shadow:0 10px 40px -12px rgba(0,0,0,.5);
+}
+body.focus-builder #flowRow.is-timeline { flex:1 1 auto; height:auto; min-height:120px; transition:none }
+body.focus-builder #wheelSvg { opacity:.5; transition:opacity .45s var(--ui-ease) }   /* fade the wheel above as you commit to building */
 .builder-head    { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px }
 .builder-title   { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:500 }
 /* A/B section tabs — segmented control under the title */
