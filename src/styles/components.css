@@ -84,7 +84,7 @@
   min-height: 30px; padding: 0 14px; border-radius: var(--r-full);
   border: 1px solid var(--line); background: var(--glass-1); color: var(--ink);
   font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
-  cursor: pointer; transition: background .15s var(--ease), border-color .15s, color .15s;
+  cursor: pointer; transition: background .15s var(--ease), border-color .15s, color .15s, transform .12s var(--ease);
 }
 .mood-btn:hover,
 .genre-btn:hover:not(.active) { border-color: var(--muted); color: var(--ink); }
@@ -104,6 +104,32 @@
 .genre-btn:focus-visible {
   outline: 2px solid var(--accent-light); outline-offset: 2px;
 }
+
+/* ── Press — every meaningful control sinks slightly when tapped ──
+   Pairs with the haptic() pulse so touch feels physical. Scales are tuned
+   per element size: bigger surfaces sink less. Honours reduced-motion. */
+.tabs .tab-btn:active,
+.wheel-toggle button:active,
+.gss-seg button:active,
+.metro-sounds .ms-btn:active,
+.builder-btn:active,
+.gss-btn:active,
+.mood-btn:active,
+.genre-btn:active { transform: scale(.95); }
+.builder-btn.play:active,
+.builder-btn.primary:active { transform: scale(.96); filter: brightness(.97); }
+@media (prefers-reduced-motion: reduce) {
+  .tabs .tab-btn:active, .wheel-toggle button:active, .gss-seg button:active,
+  .metro-sounds .ms-btn:active, .builder-btn:active, .gss-btn:active,
+  .mood-btn:active, .genre-btn:active,
+  .builder-btn.play:active, .builder-btn.primary:active { transform: none; }
+}
+
+/* ── Tab content entrance — the panel eases in on switch (V5.84) ──
+   switchTab() re-adds .tab-enter to restart this each time. */
+@keyframes tabEnter { from { opacity:0; transform:translateY(7px) scale(.996) } to { opacity:1; transform:none } }
+.tab-enter { animation: tabEnter .34s var(--ease) both; }
+@media (prefers-reduced-motion: reduce) { .tab-enter { animation: none } }
 
 /* Builder: secondary actions collapse behind the "⋯" button to keep the bar clean. */
 .builder-more { display:flex; gap:6px; align-items:center }

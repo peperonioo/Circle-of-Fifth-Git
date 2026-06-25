@@ -14,6 +14,9 @@ function switchTab(tab, btn) {
   document.getElementById('panel-production').style.display = tab === 'production' ? 'block' : 'none';
   document.body.dataset.tab = tab;            // drives the instrument dock visibility
   if (tab === 'production') { renderProduction(); applyI18n(); }
+  // Ease the freshly-shown panel in — remove + reflow + re-add to restart it.
+  const shown = document.getElementById(tab === 'production' ? 'panel-production' : 'panel-theory');
+  if (shown) { shown.classList.remove('tab-enter'); void shown.offsetWidth; shown.classList.add('tab-enter'); }
 }
 
 function setGenre(id, btn) {
