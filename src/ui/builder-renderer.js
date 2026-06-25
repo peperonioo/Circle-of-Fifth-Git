@@ -603,13 +603,15 @@ function playProgression() {
   // overlap or leave gaps, so we schedule them directly rather than as a packed
   // sequence — that's what makes free placement and contratiempo audible.
   const order = h.map((_, k) => k).sort((a, b) => starts[a] - starts[b]);
-  const t0audio = AudioEngine.now() + leadSec;
   let prevUpper = null;
   order.forEach(k => {
     const s = starts[k], endB = s + chordBeats[k];
     if (endB <= startBeat + 0.001) return;                          // already passed
     const whenBeat = s - startBeat;
-    const when = t0audio + Math.max(0, whenBeat) * secPerBeat;
+    // playChord adds ctx.currentTime, so `when` is a RELATIVE offset (lead-in + the
+    // clip's start). (Passing an absolute time double-counted currentTime and pushed
+    // every chord seconds into the future → silence.)
+    const when = leadSec + Math.max(0, whenBeat) * secPerBeat;
     const durB = whenBeat < 0 ? endB - startBeat : chordBeats[k];   // mid-clip resume → remaining time
     const v = AudioEngine._leadVoicing(prevUpper, chordPitchesForItem(h[k]));
     AudioEngine.playChord(v.all, Math.min(2.4, durB * secPerBeat * 0.96), when, false);
