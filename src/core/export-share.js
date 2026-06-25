@@ -19,20 +19,34 @@ function _midiNotesForItem(item) {
   return [tones[0] - 12].concat(tones).map(p => Math.max(0, Math.min(127, 60 + p)));
 }
 
-function buildMIDI() {
-  const h = Array.isArray(st.history) ? st.history : [];
-  if (!h.length) return null;
+// The chords to take out of the app, with absolute `start` (beats) so gaps and
+// off-beat placements survive. Chains A→B (B after A, rounded to whole bars) when
+// the song is set to play through; otherwise it's the active section.
+function _exportSong() {
+  if (st.sections && st.activeSection) st.sections[st.activeSection] = st.history;   // capture edits
+  const A = (st.sections && st.sections.A) || st.history || [];
+  const B = (st.sections && st.sections.B) || [];
+  const end = arr => arr.reduce((m, it) => Math.max(m, (it.start || 0) + Math.max(0.25, it.beats || 2)), 0);
+  if (st.chain && A.length && B.length) {
+    const off = Math.ceil(end(A) / 4) * 4;          // start B on a whole bar after A
+    return A.concat(B.map(it => ({ ...it, start: (it.start || 0) + off })));
+  }
+  return Array.isArray(st.history) ? st.history : [];
+}
 
-  // Absolute-timed events, then emit as deltas.
+function buildMIDI() {
+  const song = _exportSong();
+  if (!song.length) return null;
+
+  // Absolute-timed events (by each clip's grid start), then emit as deltas.
   const events = [];
-  let tick = 0;
-  h.forEach(it => {
-    const dur = Math.round(Math.max(1, it.beats || 2) * _MIDI_TPQ);
+  song.forEach(it => {
+    const startTick = Math.round(Math.max(0, it.start || 0) * _MIDI_TPQ);
+    const dur = Math.round(Math.max(0.25, it.beats || 2) * _MIDI_TPQ);
     _midiNotesForItem(it).forEach(n => {
-      events.push({ t: tick, on: 1, n });
-      events.push({ t: tick + dur, on: 0, n });
+      events.push({ t: startTick, on: 1, n });
+      events.push({ t: startTick + dur, on: 0, n });
     });
-    tick += dur;
   });
   // off-before-on at the same tick so re-struck notes don't hang
   events.sort((a, b) => a.t - b.t || a.on - b.on);
@@ -88,11 +102,28 @@ function _b64urlDecode(str) {
   return decodeURIComponent(escape(atob(str)));
 }
 
+// One chord ↔ a compact array. Index 8 = `start` (grid position) so off-beat and
+// gaps survive; older links without it just pack (back-compatible).
+function _encChord(it) {
+  return [it.chord, it.degree, it.quality, it.degreeIndex, it.note ?? null, it.key, it.mode, it.beats || 2, Math.round((it.start || 0) * 1000) / 1000];
+}
+function _decChord(r) {
+  return {
+    chord: r[0], degree: r[1], quality: r[2], degreeIndex: r[3],
+    note: r[4] ?? undefined, key: r[5], mode: r[6], beats: r[7] || 2,
+    start: typeof r[8] === 'number' ? r[8] : undefined,
+    uid: Date.now() + '-' + Math.random().toString(36).slice(2),
+  };
+}
+
 function buildShareURL() {
-  const h = Array.isArray(st.history) ? st.history : [];
+  if (st.sections && st.activeSection) st.sections[st.activeSection] = st.history;   // capture edits
+  const A = (st.sections && st.sections.A) || st.history || [];
+  const B = (st.sections && st.sections.B) || [];
   const payload = {
     k: st.key, m: st.mode, b: st.bpm || 100, s: st.sevenths ? 1 : 0,
-    h: h.map(it => [it.chord, it.degree, it.quality, it.degreeIndex, it.note ?? null, it.key, it.mode, it.beats || 2]),
+    sn: st.snap, ch: st.chain ? 1 : 0, as: st.activeSection === 'B' ? 'B' : 'A',
+    A: A.map(_encChord), B: B.map(_encChord),
   };
   const base = location.href.split('#')[0];
   return base + '#p=' + _b64urlEncode(JSON.stringify(payload));
@@ -116,11 +147,18 @@ function applyShareFromURL() {
     if (d.m) st.mode = d.m;
     if (d.b) st.bpm = d.b;
     st.sevenths = !!d.s;
-    st.history = (Array.isArray(d.h) ? d.h : []).map(r => ({
-      chord: r[0], degree: r[1], quality: r[2], degreeIndex: r[3],
-      note: r[4] ?? undefined, key: r[5], mode: r[6], beats: r[7] || 2,
-      uid: Date.now() + '-' + Math.random().toString(36).slice(2),
-    }));
+    if (typeof d.sn === 'number') st.snap = d.sn;
+    if (Array.isArray(d.A) || Array.isArray(d.B)) {
+      // New format: full A/B sections with grid positions.
+      st.sections = { A: (d.A || []).map(_decChord), B: (d.B || []).map(_decChord) };
+      st.activeSection = d.as === 'B' ? 'B' : 'A';
+      st.chain = !!d.ch;
+    } else {
+      // Old format: a flat list → section A (packs, no grid info).
+      st.sections = { A: (Array.isArray(d.h) ? d.h : []).map(_decChord), B: [] };
+      st.activeSection = 'A';
+    }
+    st.history = st.sections[st.activeSection];
     saveState();
     return true;
   } catch (_) { return false; }

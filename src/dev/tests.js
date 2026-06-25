@@ -307,13 +307,14 @@
 
     // ── Export & share (V4.2) ──
     withState({ key:'C', mode:'ionian', wheelView:'major', bpm:100, sevenths:false,
-                history:[{ chord:'C', degree:'I', quality:'Maj', degreeIndex:0, key:'C', mode:'ionian', beats:2 }] }, () => {
+                activeSection:'A', sections:{ A:[{ chord:'C', degree:'I', quality:'Maj', degreeIndex:0, key:'C', mode:'ionian', beats:2, start:1.5 }], B:[] },
+                history:[{ chord:'C', degree:'I', quality:'Maj', degreeIndex:0, key:'C', mode:'ionian', beats:2, start:1.5 }] }, () => {
       assert('MIDI export has a valid MThd header',
         safe(() => { const b = buildMIDI(); return !!b && String.fromCharCode(b[0], b[1], b[2], b[3]) === 'MThd'; }, false));
-      assert('Share link round-trips key + chords', safe(() => {
+      assert('Share link round-trips key + chords + grid position', safe(() => {
         const m = buildShareURL().match(/#p=(.+)/); if (!m) return false;
         const d = JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g, '+').replace(/_/g, '/')))));
-        return d.k === 'C' && d.h.length === 1 && d.h[0][0] === 'C';
+        return d.k === 'C' && d.A.length === 1 && d.A[0][0] === 'C' && d.A[0][8] === 1.5;   // [8] = start, off-beat preserved
       }, false));
     });
 
