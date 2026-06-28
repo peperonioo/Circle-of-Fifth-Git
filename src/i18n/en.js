@@ -30,6 +30,8 @@ const I18N_EN = {
   'builder.midi':      'MIDI',
   'builder.clear':     'Clear',
   'builder.empty':     'No chords yet — tap a suggestion bubble below to add one.',
+  'builder.surprise':  'Surprise me',
+  'builder.emptyHint': 'or tap a bubble below to build your own',
   'suggestions.title': 'Quick harmonic ideas',
   'suggestions.subtitle': 'Generated from the selected key and mode.',
   'suggest.title':     'Suggested next chords',

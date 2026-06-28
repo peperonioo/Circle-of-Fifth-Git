@@ -74,7 +74,30 @@ body.light .builder-btn.play.is-stop { background:#3a3a42; color:#fff }
 }
 .builder-row::-webkit-scrollbar        { height:3px }
 .builder-row::-webkit-scrollbar-thumb  { background:var(--muted); border-radius:3px }
-.builder-empty { font-size:11px; color:var(--muted); opacity:.7; padding:8px 0 }
+/* Empty state = the 30-second value moment. The "Surprise me" CTA is the hero:
+   one tap and something musical is already playing, before any learning. */
+.builder-empty {
+  display:flex; flex-direction:column; align-items:center; gap:9px;
+  padding:14px 0 10px; width:100%; text-align:center;
+}
+.surprise-btn {
+  display:inline-flex; align-items:center; gap:9px;
+  padding:11px 22px; border:0; border-radius:var(--r-full,999px); cursor:pointer;
+  font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; color:#fff;
+  background:linear-gradient(180deg, var(--accent-light,#ff7a4a), var(--accent,#ff5a3c));
+  box-shadow:0 8px 22px -6px var(--accent,#ff5a3c), inset 0 1px 0 rgba(255,255,255,.35);
+  transition:transform .12s var(--ease), filter .15s;
+}
+.surprise-btn .ico { width:18px; height:18px }
+.surprise-btn:hover  { filter:brightness(1.06) }
+.surprise-btn:active { transform:scale(.96) }
+@keyframes surprisePulse { 0%,100%{ box-shadow:0 8px 22px -6px var(--accent,#ff5a3c), inset 0 1px 0 rgba(255,255,255,.35) } 50%{ box-shadow:0 8px 30px -4px var(--accent,#ff5a3c), 0 0 0 4px rgba(232,68,26,.12), inset 0 1px 0 rgba(255,255,255,.35) } }
+.surprise-btn { animation:surprisePulse 2.8s ease-in-out infinite }
+@media (prefers-reduced-motion: reduce) { .surprise-btn { animation:none } }
+.builder-empty-hint { font-size:11px; color:var(--muted); opacity:.8 }
+/* Compact re-roll button in the actions bar carries the accent so it reads as "fun". */
+.surprise-opt { color:var(--accent2) }
+.surprise-opt .ico { width:16px; height:16px }
 .builder-step {
   position:relative; display:inline-flex; align-items:center; gap:7px;
   white-space:nowrap; border:1px solid var(--line);

@@ -19,6 +19,31 @@ const PROG_PRESETS = [
   { name: 'I–IV–vi–V',        tag: 'Pop II',    idx: [0, 3, 5, 4] },
 ];
 
+// "Surprise me" — drop a random, tonality-appropriate progression into the builder
+// and play it. This is the instant-reward / 30-second value moment for a brand-new
+// user: one tap and something musical is already sounding, before they learn a thing.
+const SURPRISE_POOL = { major: [0, 1, 2, 3, 4, 7, 8, 9, 11], minor: [5, 6, 10] };
+function surpriseMe(autoplay = true) {
+  if (typeof PROG_PRESETS === 'undefined') return;
+  if (typeof AudioEngine === 'object') AudioEngine.resume();       // unlock audio in this gesture
+  const minor = (st.tonality === 'minor') || (typeof modeIsMinor === 'function' && modeIsMinor(st.mode));
+  const pool = SURPRISE_POOL[minor ? 'minor' : 'major'];
+  let i, guard = 0;
+  do { i = pool[Math.floor(Math.random() * pool.length)]; } while (i === surpriseMe._last && pool.length > 1 && guard++ < 8);
+  surpriseMe._last = i;
+  const pr = PROG_PRESETS[i]; if (!pr) return;
+  st.history = [];
+  pr.idx.forEach(d => HistoryEngine.addDegree(d));
+  saveState();
+  RenderEngine.full();
+  haptic('ok');
+  if (typeof tel === 'function') tel('surprise', { preset: pr.name });
+  if (autoplay) {
+    if (typeof _progRAF !== 'undefined' && _progRAF && typeof stopProgression === 'function') stopProgression();
+    if (typeof playProgression === 'function') setTimeout(playProgression, 110);
+  }
+}
+
 const Library = {
   KEY: 'easy-fifth-circle:library',
   open: false,

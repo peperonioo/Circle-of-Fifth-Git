@@ -282,7 +282,11 @@ const HistoryEngine = {
 
     if (!h.length) {
       root.classList.remove('is-timeline');
-      root.innerHTML = `<div class="builder-empty">${t('builder.empty')}</div>`;
+      root.innerHTML = `<div class="builder-empty">
+        <button class="surprise-btn" data-ico="spark" onclick="surpriseMe()">${t('builder.surprise')}</button>
+        <div class="builder-empty-hint">${t('builder.emptyHint')}</div>
+      </div>`;
+      if (typeof applyIcons === 'function') applyIcons(root);
       const ruler = document.getElementById('builderRuler'); if (ruler) ruler.hidden = true;
       BuilderEngine.meta();
       if (typeof GuitarShapes === 'object') GuitarShapes.onProgressionChange();

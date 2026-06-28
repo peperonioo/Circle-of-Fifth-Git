@@ -30,6 +30,8 @@ const I18N_ES = {
   'builder.midi':      'MIDI',
   'builder.clear':     'Limpiar',
   'builder.empty':     'Sin acordes — toca una burbuja de abajo para añadir.',
+  'builder.surprise':  'Sorpréndeme',
+  'builder.emptyHint': 'o toca una burbuja abajo para crear la tuya',
   'suggestions.title': 'Ideas harmónicas',
   'suggestions.subtitle': 'Generadas desde la tonalidad y el modo seleccionados.',
   'suggest.title':     'Acordes sugeridos',

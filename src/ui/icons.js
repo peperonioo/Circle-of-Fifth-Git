@@ -28,6 +28,7 @@ const ICONS = {
   plus:      { p: '<path d="M12 5v14M5 12h14"/>' },
   check:     { p: '<path d="M5 12.5l4.5 4.5L19 6.5"/>' },
   expand:    { p: '<path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>' },
+  spark:     { p: '<path d="M12 2.4l1.75 6.6 6.6 1.75-6.6 1.75L12 19.1l-1.75-6.6L3.65 10.75l6.6-1.75z"/><circle cx="18.7" cy="5.3" r="1.15"/>', f: 1 },
 };
 
 // Build an inline SVG string for an icon (default 18px).
