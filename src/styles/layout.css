@@ -191,3 +191,23 @@ body.light .drawer:not([open]) { background:rgba(255,255,255,.48) }
 .scale-orbs { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px }
 .scale-orbs .chip { font-family:'DM Mono',monospace; font-size:10px; padding:2px 6px; border:1px solid var(--line); border-radius:5px }
 .scale-orbs .root-chip { border-color:rgba(232,68,26,.35); color:var(--accent2) }
+
+/* ── Desktop polish (≥1100px) ─────────────────────────────
+   The app started desktop and still lives there. On wide screens the wheel is
+   the centrepiece, so give it real size and let the side columns breathe — the
+   layout should feel designed for the space, not a mobile column stretched out.
+   Everything below 1100px (and the 860px mobile rules) is untouched. */
+@media (min-width:1100px) {
+  .app        { max-width:1280px; }
+  .main-row   { grid-template-columns:212px 1fr 212px; gap:24px; margin-bottom:24px; }
+  #wheelSvg   { width:min(50vw, 600px); height:min(50vw, 600px); }
+  .side .card { padding:15px 17px; }
+  .side .card .big { font-size:28px; }
+  /* The degrees + builder span the full (now wider) width — the grid gets more room. */
+  .theory-bottom { gap:14px; }
+}
+/* Extra-wide (≥1500px): let the centrepiece grow a touch more. */
+@media (min-width:1500px) {
+  .app      { max-width:1340px; }
+  #wheelSvg { width:min(46vw, 640px); height:min(46vw, 640px); }
+}
