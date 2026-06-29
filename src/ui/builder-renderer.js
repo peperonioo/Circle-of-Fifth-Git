@@ -186,6 +186,58 @@ function progressionNarrative() {
   return h.map(lbl).join(' → ');
 }
 
+// ── Undo (single level) ───────────────────────────────
+// Destructive replacements (Surprise me, Clear, loading a preset/saved) snapshot
+// the previous progression first, so an accidental tap is never fatal. A toast
+// offers Undo for a few seconds; Ctrl/⌘+Z works too.
+let _undoSnap = null, _undoToastT = null;
+function captureUndo() {
+  try { _undoSnap = { section: st.activeSection, history: JSON.parse(JSON.stringify(st.history || [])) }; }
+  catch (_) { _undoSnap = null; }
+}
+function undoLastChange() {
+  if (!_undoSnap) return;
+  const snap = _undoSnap; _undoSnap = null;
+  if (typeof _progRAF !== 'undefined' && _progRAF && typeof stopProgression === 'function') stopProgression();
+  if (snap.section && st.sections && st.sections[snap.section] != null &&
+      snap.section !== st.activeSection && typeof switchSection === 'function') {
+    switchSection(snap.section, { force: true });
+  }
+  try { st.history = JSON.parse(JSON.stringify(snap.history)); } catch (_) { st.history = snap.history; }
+  saveState();
+  if (typeof RenderEngine === 'object') RenderEngine.full(); else HistoryEngine.render();
+  haptic('ok');
+  _hideUndoToast();
+}
+// Call this BEFORE a destructive replacement. Snapshots + offers undo only when
+// something was actually at stake (non-empty progression).
+function snapshotAndOfferUndo(msgKey) {
+  if (!(st.history && st.history.length)) return;   // nothing to lose
+  captureUndo();
+  _showUndoToast(msgKey);
+}
+function _showUndoToast(msgKey) {
+  const el = document.getElementById('undoToast'); if (!el) return;
+  const m = el.querySelector('.ut-msg'); if (m) m.textContent = t(msgKey || 'undo.replaced');
+  el.classList.add('show');
+  clearTimeout(_undoToastT);
+  _undoToastT = setTimeout(_hideUndoToast, 7000);
+}
+function _hideUndoToast() {
+  const el = document.getElementById('undoToast'); if (el) el.classList.remove('show');
+  clearTimeout(_undoToastT);
+}
+// Ctrl/⌘+Z anywhere outside a text field restores the last destructive change.
+if (typeof addEventListener === 'function') {
+  addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+      const tag = (e.target && e.target.tagName) || '';
+      if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag) || (e.target && e.target.isContentEditable)) return;
+      if (_undoSnap) { e.preventDefault(); undoLastChange(); }
+    }
+  }, true);
+}
+
 const HistoryEngine = {
   max: 32,
 
@@ -260,6 +312,7 @@ const HistoryEngine = {
   },
 
   clear() {
+    snapshotAndOfferUndo('undo.cleared');
     _playheadBeat = 0;
     st.history = [];
     this.render();

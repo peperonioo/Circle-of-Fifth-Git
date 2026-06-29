@@ -32,6 +32,7 @@ function surpriseMe(autoplay = true) {
   do { i = pool[Math.floor(Math.random() * pool.length)]; } while (i === surpriseMe._last && pool.length > 1 && guard++ < 8);
   surpriseMe._last = i;
   const pr = PROG_PRESETS[i]; if (!pr) return;
+  if (typeof snapshotAndOfferUndo === 'function') snapshotAndOfferUndo('undo.replaced');  // recover an accidental tap
   st.history = [];
   pr.idx.forEach(d => HistoryEngine.addDegree(d));
   saveState();
@@ -88,6 +89,7 @@ const Library = {
 
   loadSaved(id) {
     const p = this._read().find(x => x.id === id); if (!p) return;
+    if (typeof snapshotAndOfferUndo === 'function') snapshotAndOfferUndo('undo.replaced');
     st.key = p.key; st.mode = p.mode;
     st.tonality = p.tonality || (modeIsMinor(p.mode) ? 'minor' : 'major');
     if (p.bpm) st.bpm = p.bpm;
@@ -101,6 +103,7 @@ const Library = {
   // Apply a preset's degree sequence in the current key/mode.
   loadPreset(i) {
     const pr = PROG_PRESETS[i]; if (!pr) return;
+    if (typeof snapshotAndOfferUndo === 'function') snapshotAndOfferUndo('undo.replaced');
     st.history = [];
     pr.idx.forEach(d => HistoryEngine.addDegree(d));
     saveState();

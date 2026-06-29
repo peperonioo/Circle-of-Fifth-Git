@@ -366,6 +366,12 @@
 
 <div id="copyToast" class="copy-toast" role="status" aria-live="polite"></div>
 
+<!-- Undo toast — appears after a destructive change (Surprise me / Clear / load) -->
+<div id="undoToast" class="undo-toast" role="status" aria-live="polite">
+  <span class="ut-msg"></span>
+  <button class="ut-btn" onclick="undoLastChange()" data-i18n="undo.btn">Undo</button>
+</div>
+
 <!-- Share-a-loop: shown when opened from a shared link -->
 <div id="sharedBanner" class="shared-banner" hidden role="dialog" aria-label="Shared loop">
   <span class="sb-ico" aria-hidden="true"></span>
