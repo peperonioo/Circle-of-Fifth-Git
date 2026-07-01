@@ -131,7 +131,7 @@ const Library = {
             <span class="lib-name">${p.name}</span>
             <span class="lib-chords">${this._savedChords(p).join(' · ')}</span>
           </button>
-          <button class="lib-del" onclick="Library.remove('${p.id}')" aria-label="Delete">✕</button>
+          <button class="lib-del" data-ico="close" data-ico-size="11" onclick="Library.remove('${p.id}')" aria-label="Delete"></button>
         </div>`).join('')
         : `<div class="lib-empty">No saved progressions yet.</div>`;
     }
@@ -143,5 +143,6 @@ const Library = {
           <span class="lib-chords">${this._presetChords(pr).join(' · ')}</span>
         </button>`).join('');
     }
+    if (typeof applyIcons === 'function') applyIcons(document.getElementById('libraryPanel'));
   },
 };

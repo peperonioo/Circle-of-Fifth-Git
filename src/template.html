@@ -75,7 +75,7 @@
     <div class="metro-panel" role="dialog" aria-label="Metronome">
       <div class="metro-head">
         <span class="metro-title" data-i18n="metro.title">Metronome</span>
-        <button class="metro-x" onclick="Metronome.toggleOpen()" aria-label="Close">✕</button>
+        <button class="metro-x" data-ico="close" data-ico-size="13" onclick="Metronome.toggleOpen()" aria-label="Close"></button>
       </div>
       <div class="metro-dialwrap">
         <svg id="metroDial" viewBox="0 0 180 180">
@@ -121,10 +121,10 @@
           </div>
           <div class="card-actions">
             <button class="card-action-btn" onclick="EmotionSuggester.toggle()" aria-haspopup="dialog">
-              <span class="cab-ico" aria-hidden="true">♡</span><span data-i18n="emotion.btn">Emotion</span>
+              <span data-ico="heart" data-ico-size="13" aria-hidden="true"></span><span data-i18n="emotion.btn">Emotion</span>
             </button>
             <button class="card-action-btn" onclick="ColorChords.toggle()" aria-haspopup="dialog">
-              <span class="cab-ico" aria-hidden="true">✦</span><span data-i18n="color.btn">Color</span>
+              <span data-ico="spark" data-ico-size="13" aria-hidden="true"></span><span data-i18n="color.btn">Color</span>
             </button>
           </div>
         </div>
@@ -219,7 +219,7 @@
         <div id="degrees" class="degrees-row"></div>
         <div class="deg-popup-wrap" id="degWrap">
           <div class="deg-popup" id="degPopup">
-            <button class="popup-close" onclick="closePopup()">✕</button>
+            <button class="popup-close" data-ico="close" data-ico-size="11" onclick="closePopup()" aria-label="Close"></button>
             <div class="deg-nav">
               <div class="deg-dots" id="degDots"></div>
               <span class="swipe-hint">scroll → navigate</span>
@@ -300,7 +300,7 @@
           <summary>
             <span data-i18n="drawers.piano">Piano</span>
             <button class="instr-expand" data-zoom-trigger title="Enlarge" aria-label="Enlarge piano"
-              onclick="event.stopPropagation();event.preventDefault();InstrumentZoom.show('piano')">⤢</button>
+              onclick="event.stopPropagation();event.preventDefault();InstrumentZoom.show('piano')" data-ico="expand" data-ico-size="14"></button>
             <span class="chev">⌄</span>
           </summary>
           <div class="drawer-body">
@@ -317,7 +317,7 @@
             <span data-i18n="drawers.guitar">Guitar / Fretboard</span>
             <button class="gss-btn" data-ico="shapes" onclick="event.stopPropagation();GuitarShapes.toggle()" title="Show chord shapes" aria-label="Show chord voicing diagrams"><span>Shapes</span></button>
             <button class="instr-expand" data-zoom-trigger title="Enlarge" aria-label="Enlarge fretboard"
-              onclick="event.stopPropagation();event.preventDefault();InstrumentZoom.show('guitar')">⤢</button>
+              onclick="event.stopPropagation();event.preventDefault();InstrumentZoom.show('guitar')" data-ico="expand" data-ico-size="14"></button>
             <span class="chev">⌄</span>
           </summary>
           <div class="drawer-body">
@@ -389,7 +389,7 @@
     <div class="sb-sub"></div>
   </div>
   <button class="sb-play" onclick="playSharedLoop()">Play</button>
-  <button class="sb-x" onclick="dismissSharedBanner()" aria-label="Dismiss">✕</button>
+  <button class="sb-x" data-ico="close" data-ico-size="12" onclick="dismissSharedBanner()" aria-label="Dismiss"></button>
 </div>
 
 <!-- INSTRUMENT FULLSCREEN / ENLARGE -->
@@ -412,7 +412,7 @@
 <div id="libraryPanel" class="lib-panel" role="dialog" aria-modal="true" aria-label="Progression library">
   <div class="lib-head">
     <span class="lib-title" data-i18n="library.title">Progression Library</span>
-    <button class="lib-close" onclick="Library.close()" aria-label="Close">✕</button>
+    <button class="lib-close" data-ico="close" data-ico-size="13" onclick="Library.close()" aria-label="Close"></button>
   </div>
   <div class="lib-save">
     <input id="libName" type="text" maxlength="40" placeholder="Name this progression…" aria-label="Progression name"
@@ -435,7 +435,7 @@
 <div id="settingsSheet" class="modulate-panel settings-sheet" role="dialog" aria-label="Settings" hidden>
   <div class="mod-head">
     <span class="mod-title" data-i18n="settings.title">Settings</span>
-    <button class="mod-x" onclick="Settings.close()" aria-label="Close">✕</button>
+    <button class="mod-x" data-ico="close" data-ico-size="12" onclick="Settings.close()" aria-label="Close"></button>
   </div>
   <div class="set-row">
     <span class="set-label" data-i18n="settings.theme">Theme</span>
@@ -506,7 +506,7 @@
       <div class="ts-section-label">Harmony</div>
       <div class="ts-tools">
         <button class="ts-tool ghost" onclick="EmotionSuggester.toggle()" data-i18n="emotion.btn">Emotion</button>
-        <button class="ts-tool ghost" onclick="ColorChords.toggle()"><span class="mod-ico" aria-hidden="true">✦</span><span data-i18n="color.btn">Colour chords</span></button>
+        <button class="ts-tool ghost" onclick="ColorChords.toggle()"><span data-ico="spark" data-ico-size="13" aria-hidden="true"></span><span data-i18n="color.btn">Colour chords</span></button>
       </div>
     </div>
   </div>

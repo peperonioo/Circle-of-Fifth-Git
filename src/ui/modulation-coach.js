@@ -58,7 +58,7 @@ const ModulationCoach = (() => {
     box.innerHTML = `
       <div class="mod-head">
         <span class="mod-title">${es ? '¿Hacia dónde modular?' : 'Where to modulate?'}</span>
-        <button class="mod-x" onclick="ModulationCoach.close()" aria-label="Close">✕</button>
+        <button class="mod-x" data-ico="close" data-ico-size="12" onclick="ModulationCoach.close()" aria-label="Close"></button>
       </div>
       <div class="mod-list">
         ${targets().map(tg => `
@@ -69,6 +69,7 @@ const ModulationCoach = (() => {
             ${tg.pivot ? `<span class="mod-pivot">${es ? 'pivote' : 'pivot'} · <b>${tg.pivot}</b></span>` : ''}
           </button>`).join('')}
       </div>`;
+    if (typeof applyIcons === 'function') applyIcons(box);
   }
 
   function show() {

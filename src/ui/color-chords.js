@@ -94,7 +94,7 @@ const ColorChords = (() => {
     box.innerHTML = `
       <div class="mod-head">
         <span class="mod-title">${es ? 'Más allá de la escala' : 'Beyond the key'}</span>
-        <button class="mod-x" onclick="ColorChords.close()" aria-label="Close">✕</button>
+        <button class="mod-x" data-ico="close" data-ico-size="12" onclick="ColorChords.close()" aria-label="Close"></button>
       </div>
       <div class="cx-body">
 
@@ -113,7 +113,7 @@ const ColorChords = (() => {
                 <span class="mod-role">${L(c.role)}</span>
                 <span class="cc-name">${c.name}</span>
                 <span class="mod-why">${L(c.why)}</span>
-                <button class="cc-add" onclick="event.stopPropagation();ColorChords.add(${i})" aria-label="${es?'Añadir a la progresión':'Add to progression'}">＋</button>
+                <button class="cc-add" onclick="event.stopPropagation();ColorChords.add(${i})" aria-label="${es?'Añadir a la progresión':'Add to progression'}" data-ico="plus" data-ico-size="14"></button>
               </div>`).join('')}
           </div>
         </div>
@@ -139,6 +139,7 @@ const ColorChords = (() => {
         </div>
 
       </div>`;
+    if (typeof applyIcons === 'function') applyIcons(box);
   }
 
   function preview(i) {

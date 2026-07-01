@@ -92,10 +92,11 @@ const ChordVariants = {
       <div class="cv-below">
         ${bot}
         <div class="cv-foot">
-          <button class="cv-act" onclick="ChordVariants._dup()" aria-label="Duplicate chord">＋</button>
-          <button class="cv-act danger" onclick="ChordVariants._del()" aria-label="Delete chord">×</button>
+          <button class="cv-act" data-ico="plus" data-ico-size="13" onclick="ChordVariants._dup()" aria-label="Duplicate chord"></button>
+          <button class="cv-act danger" data-ico="trash" data-ico-size="13" onclick="ChordVariants._del()" aria-label="Delete chord"></button>
         </div>
       </div>`;
+    if (typeof applyIcons === 'function') applyIcons(el);
     // size the gap to the bar so it shows through
     const gap = el.querySelector('.cv-mid');
     if (gap && this._anchorRect) gap.style.height = this._anchorRect.height + 'px';

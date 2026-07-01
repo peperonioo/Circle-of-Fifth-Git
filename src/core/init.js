@@ -292,8 +292,9 @@ function _showInstallNudge(ios) {
       <div class="in-sub">${ios ? t('install.ios') : t('install.sub')}</div>
     </div>
     ${ios ? '' : `<button class="in-btn" onclick="_acceptInstall()">${t('install.btn')}</button>`}
-    <button class="in-x" onclick="_dismissInstall()" aria-label="Dismiss">✕</button>`;
+    <button class="in-x" data-ico="close" data-ico-size="12" onclick="_dismissInstall()" aria-label="Dismiss"></button>`;
   document.body.appendChild(el);
+  if (typeof applyIcons === 'function') applyIcons(el);
   requestAnimationFrame(() => el.classList.add('show'));
   if (typeof tel === 'function') tel('install_prompt_shown', { ios: !!ios });
 }

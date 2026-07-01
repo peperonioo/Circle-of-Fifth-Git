@@ -109,7 +109,7 @@ function _buildBubblesHTML() {
   const beyond = `<button class="beyond-key" onclick="ColorChords.toggle()"
       title="${es ? 'Acordes fuera de tu tonalidad — préstamos y modulación' : 'Chords outside your key — borrow & modulate'}"
       aria-label="${es ? 'Acordes fuera de la escala' : 'Chords outside the key'}">
-      <span class="bk-ico" aria-hidden="true">✦</span>
+      <span class="bk-ico" data-ico="spark" data-ico-size="13" aria-hidden="true"></span>
       <span class="bk-text">${es ? 'Fuera de la escala' : 'Outside the key'}</span>
       <span class="bk-sub">${es ? 'préstamo · modulación' : 'borrow · modulate'}</span>
     </button>`;
@@ -230,6 +230,7 @@ function renderProgressionStory() {
   const el = document.getElementById('progressionStory'); if (!el) return;
   el.classList.add('builder-next-moves');
   el.innerHTML = _buildBubblesHTML();
+  if (typeof applyIcons === 'function') applyIcons(el);
   if (typeof BubbleField === 'object') BubbleField.mount();
 }
 

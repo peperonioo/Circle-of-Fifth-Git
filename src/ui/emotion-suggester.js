@@ -54,7 +54,7 @@ const EmotionSuggester = (() => {
     box.innerHTML = `
       <div class="mod-head">
         <span class="mod-title">${es ? '¿Cómo quieres sonar?' : 'How should it feel?'}</span>
-        <button class="mod-x" onclick="EmotionSuggester.close()" aria-label="Close">✕</button>
+        <button class="mod-x" data-ico="close" data-ico-size="12" onclick="EmotionSuggester.close()" aria-label="Close"></button>
       </div>
       <div class="em-grid">
         ${EMOTIONS.map(e => `
@@ -74,6 +74,7 @@ const EmotionSuggester = (() => {
       <button class="em-apply"${!selected ? ' disabled' : ''} onclick="EmotionSuggester.apply()">
         ${es ? 'Cargar progresión' : 'Load progression'}
       </button>`;
+    if (typeof applyIcons === 'function') applyIcons(box);
   }
 
   function show() {
