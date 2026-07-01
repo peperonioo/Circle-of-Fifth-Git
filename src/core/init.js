@@ -242,6 +242,13 @@ function toggleTheme() {
   if (typeof initBuilderFocus === 'function') initBuilderFocus();   // scroll → builder fills the screen
   if (typeof tel === 'function') tel('app_open');
 
+  // Boot complete → fade the splash out (the template has a 4s failsafe too).
+  const _splash = document.getElementById('splash');
+  if (_splash) setTimeout(() => {
+    _splash.classList.add('done');
+    setTimeout(() => { try { _splash.remove(); } catch (_) {} }, 600);
+  }, 120);
+
   // Opened from a shared link → invite them to play the loop (audio needs the tap).
   if (_sharedLoop && typeof showSharedBanner === 'function') {
     setTimeout(showSharedBanner, 420);

@@ -25,11 +25,20 @@
 <meta name="twitter:description" content="An interactive circle of fifths. Build progressions, hear them, and let smart suggestions guide you."/>
 <meta name="twitter:image" content="https://peperonioo.github.io/Quinta/og.png"/>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
+<link rel="icon" type="image/png" sizes="64x64" href="icons/favicon.png"/>
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <!-- %%CSS%% -->
 </head>
 <body>
+
+<!-- SPLASH — branded first frame, painted as soon as HTML parses; init.js fades
+     it out when boot completes (inline failsafe below dismisses it regardless). -->
+<div id="splash" aria-hidden="true">
+  <div class="sp-mark"><i class="sp-ring"></i><i class="sp-tail"></i></div>
+  <div class="sp-name">QUINTA</div>
+</div>
+<script>setTimeout(function(){var s=document.getElementById('splash');if(s){s.classList.add('done');setTimeout(function(){try{s.remove()}catch(e){}},600);}},4000);</script>
 <canvas id="plasma"></canvas>
 
 <div class="app">

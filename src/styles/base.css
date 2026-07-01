@@ -22,6 +22,40 @@ html,body { -webkit-tap-highlight-color:transparent; overscroll-behavior-y:none;
   ::view-transition-old(root), ::view-transition-new(root) { animation:none; }
 }
 
+/* ── Splash — branded first frame while the app boots ─────
+   Colours are hard-coded (not tokens): it must paint before any theme logic. */
+#splash {
+  position:fixed; inset:0; z-index:12000;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px;
+  background:
+    radial-gradient(70% 60% at 82% 12%, rgba(255,90,60,.14), transparent 60%),
+    radial-gradient(70% 60% at 10% 95%, rgba(124,47,247,.13), transparent 60%),
+    #0b0810;
+  transition:opacity .45s ease;
+}
+#splash.done { opacity:0; pointer-events:none }
+.sp-mark { position:relative; width:86px; height:86px }
+.sp-ring {
+  position:absolute; inset:0; border-radius:50%;
+  background:conic-gradient(from -10deg, #ffb24a, #ff5a3c 30%, #c4287a 52%, #ff5a3c 72%, #ffb24a);
+  -webkit-mask:radial-gradient(circle, transparent 55%, #000 56%);
+          mask:radial-gradient(circle, transparent 55%, #000 56%);
+  animation:spSpin 2.6s linear infinite;
+}
+.sp-tail {
+  position:absolute; left:63%; top:63%; width:38px; height:15px; border-radius:99px;
+  background:linear-gradient(90deg, #ff5a3c, #ffb24a);
+  transform:rotate(45deg); transform-origin:0 50%;
+  box-shadow:0 4px 14px rgba(255,90,60,.35);
+}
+.sp-name {
+  font-family:'DM Mono', Menlo, monospace; font-size:13px; letter-spacing:.42em;
+  text-indent:.42em;                          /* optically recentre the tracked text */
+  color:#f3efe9; opacity:.92;
+}
+@keyframes spSpin { to { transform:rotate(360deg) } }
+@media (prefers-reduced-motion: reduce) { .sp-ring { animation:none } }
+
 /* Plasma canvas */
 #plasma {
   position:fixed; inset:0;
