@@ -1,7 +1,7 @@
 // ── CONSTANTS ─────────────────────────────────────────
 // Pure data. No DOM access. No state mutation.
 
-const APP_VERSION = 'V5.94';
+const APP_VERSION = 'V5.95';
 // NOTE: storage key kept as-is across the "Quinta" rebrand so existing saved
 // state/progressions are not wiped. It's an internal key, never shown to users.
 const STORAGE_KEY = 'easy-fifth-circle:v1';
@@ -86,6 +86,7 @@ const defaultState = {
   history:[], mood:'balanced', bpm:100,
   sevenths:false, countIn:false, voicingOpen:false, metroSound:'woodblock',
   pianoSound:'piano', loop:false,
+  realPiano:true,                        // sampled Salamander piano (synth fallback / user off)
   activeSection:'A', chain:false,        // A/B parts; `chain` plays A→B as one song
   snap:0.25,                             // grid snap in beats (0.25 = 1/16 note; 0 = free)
   onboarded:false,

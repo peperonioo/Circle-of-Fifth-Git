@@ -459,6 +459,14 @@
       <i>⌄</i>
     </button>
   </div>
+  <div class="set-row">
+    <span class="set-label" data-i18n="settings.pianoSnd">Piano</span>
+    <div class="set-seg">
+      <button data-rp="real"  onclick="Settings.setRealPiano(true)"  data-i18n="settings.pianoReal">Real</button>
+      <button data-rp="synth" onclick="Settings.setRealPiano(false)" data-i18n="settings.pianoSynth">Synth</button>
+    </div>
+  </div>
+  <div class="set-note" data-i18n="settings.pianoCredit">Real piano: Salamander Grand by Alexander Holm (CC-BY)</div>
   <div class="set-block">
     <span class="set-label" data-i18n="settings.plasma">Plasma</span>
     <div class="palette-row" id="palRow"></div>

@@ -119,6 +119,7 @@
 .set-seg { display:flex; gap:3px; padding:3px; border-radius:10px; background:var(--glass-1); border:1px solid var(--glass-border) }
 .set-seg button { border:0; background:transparent; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; padding:6px 15px; border-radius:8px; cursor:pointer; transition:background .15s, color .15s }
 .set-seg button.on { background:var(--accent); color:#fff }
+.set-note  { font-family:'DM Mono',monospace; font-size:8.5px; color:var(--muted); opacity:.8; margin:-6px 2px 8px; text-align:right }
 .set-block { padding:11px 2px 4px; border-top:1px solid var(--glass-border); margin-top:4px }
 .set-block .set-label { display:block; margin-bottom:10px }
 .settings-sheet .palette-row { display:flex; gap:9px; margin-bottom:13px }

@@ -135,3 +135,7 @@ See `CHANGELOG.md` → Roadmap for version targets. Priority order:
 2. **V3.19** — Suggestion engine validation (musical correctness, genre bias)
 3. **V3.20** — Final CSS de-override pass (remove any remaining duplicate selectors)
 4. **V4.0** — Harmonic Playground (visual gravity, progression storytelling)
+
+## Audio credits
+
+Real piano sound: [Salamander Grand Piano V3](https://freepats.zenvoid.org/Piano/acoustic-grand-piano.html) by Alexander Holm, licensed [CC-BY 3.0](https://creativecommons.org/licenses/by/3.0/). A 17-sample subset (C2–C6) is served from `samples/piano/` and pitch-shifted to fill the range; everything else in the app is synthesised with Web Audio.

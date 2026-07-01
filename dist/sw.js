@@ -1,6 +1,9 @@
 // Service worker — makes Easy Fifth Circle installable and offline-capable.
 // Bump CACHE on each release so clients pick up the new HTML.
-const CACHE = 'efc-v5.94';
+const CACHE = 'efc-v5.95';
+// Piano samples live in their own cache that SURVIVES version bumps — they never
+// change, and re-downloading ~1.2MB on every release would be rude.
+const SAMPLES = 'efc-samples-v1';
 const ASSETS = [
   './',
   './index.html',
@@ -19,7 +22,7 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE && k !== SAMPLES).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -34,6 +37,17 @@ self.addEventListener('fetch', e => {
       fetch(req)
         .then(res => { const cp = res.clone(); caches.open(CACHE).then(c => c.put('./index.html', cp)); return res; })
         .catch(() => caches.match('./index.html') || caches.match('./'))
+    );
+    return;
+  }
+
+  // Piano samples: cache-first into the persistent samples cache.
+  if (req.url.indexOf('/samples/') > -1) {
+    e.respondWith(
+      caches.open(SAMPLES).then(c => c.match(req).then(cached => cached || fetch(req).then(res => {
+        if (res.ok) c.put(req, res.clone());
+        return res;
+      })))
     );
     return;
   }

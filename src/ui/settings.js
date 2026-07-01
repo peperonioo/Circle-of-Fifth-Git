@@ -9,6 +9,7 @@ const Settings = (() => {
     const light = document.body.classList.contains('light');
     el()?.querySelectorAll('[data-theme]').forEach(b => b.classList.toggle('on', (b.dataset.theme === 'light') === light));
     el()?.querySelectorAll('[data-lang]').forEach(b => b.classList.toggle('on', b.dataset.lang === st.lang));
+    el()?.querySelectorAll('[data-rp]').forEach(b => b.classList.toggle('on', (b.dataset.rp === 'real') === (st.realPiano !== false)));
   }
 
   function setTheme(tk) {
@@ -18,10 +19,17 @@ const Settings = (() => {
   }
   function setLang(l) { if (typeof setLanguage === 'function') setLanguage(l); syncActive(); }
 
+  // Real (sampled) piano vs pure synth. Turning it on kicks the lazy sample load.
+  function setRealPiano(v) {
+    st.realPiano = !!v; saveState(); syncActive();
+    if (st.realPiano && typeof AudioEngine === 'object' && AudioEngine.ctx && typeof SamplePiano === 'object') SamplePiano.ensure();
+    if (typeof haptic === 'function') haptic('sel');
+  }
+
   function show()  { const b = el(); if (!b) return; b.hidden = false; requestAnimationFrame(() => b.classList.add('open')); _open = true; syncActive();
                      if (typeof OverlayManager === 'object') OverlayManager.opened('settings'); }
   function close() { const b = el(); if (!b) return; b.classList.remove('open'); _open = false; setTimeout(() => { if (!_open) b.hidden = true; }, 200); }
   function toggle(){ _open ? close() : show(); }
 
-  return { show, close, toggle, setTheme, setLang, syncActive, isOpen: () => _open };
+  return { show, close, toggle, setTheme, setLang, setRealPiano, syncActive, isOpen: () => _open };
 })();
