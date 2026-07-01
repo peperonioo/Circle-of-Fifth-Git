@@ -219,6 +219,40 @@ const AudioEngine = {
     src.start(t0);
   },
 
+  // ── Wheel dial tick ───────────────────────────────────
+  // The sound of the wheel crossing a key: a soft felt "thmp" — deep, muted,
+  // tactile, like the detent of a high-end camera dial. All lows, no shrill:
+  // a sine knock dropping 185→95Hz through a lowpass, plus a whisper of felt
+  // noise. Pitch varies ±4% per tick so a fast spin sounds organic, not robotic.
+  dialTick(vol = 0.11) {
+    if (!this.resume()) return;
+    const ctx = this.ctx, t0 = ctx.currentTime, out = this.dry || this.master;
+    const v = 1 + (Math.random() * 0.08 - 0.04);            // organic variation
+
+    // Felt knock: soft-attack sine with a quick downward pitch settle.
+    const o = ctx.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(185 * v, t0);
+    o.frequency.exponentialRampToValueAtTime(95 * v, t0 + 0.045);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 850; lp.Q.value = 0.4;
+    const g = ctx.createGain();
+    o.connect(lp); lp.connect(g); g.connect(out);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + 0.006);         // soft, not clicky
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.09);
+    o.start(t0); o.stop(t0 + 0.1);
+
+    // A whisper of felt texture (very quiet, lowpassed noise breath).
+    const len = Math.floor(ctx.sampleRate * 0.02);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.5);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const nf = ctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 1100;
+    const ng = ctx.createGain(); ng.gain.value = vol * 0.22;
+    src.connect(nf); nf.connect(ng); ng.connect(out);
+    src.start(t0);
+  },
+
   // ── Metronome click voices ────────────────────────────
   // Dispatch to the active sound (persisted in st.metroSound).
   metroClick(accent, when) {

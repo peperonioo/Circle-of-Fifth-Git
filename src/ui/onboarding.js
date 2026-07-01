@@ -22,19 +22,22 @@ const Onboarding = (() => {
       body:  { en: 'Every step clockwise jumps up a fifth — C → G → D → A. Neighbours share almost every note, so they always sound good together.',
                es: 'Cada paso a la derecha sube una quinta — C → G → D → A. Las vecinas comparten casi todas sus notas, por eso suenan siempre bien juntas.' },
       try:   { en: 'Spin the wheel one step right: from C you land on G, its fifth.',
-               es: 'Gira la rueda un paso a la derecha: de C caes en G, su quinta.' } },
+               es: 'Gira la rueda un paso a la derecha: de C caes en G, su quinta.' },
+      done:  c => st.key !== c.key },
     { sel: '#wheelSvg', pad: 6, radius: '50%', interactive: true,
       title: { en: 'Hear it, lock it', es: 'Óyelo, fíjalo' },
       body:  { en: 'Tap any chord on the wheel to hear it. Tap the centre to lock that key — the whole wheel lights up to show what belongs.',
                es: 'Toca cualquier acorde de la rueda para oírlo. Toca el centro para fijar esa tonalidad — toda la rueda se ilumina con lo que pertenece.' },
       try:   { en: 'Tap a couple of chords, then tap the centre.',
-               es: 'Toca un par de acordes y luego toca el centro.' } },
+               es: 'Toca un par de acordes y luego toca el centro.' },
+      done:  c => c.taps >= 2 || (typeof wheelLocked !== 'undefined' && wheelLocked) },
     { sel: '#degrees', pad: 8, interactive: true,
       title: { en: 'The chords in your key', es: 'Los acordes de tu tonalidad' },
       body:  { en: 'Right under the wheel are your in-key chords (I to vii°). Tapping one plays it and shows its role — what each chord does in the key.',
                es: 'Justo debajo están tus acordes en tonalidad (I a vii°). Al tocar uno suena y te muestra su papel — qué hace cada acorde en la tonalidad.' },
       try:   { en: 'Tap a chord to hear it and see its role.',
-               es: 'Toca un acorde para oírlo y ver su papel.' } },
+               es: 'Toca un acorde para oírlo y ver su papel.' },
+      done:  c => c.taps >= 1 },
     // The instant-reward comes FIRST and spotlights the actual button — so the
     // builder is still empty (the hero exists) and the tour never asks you to
     // press a button it just removed. Falls back to the always-present compact
@@ -44,13 +47,15 @@ const Onboarding = (() => {
       body:  { en: 'This is your builder — where a song takes shape. The fastest way in: tap Surprise me and a full, in-key progression starts playing.',
                es: 'Este es tu builder — donde toma forma la canción. La forma más rápida de empezar: toca Sorpréndeme y suena una progresión entera en tu tonalidad.' },
       try:   { en: 'Tap “Surprise me” — you’ll hear it in seconds.',
-               es: 'Toca «Sorpréndeme» — lo oirás en segundos.' } },
+               es: 'Toca «Sorpréndeme» — lo oirás en segundos.' },
+      done:  c => (st.history || []).length > c.hist },
     { sel: '#progressionStory', pad: 8, interactive: true,
       title: { en: 'Or build your own', es: 'O construye la tuya' },
       body:  { en: 'Prefer to craft it by hand? These bubbles suggest the strongest next chords for your key and mood — the biggest is the best bet. Drag chords on the grid to rearrange.',
                es: 'Prefieres crearla a mano? Estas burbujas sugieren los acordes más fuertes para tu tonalidad y mood — la más grande es la mejor apuesta. Arrastra los acordes del grid para reordenar.' },
       try:   { en: 'Tap a bubble to add the next chord.',
-               es: 'Toca una burbuja para añadir el siguiente acorde.' } },
+               es: 'Toca una burbuja para añadir el siguiente acorde.' },
+      done:  c => (st.history || []).length > c.hist },
     { sel: '.tabs', pad: 8, place: 'below',
       title: { en: 'Produce & take it anywhere', es: 'Produce y llévatelo' },
       body:  { en: 'Switch to Production for drums and a groove synced to your tempo. You’re ready — start sketching!',
@@ -59,6 +64,46 @@ const Onboarding = (() => {
 
   let idx = 0, _reflowRAF = 0, _scrollT = 0, _anchorY = 0, _settling = false;
   const SCROLL_LIMIT = 60;   // you can nudge the page a little, but not scroll away from the step
+
+  // ── Do-it-to-continue gating ─────────────────────────
+  // Steps with a `done` predicate LOCK the Next button until the user actually
+  // performs the action (we snapshot state on entry and poll). A generous 25s
+  // fallback unlocks regardless — the tour must never trap anyone.
+  let _locked = false, _ctx = null, _watchT = 0, _watchStart = 0, _tapEl = null;
+  const UNLOCK_FALLBACK_MS = 25000;
+  function _countTap() { if (_ctx) _ctx.taps++; }
+  function _stopWatch() {
+    clearInterval(_watchT); _watchT = 0;
+    if (_tapEl) { _tapEl.removeEventListener('pointerdown', _countTap, true); _tapEl = null; }
+  }
+  function _startWatch(s) {
+    _stopWatch();
+    _locked = !!s.done;
+    if (!_locked) return;
+    _ctx = { key: st.key, hist: (st.history || []).length, taps: 0 };
+    _tapEl = _targetEl(s);
+    if (_tapEl) _tapEl.addEventListener('pointerdown', _countTap, true);
+    _watchStart = Date.now();
+    _watchT = setInterval(() => {
+      let ok = false;
+      try { ok = !!s.done(_ctx); } catch (_) {}
+      if (ok || Date.now() - _watchStart > UNLOCK_FALLBACK_MS) _unlock(ok);
+    }, 280);
+  }
+  function _unlock(earned) {
+    _stopWatch();
+    if (!_locked) return;
+    _locked = false;
+    const nextB = $('obNext');
+    if (nextB) { nextB.disabled = false; nextB.classList.add('ob-unlocked'); }
+    const tryEl = $('obTry');
+    if (tryEl && earned) {
+      tryEl.classList.add('ob-done');
+      tryEl.innerHTML = (typeof icon === 'function' ? icon('check', 13) : '') +
+        '<span>' + (es() ? '¡Eso es! Sigue cuando quieras.' : 'That’s it! Continue when ready.') + '</span>';
+    }
+    if (earned && typeof haptic === 'function') haptic('ok');
+  }
 
   // Keep the page near the current step: allow a short scroll range, then stop.
   function _clampScroll() {
@@ -91,6 +136,7 @@ const Onboarding = (() => {
     go(0);
   }
   function close() {
+    _stopWatch(); _locked = false;
     const ov = $('onboarding'); if (!ov) return;
     ov.classList.remove('ob-on');
     document.removeEventListener('keydown', _key, true);
@@ -105,6 +151,7 @@ const Onboarding = (() => {
   function go(i) {
     idx = Math.max(0, Math.min(steps.length - 1, i));
     render();
+    _startWatch(steps[idx]);
     const el = _targetEl(steps[idx]);
     _settling = true;                                  // don't clamp while we scroll the target into view
     if (el) {
@@ -136,7 +183,7 @@ const Onboarding = (() => {
     // click-catcher click-through); show the "try this" prompt.
     const ov = $('onboarding'); if (ov) ov.classList.toggle('ob-interactive', !!s.interactive);
     const tryEl = $('obTry');
-    if (tryEl) { tryEl.hidden = !s.try; if (s.try) tryEl.textContent = L(s.try); }
+    if (tryEl) { tryEl.hidden = !s.try; tryEl.classList.remove('ob-done'); if (s.try) tryEl.textContent = L(s.try); }
     const tip = $('obTip');
     if (tip) { tip.classList.remove('ob-fade'); void tip.offsetWidth; tip.classList.add('ob-fade'); }
     if ($('obDots')) $('obDots').innerHTML = steps.map((_, i) =>
@@ -144,7 +191,12 @@ const Onboarding = (() => {
     const back = $('obBack'), nextB = $('obNext'), skipB = $('obSkip');
     if (back)  { back.style.visibility = idx === 0 ? 'hidden' : 'visible'; back.textContent = es() ? 'Atrás' : 'Back'; }
     if (skipB) skipB.textContent = es() ? 'Saltar' : 'Skip';
-    if (nextB) nextB.textContent = idx === n - 1 ? (es() ? 'Empezar a crear' : 'Start creating') : (es() ? 'Siguiente' : 'Next');
+    if (nextB) {
+      nextB.textContent = idx === n - 1 ? (es() ? 'Empezar a crear' : 'Start creating') : (es() ? 'Siguiente' : 'Next');
+      nextB.disabled = !!s.done;                        // locked until the action is done
+      nextB.classList.remove('ob-unlocked');
+      nextB.title = s.done ? (es() ? 'Prueba lo de arriba para seguir' : 'Try the step above to continue') : '';
+    }
   }
 
   function position() {

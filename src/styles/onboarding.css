@@ -70,6 +70,19 @@
 .ob-primary { background: var(--accent); color: #fff; box-shadow: 0 5px 16px rgba(232,68,26,.3); }
 .ob-primary:hover { filter: brightness(1.07); }
 
+/* Do-it-to-continue: Next stays dim until the step's action is performed */
+.ob-btn:disabled { opacity: .38; filter: saturate(.35); cursor: default; pointer-events: none; }
+@keyframes obUnlock { 0% { transform: scale(1) } 45% { transform: scale(1.09) } 100% { transform: scale(1) } }
+.ob-btn.ob-unlocked { animation: obUnlock .5s var(--ease); }
+/* The try box flips to a "done" state (check icon injected by JS) */
+.ob-try.ob-done {
+  border-color: rgba(70,211,154,.4); background: rgba(70,211,154,.10); color: #46d39a;
+  align-items: center;
+}
+.ob-try.ob-done::before { display: none; }
+.ob-try.ob-done .ico { flex: 0 0 auto; }
+@media (prefers-reduced-motion: reduce) { .ob-btn.ob-unlocked { animation: none } }
+
 /* Header "?" replay button */
 .help-btn {
   width: 34px; height: 34px; flex: 0 0 auto; border-radius: 999px; cursor: pointer;

@@ -93,7 +93,7 @@ function applyWheelRotation(rot) {
       haptic(4);
       const now = performance.now();
       if (typeof AudioEngine === 'object' && now - _lastTickT > 32) {
-        AudioEngine.tick(1150, 0.05); _lastTickT = now;
+        AudioEngine.dialTick(0.11); _lastTickT = now;
       }
     }
   }
