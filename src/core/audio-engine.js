@@ -230,10 +230,11 @@ const AudioEngine = {
     const v = 1 + (Math.random() * 0.08 - 0.04);            // organic variation
 
     // Felt knock: soft-attack sine with a quick downward pitch settle.
+    // Mid register (wood, not sub-bass): ~330→180Hz reads as a warm "tock".
     const o = ctx.createOscillator(); o.type = 'sine';
-    o.frequency.setValueAtTime(185 * v, t0);
-    o.frequency.exponentialRampToValueAtTime(95 * v, t0 + 0.045);
-    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 850; lp.Q.value = 0.4;
+    o.frequency.setValueAtTime(330 * v, t0);
+    o.frequency.exponentialRampToValueAtTime(180 * v, t0 + 0.04);
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400; lp.Q.value = 0.5;
     const g = ctx.createGain();
     o.connect(lp); lp.connect(g); g.connect(out);
     g.gain.setValueAtTime(0.0001, t0);
@@ -247,7 +248,7 @@ const AudioEngine = {
     const d = buf.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.5);
     const src = ctx.createBufferSource(); src.buffer = buf;
-    const nf = ctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 1100;
+    const nf = ctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 1700;
     const ng = ctx.createGain(); ng.gain.value = vol * 0.22;
     src.connect(nf); nf.connect(ng); ng.connect(out);
     src.start(t0);
