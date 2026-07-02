@@ -399,12 +399,34 @@ const DurationDrag = {
     bar.classList.add('resizing');
     try { bar.setPointerCapture(e.pointerId); } catch (_) {}
     let lastBeats = startBeats;
+    // Resize physics: the growing right edge shoves every clip to its right in a
+    // chain (same solid-object feel as dragging). Stateless from the gesture-start
+    // snapshot, so shrinking back mid-gesture returns everyone to where they were.
+    const h = Array.isArray(st.history) ? st.history : [];
+    const root = document.getElementById('flowRow');
+    const rights = h.map((it, k) => ({ k, orig: it.start || 0, len: Math.max(0.25, it.beats || 2) }))
+      .filter(o => o.k !== i && o.orig + 0.001 >= (item.start || 0))
+      .sort((x, y) => x.orig - y.orig);
+    const reflowRights = () => {
+      let frontier = (item.start || 0) + (item.beats || 2);
+      rights.forEach(o => {
+        const it = h[o.k];
+        const ns = Math.max(o.orig, frontier);           // pushed only if the chain reaches it
+        if (it.start !== ns) {
+          it.start = ns;
+          const el = root && root.querySelector(`.builder-step[data-i="${o.k}"]`);
+          if (el) el.style.setProperty('--start', ns);
+        }
+        frontier = ns + o.len;
+      });
+    };
     const move = ev => {
       const raw = startBeats + (ev.clientX - startX) / pxBeat;
       const s = _snapVal();
       const nb = Math.max(0.25, Math.min(16, s > 0 ? Math.round(raw / s) * s : raw));  // snap per the ruler setting
       item.beats = nb;
       bar.style.setProperty('--beats', nb);
+      reflowRights();
       const lab = bar.querySelector('.step-len'); if (lab) lab.textContent = fmtBeats(nb);
       if (nb !== lastBeats) { lastBeats = nb; if (typeof AudioEngine === 'object') AudioEngine.tick(240, 0.08); }
     };
@@ -412,7 +434,9 @@ const DurationDrag = {
       bar.classList.remove('resizing');
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
-      saveState(); BuilderEngine.meta();
+      saveState();
+      HistoryEngine.render();                            // re-lay the grid/ruler for the new total
+      BuilderEngine.meta();
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
