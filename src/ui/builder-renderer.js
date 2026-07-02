@@ -212,6 +212,7 @@ function undoLastChange() {
 // Call this BEFORE a destructive replacement. Snapshots + offers undo only when
 // something was actually at stake (non-empty progression).
 function snapshotAndOfferUndo(msgKey) {
+  if (typeof window !== 'undefined' && window.__EFC_TESTING) return;   // tests exercise clear(); stay silent
   if (!(st.history && st.history.length)) return;   // nothing to lose
   captureUndo();
   _showUndoToast(msgKey);

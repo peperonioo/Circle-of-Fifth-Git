@@ -186,11 +186,13 @@ const ColorChords = (() => {
     requestAnimationFrame(() => b.classList.add('open'));
     _open = true;
     if (typeof OverlayManager === 'object') OverlayManager.opened('color-chords');
+    if (typeof FocusTrap === 'object') FocusTrap.activate(b);
   }
   function close() {
     const b = el(); if (!b) return;
     b.classList.remove('open'); _open = false;
     setTimeout(() => { if (!_open) b.hidden = true; }, 200);
+    if (typeof FocusTrap === 'object') FocusTrap.release(b);
   }
   function toggle() { _open ? close() : show(); }
 

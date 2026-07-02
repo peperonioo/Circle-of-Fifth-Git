@@ -17,7 +17,7 @@ const I18N_EN = {
   'common.minor':      'minor',
   'common.major':      'major',
   'builder.title':     'Progression builder',
-  'builder.subtitle':  'Tap a degree or bubble to add it to your progression.',
+  'builder.subtitle':  'Tap a bubble to add it to your progression.',
   'builder.play':      'Play',
   'metro.title':       'Metronome',
   'mode.advanced':     'Advanced mode — it recolours the <b>chords below</b> only. The circle stays on your Major/Minor key.',

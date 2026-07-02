@@ -52,7 +52,7 @@ const Onboarding = (() => {
     { sel: '#progressionStory', pad: 8, interactive: true,
       title: { en: 'Or build your own', es: 'O construye la tuya' },
       body:  { en: 'Prefer to craft it by hand? These bubbles suggest the strongest next chords for your key and mood — the biggest is the best bet. Drag chords on the grid to rearrange.',
-               es: 'Prefieres crearla a mano? Estas burbujas sugieren los acordes más fuertes para tu tonalidad y mood — la más grande es la mejor apuesta. Arrastra los acordes del grid para reordenar.' },
+               es: '¿Prefieres crearla a mano? Estas burbujas sugieren los acordes más fuertes para tu tonalidad y mood — la más grande es la mejor apuesta. Arrastra los acordes del grid para reordenar.' },
       try:   { en: 'Tap a bubble to add the next chord.',
                es: 'Toca una burbuja para añadir el siguiente acorde.' },
       done:  c => (st.history || []).length > c.hist },

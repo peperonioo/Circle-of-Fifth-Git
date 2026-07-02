@@ -1,7 +1,7 @@
 // ── CONSTANTS ─────────────────────────────────────────
 // Pure data. No DOM access. No state mutation.
 
-const APP_VERSION = 'V6.01';
+const APP_VERSION = 'V6.02';
 // NOTE: storage key kept as-is across the "Quinta" rebrand so existing saved
 // state/progressions are not wiped. It's an internal key, never shown to users.
 const STORAGE_KEY = 'easy-fifth-circle:v1';
@@ -56,7 +56,7 @@ const IONIAN_STEPS    = [0,2,4,5,7,9,11];
 
 const MODE_FRIENDLY = {
   en: {ionian:['Major','bright, stable'],aeolian:['Minor','emotional, natural'],dorian:['Dorian','minor but soulful'],mixolydian:['Mixolydian','major but bluesy'],lydian:['Lydian','floating / dreamy'],phrygian:['Phrygian','dark / Spanish'],locrian:['Locrian','unstable / tense']},
-  es: {ionian:['Mayor','brillante, estable'],aeolian:['Menor','emocional, natural'],dorian:['Dórico','menor con lift soul'],mixolydian:['Mixolidio','mayor con color blues'],lydian:['Lidio','flotante / dreamy'],phrygian:['Frigio','oscuro / español'],locrian:['Locrio','inestable / tenso']},
+  es: {ionian:['Mayor','brillante, estable'],aeolian:['Menor','emocional, natural'],dorian:['Dórico','menor con alma soul'],mixolydian:['Mixolidio','mayor con color blues'],lydian:['Lidio','flotante, soñador'],phrygian:['Frigio','oscuro, español'],locrian:['Locrio','inestable, tenso']},
 };
 
 const PALETTES = [

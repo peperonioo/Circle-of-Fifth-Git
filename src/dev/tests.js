@@ -89,6 +89,17 @@
   }
 
   function runTests() {
+    // App systems (telemetry, undo toast, haptics) go quiet during a run — the
+    // suite exercises real actions (addDegree, clear…) and must not emit fake
+    // analytics events or user-facing chrome.
+    window.__EFC_TESTING = true;
+    try {
+      return _runTestsBody();
+    } finally {
+      window.__EFC_TESTING = false;
+    }
+  }
+  function _runTestsBody() {
     results.length = 0;
 
     assert('Theory data exists',            typeof THEORY_DATA === 'object' && Array.isArray(THEORY_DATA.modes));
@@ -521,6 +532,12 @@
     report: 'EFC_DEV.report()',
   };
 
-  // Auto-run tests after load
-  setTimeout(() => { try { runTests(); } catch (_) {} }, 120);
+  // Auto-run tests after load — DEV ONLY (localhost). In production this ran in
+  // every user's session: it burned CPU, emitted fake telemetry (the suite calls
+  // addDegree → tel('chord_add')) and, since the V5.92 undo, flashed a
+  // 'Progression cleared' toast at real users on boot. CI calls runTests()
+  // explicitly, so it never depended on this.
+  if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+    setTimeout(() => { try { runTests(); } catch (_) {} }, 120);
+  }
 })();

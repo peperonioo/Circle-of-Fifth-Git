@@ -60,12 +60,15 @@ const Library = {
     p.classList.add('open');
     document.getElementById('libraryBackdrop')?.classList.add('open');
     if (typeof OverlayManager === 'object') OverlayManager.opened('library');
+    if (typeof FocusTrap === 'object') FocusTrap.activate(p);
     setTimeout(() => document.getElementById('libName')?.focus(), 60);
   },
   close() {
     this.open = false;
-    document.getElementById('libraryPanel')?.classList.remove('open');
+    const p = document.getElementById('libraryPanel');
+    p?.classList.remove('open');
     document.getElementById('libraryBackdrop')?.classList.remove('open');
+    if (typeof FocusTrap === 'object') FocusTrap.release(p);
   },
 
   saveCurrent() {

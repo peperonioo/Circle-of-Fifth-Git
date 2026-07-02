@@ -31,8 +31,10 @@ const Settings = (() => {
   }
 
   function show()  { const b = el(); if (!b) return; b.hidden = false; requestAnimationFrame(() => b.classList.add('open')); _open = true; syncActive();
-                     if (typeof OverlayManager === 'object') OverlayManager.opened('settings'); }
-  function close() { const b = el(); if (!b) return; b.classList.remove('open'); _open = false; setTimeout(() => { if (!_open) b.hidden = true; }, 200); }
+                     if (typeof OverlayManager === 'object') OverlayManager.opened('settings');
+                     if (typeof FocusTrap === 'object') FocusTrap.activate(b); }
+  function close() { const b = el(); if (!b) return; b.classList.remove('open'); _open = false; setTimeout(() => { if (!_open) b.hidden = true; }, 200);
+                     if (typeof FocusTrap === 'object') FocusTrap.release(b); }
   function toggle(){ _open ? close() : show(); }
 
   function setHaptics(v) {

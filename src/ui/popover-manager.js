@@ -229,3 +229,54 @@ function closePopup(update = true) {
     if (Math.abs(dx) > 50) nav(dx < 0 ? 1 : -1);
   }, { passive: true });
 })();
+
+// ── Focus management (a11y) ───────────────────────────
+// Trap Tab inside an open dialog and give focus back to the trigger on close.
+// Wired into the main dialogs (Settings, Library, Color, Emotion). Keyboard
+// users can't tab "behind" an open sheet, and never lose their place.
+const FocusTrap = {
+  _el: null, _prev: null,
+  _sel: 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+  activate(el) {
+    if (!el || this._el === el) return;
+    this.release();
+    this._el = el; this._prev = document.activeElement;
+    el.addEventListener('keydown', this._onKey);
+    const first = el.querySelector(this._sel);
+    if (first) setTimeout(() => { try { first.focus({ preventScroll: true }); } catch (_) {} }, 80);
+  },
+  release(el) {
+    if (el && el !== this._el) return;                 // stale release from another dialog
+    const dlg = this._el;
+    if (dlg) dlg.removeEventListener('keydown', this._onKey);
+    const prev = this._prev;
+    this._el = null; this._prev = null;
+    if (prev && prev !== document.body && document.contains(prev)) {
+      try { prev.focus({ preventScroll: true }); } catch (_) {}
+    } else if (dlg && dlg.contains(document.activeElement)) {
+      // No real trigger to return to — at least don't leave focus in a hidden sheet.
+      try { document.activeElement.blur(); } catch (_) {}
+    }
+  },
+  _onKey(e) {
+    if (e.key !== 'Tab') return;
+    const el = FocusTrap._el; if (!el) return;
+    const items = [...el.querySelectorAll(FocusTrap._sel)].filter(n => (n.offsetWidth || n.offsetHeight) && !n.disabled);
+    if (!items.length) return;
+    const first = items[0], last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  },
+};
+
+// ── Space = play/stop (desktop keyboard) ──────────────
+// Anywhere outside a form control (buttons keep their native space behaviour).
+addEventListener('keydown', e => {
+  if (e.code !== 'Space' || e.repeat) return;
+  const t = e.target;
+  if (t && (/^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(t.tagName) || t.isContentEditable)) return;
+  const ob = document.getElementById('onboarding');
+  if (ob && !ob.hidden) return;                        // don't hijack the tour
+  e.preventDefault();
+  if (typeof toggleProgPlay === 'function') toggleProgPlay();
+});

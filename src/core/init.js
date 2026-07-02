@@ -285,6 +285,7 @@ function _showInstallNudge(ios) {
   if (document.getElementById('installNudge')) return;
   const el = document.createElement('div');
   el.id = 'installNudge'; el.className = 'install-nudge';
+  el.setAttribute('role', 'status');
   el.innerHTML = `
     <img class="in-ico" src="icons/favicon.png" alt="" width="30" height="30"/>
     <div class="in-text">
@@ -323,6 +324,7 @@ function _hideInstallNudge() {
     if (off && !el) {
       el = document.createElement('div');
       el.className = 'offline-pill';
+      el.setAttribute('role', 'status');
       el.textContent = t('offline.pill');
       document.body.appendChild(el);
       requestAnimationFrame(() => el.classList.add('show'));

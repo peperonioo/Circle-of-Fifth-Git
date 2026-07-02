@@ -24,6 +24,7 @@ const Telemetry = (() => {
   }
   function track(event, props) {
     if (!event) return;
+    if (typeof window !== 'undefined' && window.__EFC_TESTING) return;   // test runs emit no analytics
     bump(event);                                        // local tally always
     if (!enabled()) return;
     queue.push({ e: event, p: props || {}, t: Date.now() });
