@@ -103,7 +103,12 @@ function applyWheelRotation(rot) {
 function updatePanelsAfterSpin() {
   const idx   = nearestFifthIndex(wRot);
   const key   = FIFTHS[idx];          // the major key of the sector now at top
-  if (key !== wheelKey()) AppActions.setKey(key);
+  if (key !== wheelKey()) {
+    // Arrival reward: the settled key's root + fifth, soft and warm. Only when
+    // the spin actually landed somewhere new — a snap-back stays silent.
+    if (typeof AudioEngine === 'object' && AudioEngine.dialSettle) AudioEngine.dialSettle(ni(key));
+    AppActions.setKey(key);
+  }
   else { renderTheory(); renderSuggestions(); }
 }
 

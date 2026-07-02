@@ -254,6 +254,36 @@ const AudioEngine = {
     src.start(t0);
   },
 
+  // ── Wheel settle — the arrival sound ──────────────────
+  // When the spun wheel snaps onto a NEW key, play its root + fifth (the
+  // interval the app is named after) as two soft kalimba-like plucks: warm
+  // sine bodies with a whisper of octave, through the reverb for a little
+  // bloom. Quiet, brief, musical — you HEAR the key you landed on. No bells,
+  // no rising arpeggio: the anti-casino arrival.
+  dialSettle(pc = 0) {
+    if (!this.resume()) return;
+    const ctx = this.ctx, out = this.master;              // master → a touch of reverb bloom
+    // Fold the root into a warm register (G3–F#4) so no key sounds shrill or muddy.
+    const rootPitch = pc > 6 ? pc - 12 : pc;              // pitch 0 = middle C
+    const base = this._freq(rootPitch);
+    [[0, 0, 0.10], [7, 0.085, 0.075]].forEach(([semi, dt, vol]) => {   // root, then its fifth
+      const f = base * Math.pow(2, semi / 12);
+      const t0 = ctx.currentTime + dt;
+      const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+      const h = ctx.createOscillator(); h.type = 'sine'; h.frequency.value = f * 2;   // soft octave sheen
+      const g = ctx.createGain(), hg = ctx.createGain();
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2400; lp.Q.value = 0.4;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.linearRampToValueAtTime(vol, t0 + 0.009);                 // soft pluck, not a click
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.6);
+      hg.gain.setValueAtTime(0.0001, t0);
+      hg.gain.linearRampToValueAtTime(vol * 0.24, t0 + 0.009);
+      hg.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.32);
+      o.connect(g); h.connect(hg); g.connect(lp); hg.connect(lp); lp.connect(out);
+      o.start(t0); o.stop(t0 + 0.65); h.start(t0); h.stop(t0 + 0.36);
+    });
+  },
+
   // ── Metronome click voices ────────────────────────────
   // Dispatch to the active sound (persisted in st.metroSound).
   metroClick(accent, when) {
